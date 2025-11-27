@@ -23,66 +23,66 @@ const calculateMatchScore = (role: TournamentRole, k: number, d: number, a: numb
 
 // Mock Initial Data for Leaderboard
 const INITIAL_PLAYERS: TournamentPlayer[] = [
-    { id: '1', name: 'Weak3n', primaryRole: 'Jungle', offRoles: ['Solo', 'Mid'], mmr: 3200, kills: 45, deaths: 12, assists: 30, score: 280, matchesPlayed: 5, wins: 4 },
-    { id: '2', name: 'Inbowned', primaryRole: 'Support', offRoles: ['Solo', 'Jungle'], mmr: 2900, kills: 10, deaths: 15, assists: 80, score: 245, matchesPlayed: 5, wins: 3 },
-    { id: '3', name: 'Fineokay', primaryRole: 'Solo', offRoles: ['Carry', 'Mid'], mmr: 3100, kills: 30, deaths: 10, assists: 25, score: 260, matchesPlayed: 5, wins: 4 },
-    { id: '4', name: 'Zapman', primaryRole: 'Carry', offRoles: ['Mid', 'Jungle'], mmr: 2800, kills: 50, deaths: 20, assists: 15, score: 230, matchesPlayed: 5, wins: 2 },
-    { id: '5', name: 'Venenu', primaryRole: 'Mid', offRoles: ['Carry', 'Solo'], mmr: 2750, kills: 40, deaths: 18, assists: 20, score: 220, matchesPlayed: 5, wins: 2 },
+    { id: '1', name: 'Weak3n', primaryRole: 'Jungle', offRoles: ['Solo', 'Mid'], mmr: 9999, kills: 667, deaths: 0, assists: 0, score: 280, matchesPlayed: 5, wins: 4 },
+    { id: '2', name: 'Jiggy', primaryRole: 'Support', offRoles: ['Solo', 'Jungle'], mmr: 2900, kills: 10, deaths: 15, assists: 80, score: 245, matchesPlayed: 5, wins: 3 },
+    { id: '3', name: 'Shmeep', primaryRole: 'Solo', offRoles: ['Carry', 'Mid'], mmr: 3100, kills: 30, deaths: 10, assists: 25, score: 260, matchesPlayed: 5, wins: 4 },
+    { id: '4', name: 'Johny', primaryRole: 'Carry', offRoles: ['Mid', 'Jungle'], mmr: 2800, kills: 50, deaths: 20, assists: 15, score: 230, matchesPlayed: 5, wins: 2 },
+    { id: '5', name: 'Paige', primaryRole: 'Mid', offRoles: ['Carry', 'Solo'], mmr: 2750, kills: 40, deaths: 18, assists: 20, score: 220, matchesPlayed: 5, wins: 2 },
 ];
 
 // Mock Match History Data
 const MOCK_MATCHES = [
   {
     id: 'm1',
-    timestamp: '2 hours ago',
-    matchId: 'Match #492',
+    timestamp: '11/27/25',
+    matchId: 'Match #002',
     order: {
       result: 'Defeat',
       score: 18,
       players: [
-        { name: 'Haddix', role: 'Solo', mmr: 3050, k: 3, d: 6, a: 4 },
-        { name: 'Lasbra', role: 'Jungle', mmr: 3100, k: 5, d: 8, a: 5 },
-        { name: 'Pegon', role: 'Mid', mmr: 2800, k: 6, d: 7, a: 3 },
-        { name: 'Barra', role: 'Carry', mmr: 2750, k: 4, d: 6, a: 2 },
-        { name: 'Jake', role: 'Support', mmr: 2850, k: 0, d: 8, a: 8 },
+        { name: 'Weak3n', role: 'Solo', mmr: 3050, k: 3, d: 6, a: 4 },
+        { name: 'Weak3n', role: 'Jungle', mmr: 3100, k: 5, d: 8, a: 5 },
+        { name: 'Weak3n', role: 'Mid', mmr: 2800, k: 6, d: 7, a: 3 },
+        { name: 'Weak3n', role: 'Carry', mmr: 2750, k: 4, d: 6, a: 2 },
+        { name: 'Weak3n', role: 'Support', mmr: 2850, k: 0, d: 8, a: 8 },
       ]
     },
     chaos: {
       result: 'Victory',
       score: 35,
       players: [
-        { name: 'Fineokay', role: 'Solo', mmr: 3100, k: 5, d: 2, a: 12 },
+        { name: 'Weak3n', role: 'Solo', mmr: 3100, k: 5, d: 2, a: 12 },
         { name: 'Weak3n', role: 'Jungle', mmr: 3200, k: 12, d: 3, a: 8 },
-        { name: 'Venenu', role: 'Mid', mmr: 2750, k: 8, d: 4, a: 15 },
-        { name: 'Zapman', role: 'Carry', mmr: 2800, k: 7, d: 2, a: 9 },
-        { name: 'Inbowned', role: 'Support', mmr: 2900, k: 1, d: 5, a: 22 },
+        { name: 'Weak3n', role: 'Mid', mmr: 2750, k: 8, d: 4, a: 15 },
+        { name: 'Weak3n', role: 'Carry', mmr: 2800, k: 7, d: 2, a: 9 },
+        { name: 'Weak3n', role: 'Support', mmr: 2900, k: 1, d: 5, a: 22 },
       ]
     }
   },
   {
     id: 'm2',
-    timestamp: '1 day ago',
-    matchId: 'Match #488',
+    timestamp: '11/27/25',
+    matchId: 'Match #001',
     order: {
       result: 'Victory',
       score: 42,
       players: [
-         { name: 'SoloOrTroll', role: 'Solo', mmr: 2950, k: 8, d: 2, a: 15 },
-         { name: 'Screammmmm', role: 'Jungle', mmr: 3120, k: 15, d: 4, a: 10 },
-         { name: 'Sheento', role: 'Mid', mmr: 3000, k: 9, d: 3, a: 12 },
-         { name: 'Netriroid', role: 'Carry', mmr: 2900, k: 8, d: 1, a: 8 },
-         { name: 'Ronngyu', role: 'Support', mmr: 2950, k: 2, d: 2, a: 25 },
+         { name: 'Weak3n', role: 'Solo', mmr: 2950, k: 8, d: 2, a: 15 },
+         { name: 'Weak3n', role: 'Jungle', mmr: 3120, k: 15, d: 4, a: 10 },
+         { name: 'Weak3n', role: 'Mid', mmr: 3000, k: 9, d: 3, a: 12 },
+         { name: 'Weak3n', role: 'Carry', mmr: 2900, k: 8, d: 1, a: 8 },
+         { name: 'Weak3n', role: 'Support', mmr: 2950, k: 2, d: 2, a: 25 },
       ]
     },
     chaos: {
       result: 'Defeat',
       score: 15,
       players: [
-         { name: 'Jarcorr', role: 'Solo', mmr: 3080, k: 2, d: 8, a: 3 },
-         { name: 'Panitom', role: 'Jungle', mmr: 3150, k: 6, d: 9, a: 4 },
-         { name: 'Paul', role: 'Mid', mmr: 3200, k: 5, d: 6, a: 2 },
-         { name: 'CycloneSpin', role: 'Carry', mmr: 3100, k: 2, d: 8, a: 1 },
-         { name: 'Aror', role: 'Support', mmr: 3050, k: 0, d: 11, a: 5 },
+         { name: 'Weak3n', role: 'Solo', mmr: 3080, k: 2, d: 8, a: 3 },
+         { name: 'Weak3n', role: 'Jungle', mmr: 3150, k: 6, d: 9, a: 4 },
+         { name: 'Weak3n', role: 'Mid', mmr: 3200, k: 5, d: 6, a: 2 },
+         { name: 'Weak3n', role: 'Carry', mmr: 3100, k: 2, d: 8, a: 1 },
+         { name: 'Weak3n', role: 'Support', mmr: 3050, k: 0, d: 11, a: 5 },
       ]
     }
   }
@@ -179,13 +179,16 @@ export const TournamentView: React.FC = () => {
   };
 
   const getMMRLabel = (mmr: number) => {
-      if (mmr >= 3100) return 'Obsidian';
-      if (mmr >= 2600) return 'Diamond';
-      if (mmr >= 2100) return 'Platinum';
-      if (mmr >= 1600) return 'Gold';
-      if (mmr >= 1100) return 'Silver';
-      if (mmr >= 600) return 'Bronze';
-      return 'Clay';
+      if (mmr >= 5500) return 'Deity';
+      if (mmr >= 5000) return 'Demigod';
+      if (mmr >= 4400) return 'Master';
+      if (mmr >= 3800) return 'Obsidian';
+      if (mmr >= 3200) return 'Diamond';
+      if (mmr >= 2600) return 'Platinum';
+      if (mmr >= 2000) return 'Gold';
+      if (mmr >= 1400) return 'Silver';
+      if (mmr >= 800) return 'Bronze';
+      return 'Amber';
   };
 
   const RoleIcon = ({ role, size = 'md', className = '' }: { role: TournamentRole | string, size?: 'sm' | 'md', className?: string }) => (
@@ -228,10 +231,9 @@ export const TournamentView: React.FC = () => {
                         <strong className="text-slate-100 block mb-1">Scoring System</strong>
                         <ul className="list-disc list-inside space-y-1 text-slate-400">
                             <li><span className="text-yellow-500 font-bold">Win Bonus:</span> +{WIN_BONUS} Points</li>
-                            <li><span className="text-purple-400 font-bold">Carry/Mid/Jungle:</span> 4 pts/kill</li>
-                            <li><span className="text-blue-400 font-bold">Solo:</span> 3 pts/kill</li>
-                            <li><span className="text-green-400 font-bold">Support:</span> 3 pts/assist</li>
-                            <li><span className="text-red-400 font-bold">Death Penalty:</span> -1 to -2 pts</li>
+                            <li><span className="text-purple-400 font-bold">Carry/Mid/Jungle:</span> 3 pts/kill, -2 pts/death, 1 pts/assist </li>
+                            <li><span className="text-blue-400 font-bold">Solo:</span> 2 pts/kill, -2 pts/death, 2 pts/assist </li>
+                            <li><span className="text-green-400 font-bold">Support:</span> 1 pts/kill, -2 pts/death, 3 pts/assist </li>
                         </ul>
                     </div>
                     <div>

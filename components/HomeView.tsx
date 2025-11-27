@@ -301,7 +301,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
       {/* Discord Community Section */}
       <div className="mt-20 mb-10">
         <a 
-          href="https://discord.gg/smitegame" 
+          href="https://discord.gg/weak3n" 
           target="_blank" 
           rel="noopener noreferrer"
           className="block bg-[#5865F2] rounded-2xl p-8 md:p-12 relative overflow-hidden group hover:shadow-[0_0_40px_rgba(88,101,242,0.4)] transition-all transform hover:-translate-y-1"
@@ -312,7 +312,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
           
           <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="text-center md:text-left space-y-2">
-              <h2 className="text-3xl md:text-4xl font-serif font-bold text-white">Join the Source Discord</h2>
+              <h2 className="text-3xl md:text-4xl font-serif font-bold text-white">Join Weak3n's Discord</h2>
               <p className="text-blue-100 text-lg max-w-xl">
                  Connect with the community, submit your builds, and get feedback from high-level players.
               </p>
