@@ -38,7 +38,7 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView }) =
                         SMITE <span className="text-transparent bg-clip-text bg-gradient-to-r from-mythic-gold to-yellow-200">SOURCE 2</span>
                     </h1>
                     <span className="text-[9px] text-slate-400 font-mono uppercase tracking-widest mt-0.5 flex items-center gap-1">
-                       <Snowflake size={8} className="text-cyan-400" /> Holiday Beta 23
+                       <Snowflake size={8} className="text-cyan-400" /> Open Beta 23
                     </span>
                 </div>
             </div>
