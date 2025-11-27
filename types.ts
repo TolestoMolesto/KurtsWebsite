@@ -1,4 +1,5 @@
 
+
 export enum DamageType {
   Physical = 'Physical',
   Magical = 'Magical'
@@ -138,12 +139,15 @@ export type TournamentRole = 'Solo' | 'Jungle' | 'Mid' | 'Carry' | 'Support';
 export interface TournamentPlayer {
   id: string;
   name: string;
-  role: TournamentRole;
+  primaryRole: TournamentRole;
+  offRoles: TournamentRole[];
   mmr: number;
   kills: number;
   deaths: number;
   assists: number;
   score: number;
+  matchesPlayed?: number;
+  wins?: number;
 }
 
 export interface TournamentTeam {

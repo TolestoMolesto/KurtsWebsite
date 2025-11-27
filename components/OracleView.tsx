@@ -5,7 +5,7 @@ import { Send, Bot, User, Sparkles } from 'lucide-react';
 
 export const OracleView: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { id: '1', role: 'model', text: 'Greetings, Champion. I am the Oracle of the Smite Forge. Ask me about builds, counters, or god strategies.' }
+    { id: '1', role: 'model', text: 'Greetings, Champion. I am the Oracle of Smite Source. Ask me about builds, counters, or god strategies.' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);

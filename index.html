@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Smite 2 Forge</title>
+    <title>Smite Source 2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <script>
@@ -15,12 +15,26 @@
               serif: ['Cinzel', 'serif'],
             },
             colors: {
+              // Override Slate with Zinc (Neutral Dark Gaming Grey)
+              slate: {
+                50: '#fafafa',
+                100: '#f4f4f5',
+                200: '#e4e4e7',
+                300: '#d4d4d8',
+                400: '#a1a1aa',
+                500: '#71717a',
+                600: '#52525b',
+                700: '#3f3f46',
+                800: '#27272a',
+                900: '#18181b',
+                950: '#09090b',
+              },
               mythic: {
-                900: '#0f172a',
-                800: '#1e293b',
-                700: '#334155',
-                gold: '#fbbf24',
-                accent: '#38bdf8',
+                900: '#09090b',
+                800: '#18181b',
+                700: '#27272a',
+                gold: '#FACC15', // Bright Electric Yellow (Weak3n Style)
+                accent: '#EAB308', // Darker Yellow/Gold
               }
             }
           }
@@ -29,22 +43,22 @@
     </script>
     <style>
       body {
-        background-color: #020617;
-        color: #e2e8f0;
+        background-color: #09090b; /* Zinc 950 */
+        color: #e4e4e7; /* Zinc 200 */
       }
       /* Custom Scrollbar */
       ::-webkit-scrollbar {
         width: 8px;
       }
       ::-webkit-scrollbar-track {
-        background: #0f172a; 
+        background: #18181b; 
       }
       ::-webkit-scrollbar-thumb {
-        background: #475569; 
+        background: #3f3f46; 
         border-radius: 4px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #fbbf24; 
+        background: #FACC15; 
       }
     </style>
   <script type="importmap">

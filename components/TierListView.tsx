@@ -1,37 +1,54 @@
 
 import React, { useState } from 'react';
-import { GODS, STREAMER_TIER_LISTS } from '../constants';
+import { GODS, STREAMER_TIER_LISTS, ITEMS } from '../constants';
 import { TierListState, TierRank, NamedTierList } from '../types';
-import { RotateCcw, User, ArrowLeft, Trophy, PenTool, Twitch, Youtube, ExternalLink } from 'lucide-react';
+import { RotateCcw, User, ArrowLeft, Trophy, Twitch, Youtube, Shield, Sword, Hexagon, Box } from 'lucide-react';
 
 export const TierListView: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'streamer' | 'custom'>('streamer');
+  const [activeTab, setActiveTab] = useState<'streamer' | 'gods' | 'items'>('streamer');
   
-  // Initialize Custom List with ALL God-Aspect combinations
-  const [customTiers, setCustomTiers] = useState<TierListState>({
+  // --- GOD BUILDER STATE ---
+  const [customGodTiers, setCustomGodTiers] = useState<TierListState>({
     [TierRank.S]: [],
     [TierRank.A]: [],
     [TierRank.B]: [],
     [TierRank.C]: [],
     [TierRank.D]: [],
     pool: GODS.flatMap(god => {
-        // Base God
         const entries = [`${god.id}:base`];
-        // Aspects
         god.aspects.forEach(aspect => {
             entries.push(`${god.id}:${aspect.id}`);
         });
         return entries;
     })
   });
+  const [godRoleFilter, setGodRoleFilter] = useState<string>('All');
+
+  // --- ITEM BUILDER STATE ---
+  const [customItemTiers, setCustomItemTiers] = useState<TierListState>({
+    [TierRank.S]: [],
+    [TierRank.A]: [],
+    [TierRank.B]: [],
+    [TierRank.C]: [],
+    [TierRank.D]: [],
+    pool: ITEMS.map(i => i.id)
+  });
+  const [itemFilter, setItemFilter] = useState<string>('All');
   
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
 
   // Streamer List State
   const [selectedStreamerList, setSelectedStreamerList] = useState<NamedTierList | null>(null);
 
-  // Helper to parse ID: "godId:aspectId" -> object
-  const getEntry = (id: string) => {
+  // --- HELPERS ---
+
+  const handleTabChange = (tab: 'streamer' | 'gods' | 'items') => {
+      setActiveTab(tab);
+      setSelectedEntryId(null);
+      setSelectedStreamerList(null);
+  };
+
+  const getGodEntry = (id: string) => {
     const [godId, aspectId] = id.split(':');
     const god = GODS.find(g => g.id === godId);
     
@@ -45,9 +62,11 @@ export const TierListView: React.FC = () => {
     return { god, aspectName: aspect?.name || 'Unknown' };
   };
 
-  // --- Logic for Custom List ---
+  const getItemEntry = (id: string) => {
+      return ITEMS.find(i => i.id === id);
+  };
+
   const handleEntryClick = (id: string) => {
-    if (activeTab !== 'custom') return;
     if (selectedEntryId === id) {
       setSelectedEntryId(null);
     } else {
@@ -56,26 +75,33 @@ export const TierListView: React.FC = () => {
   };
 
   const moveToTier = (targetTier: TierRank | 'pool') => {
-    if (activeTab !== 'custom' || !selectedEntryId) return;
+    if (!selectedEntryId) return;
 
-    const newTiers = { ...customTiers };
+    if (activeTab === 'gods') {
+        const newTiers = { ...customGodTiers };
+        Object.keys(newTiers).forEach(key => {
+            // @ts-ignore
+            newTiers[key] = newTiers[key].filter(id => id !== selectedEntryId);
+        });
+        // @ts-ignore
+        newTiers[targetTier].push(selectedEntryId);
+        setCustomGodTiers(newTiers);
+    } else if (activeTab === 'items') {
+        const newTiers = { ...customItemTiers };
+        Object.keys(newTiers).forEach(key => {
+            // @ts-ignore
+            newTiers[key] = newTiers[key].filter(id => id !== selectedEntryId);
+        });
+        // @ts-ignore
+        newTiers[targetTier].push(selectedEntryId);
+        setCustomItemTiers(newTiers);
+    }
 
-    // Remove from current location
-    Object.keys(newTiers).forEach(key => {
-      // @ts-ignore
-      newTiers[key] = newTiers[key].filter(id => id !== selectedEntryId);
-    });
-
-    // Add to new location
-    // @ts-ignore
-    newTiers[targetTier].push(selectedEntryId);
-
-    setCustomTiers(newTiers);
     setSelectedEntryId(null);
   };
 
-  const resetCustom = () => {
-    setCustomTiers({
+  const resetGods = () => {
+    setCustomGodTiers({
         [TierRank.S]: [],
         [TierRank.A]: [],
         [TierRank.B]: [],
@@ -90,6 +116,18 @@ export const TierListView: React.FC = () => {
         })
     });
     setSelectedEntryId(null);
+  };
+
+  const resetItems = () => {
+    setCustomItemTiers({
+        [TierRank.S]: [],
+        [TierRank.A]: [],
+        [TierRank.B]: [],
+        [TierRank.C]: [],
+        [TierRank.D]: [],
+        pool: ITEMS.map(i => i.id)
+    });
+    setSelectedEntryId(null);
   }
 
   const tierColors: Record<TierRank, string> = {
@@ -100,10 +138,10 @@ export const TierListView: React.FC = () => {
     [TierRank.D]: 'bg-blue-500 border-blue-400',
   };
 
-  // --- Render Helpers ---
+  // --- RENDERERS ---
 
-  const renderEntry = (id: string, isEditable: boolean) => {
-    const { god, aspectName } = getEntry(id);
+  const renderGodEntry = (id: string, isEditable: boolean) => {
+    const { god, aspectName } = getGodEntry(id);
     if (!god) return null;
 
     const isSelected = isEditable && selectedEntryId === id;
@@ -117,7 +155,7 @@ export const TierListView: React.FC = () => {
                     handleEntryClick(id);
                 }
             }}
-            className={`group relative w-20 h-24 rounded-md overflow-hidden bg-slate-950 border-2 transition-transform shadow-lg ${
+            className={`group relative w-20 h-24 rounded-md overflow-hidden bg-slate-950 border-2 transition-transform shadow-lg shrink-0 ${
                 isEditable ? 'cursor-pointer hover:scale-105' : ''
             } ${
                 isSelected ? 'border-mythic-gold scale-110 z-10 shadow-[0_0_15px_rgba(251,191,36,0.5)]' : 'border-slate-700'
@@ -126,7 +164,6 @@ export const TierListView: React.FC = () => {
             <img src={god.image} alt={god.name} className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80"></div>
             
-            {/* Aspect Name Overlay */}
             <div className="absolute bottom-0 left-0 right-0 p-1 text-center bg-slate-900/90 border-t border-slate-700">
                  <div className="text-[8px] uppercase font-bold text-slate-400 truncate leading-none mb-0.5">{god.name}</div>
                  <div className={`text-[9px] font-bold truncate leading-none ${aspectName === 'Base God' ? 'text-slate-300' : 'text-mythic-gold'}`}>
@@ -134,7 +171,6 @@ export const TierListView: React.FC = () => {
                  </div>
             </div>
             
-            {/* Selection Check */}
             {isSelected && (
                 <div className="absolute top-1 right-1 w-4 h-4 bg-green-500 rounded-full border border-white flex items-center justify-center">
                     <div className="w-2 h-2 bg-white rounded-full"></div>
@@ -142,38 +178,73 @@ export const TierListView: React.FC = () => {
             )}
         </div>
     );
-  }
+  };
 
-  const renderTierList = (data: TierListState, isEditable: boolean) => (
-    <div className="space-y-3 mb-8">
-        {(Object.keys(tierColors) as TierRank[]).map((rank) => (
-          <div 
-            key={rank} 
-            onClick={() => isEditable && selectedEntryId && moveToTier(rank)}
-            className={`flex min-h-[120px] bg-slate-900 rounded-lg overflow-hidden border border-slate-700 transition-colors ${
-                isEditable && selectedEntryId ? 'cursor-pointer hover:bg-slate-800/80 ring-2 ring-transparent hover:ring-mythic-gold' : ''
+  const renderItemEntry = (id: string, isEditable: boolean) => {
+      const item = getItemEntry(id);
+      if (!item) return null;
+
+      const isSelected = isEditable && selectedEntryId === id;
+
+      return (
+        <div 
+            key={id} 
+            onClick={(e) => { 
+                if (isEditable) {
+                    e.stopPropagation(); 
+                    handleEntryClick(id);
+                }
+            }}
+            className={`group relative w-20 h-24 rounded-md overflow-hidden bg-slate-900 border-2 transition-transform shadow-lg shrink-0 flex flex-col items-center justify-center p-2 ${
+                isEditable ? 'cursor-pointer hover:scale-105' : ''
+            } ${
+                isSelected ? 'border-mythic-gold scale-110 z-10 shadow-[0_0_15px_rgba(251,191,36,0.5)]' : 'border-slate-700'
             }`}
-          >
-            <div className={`w-24 md:w-32 flex items-center justify-center shrink-0 ${tierColors[rank]}`}>
-              <span className="text-2xl md:text-4xl font-black text-white drop-shadow-md">{rank}</span>
+        >
+            <div className="w-14 h-14 rounded bg-black overflow-hidden border border-slate-600 mb-1 relative">
+                <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                {item.tier && (
+                    <div className="absolute top-0 right-0 bg-black/80 text-[7px] text-white px-1 border-l border-b border-slate-600 rounded-bl">T{item.tier}</div>
+                )}
             </div>
-            <div className="flex-1 p-3 flex flex-wrap gap-3 content-start">
-              {data[rank].map(id => renderEntry(id, isEditable))}
-            </div>
-          </div>
-        ))}
+            <div className="text-[8px] font-bold text-slate-300 text-center leading-tight line-clamp-2 w-full">{item.name}</div>
+            
+            {isSelected && (
+                <div className="absolute top-1 right-1 w-3 h-3 bg-green-500 rounded-full border border-white"></div>
+            )}
+        </div>
+      );
+  };
+
+  const renderTierRow = (rank: TierRank, data: string[], isEditable: boolean, type: 'gods' | 'items') => (
+      <div 
+        key={rank} 
+        onClick={() => isEditable && selectedEntryId && moveToTier(rank)}
+        className={`flex min-h-[120px] bg-slate-900 rounded-lg overflow-hidden border border-slate-700 transition-colors ${
+            isEditable && selectedEntryId ? 'cursor-pointer hover:bg-slate-800/80 ring-2 ring-transparent hover:ring-mythic-gold' : ''
+        }`}
+      >
+        <div className={`w-24 md:w-32 flex items-center justify-center shrink-0 ${tierColors[rank]}`}>
+          <span className="text-2xl md:text-4xl font-black text-white drop-shadow-md">{rank}</span>
+        </div>
+        <div className="flex-1 p-3 flex flex-wrap gap-3 content-start">
+          {data.map(id => type === 'gods' ? renderGodEntry(id, isEditable) : renderItemEntry(id, isEditable))}
+        </div>
       </div>
   );
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-        <h2 className="text-3xl font-serif text-slate-100 font-bold">Meta Tier Lists</h2>
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-8 gap-4">
+        <div>
+            <h2 className="text-3xl font-serif text-slate-100 font-bold mb-2">Meta Tier Lists</h2>
+            <p className="text-slate-400 text-sm">Consult streamer rankings or forge your own meta.</p>
+        </div>
         
         {/* Tab Switcher */}
-        <div className="flex bg-slate-800 p-1 rounded-lg">
+        <div className="flex bg-slate-800 p-1 rounded-lg self-center xl:self-auto">
            <button 
-             onClick={() => setActiveTab('streamer')}
+             onClick={() => handleTabChange('streamer')}
              className={`flex items-center gap-2 px-4 py-2 rounded-md font-semibold text-sm transition-all ${
                 activeTab === 'streamer' ? 'bg-mythic-gold text-slate-900 shadow' : 'text-slate-400 hover:text-slate-200'
              }`}
@@ -181,12 +252,20 @@ export const TierListView: React.FC = () => {
              <Trophy size={16} /> Streamer Lists
            </button>
            <button 
-             onClick={() => setActiveTab('custom')}
+             onClick={() => handleTabChange('gods')}
              className={`flex items-center gap-2 px-4 py-2 rounded-md font-semibold text-sm transition-all ${
-                activeTab === 'custom' ? 'bg-mythic-gold text-slate-900 shadow' : 'text-slate-400 hover:text-slate-200'
+                activeTab === 'gods' ? 'bg-mythic-gold text-slate-900 shadow' : 'text-slate-400 hover:text-slate-200'
              }`}
            >
-             <PenTool size={16} /> Create Custom
+             <Sword size={16} /> God Tier List
+           </button>
+           <button 
+             onClick={() => handleTabChange('items')}
+             className={`flex items-center gap-2 px-4 py-2 rounded-md font-semibold text-sm transition-all ${
+                activeTab === 'items' ? 'bg-mythic-gold text-slate-900 shadow' : 'text-slate-400 hover:text-slate-200'
+             }`}
+           >
+             <Shield size={16} /> Item Tier List
            </button>
         </div>
       </div>
@@ -195,7 +274,6 @@ export const TierListView: React.FC = () => {
       {activeTab === 'streamer' && (
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
             {!selectedStreamerList ? (
-                /* List of Streamer Lists */
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                    {STREAMER_TIER_LISTS.map((list) => (
                       <div 
@@ -218,7 +296,6 @@ export const TierListView: React.FC = () => {
                          <p className="text-slate-400 text-sm mb-6 line-clamp-2 min-h-[40px]">{list.description}</p>
                          
                          <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-700/50">
-                            {/* Platform Icon */}
                             <div className="flex items-center gap-2">
                                 {list.streamerInfo?.platform === 'twitch' ? (
                                     <Twitch size={16} className="text-purple-400" />
@@ -236,7 +313,6 @@ export const TierListView: React.FC = () => {
                    ))}
                 </div>
             ) : (
-                /* Detail View of a Streamer List */
                 <div>
                     <button 
                       onClick={() => setSelectedStreamerList(null)}
@@ -252,67 +328,139 @@ export const TierListView: React.FC = () => {
                            </div>
                            <p className="text-slate-300 text-sm italic mb-2">Authored by <span className="font-bold text-slate-100">{selectedStreamerList.author}</span> on {selectedStreamerList.date}</p>
                            <p className="text-slate-400 mb-4">{selectedStreamerList.description}</p>
-                           
-                           <div className="flex gap-3">
-                              <a 
-                                href={selectedStreamerList.streamerInfo.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-900 rounded border border-slate-700 text-sm text-mythic-accent hover:text-white hover:border-mythic-gold transition-all"
-                              >
-                                  {selectedStreamerList.streamerInfo.platform === 'twitch' ? <Twitch size={14}/> : <Youtube size={14} />}
-                                  {selectedStreamerList.streamerInfo.platform === 'twitch' ? 'Twitch Channel' : 'YouTube Channel'} <ExternalLink size={12} />
-                              </a>
-                              {selectedStreamerList.streamerInfo.secondaryUrl && (
-                                <a 
-                                  href={selectedStreamerList.streamerInfo.secondaryUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-900 rounded border border-slate-700 text-sm text-red-400 hover:text-white hover:border-red-500 transition-all"
-                                >
-                                    {selectedStreamerList.streamerInfo.platform === 'twitch' ? <Youtube size={14} /> : <Twitch size={14}/>}
-                                    {selectedStreamerList.streamerInfo.platform === 'twitch' ? 'YouTube Channel' : 'Twitch Channel'} <ExternalLink size={12} />
-                                </a>
-                              )}
-                           </div>
                        </div>
                     </div>
 
-                    {renderTierList(selectedStreamerList.data, false)}
-                    
-                    <div className="mt-8 p-4 bg-slate-900 border border-slate-800 rounded-lg text-center text-slate-500 text-sm">
-                        This is a saved tier list by a verified streamer. You cannot modify it.
+                    <div className="space-y-3 mb-8">
+                        {(Object.keys(tierColors) as TierRank[]).map((rank) => renderTierRow(rank, selectedStreamerList.data[rank], false, 'gods'))}
                     </div>
                 </div>
             )}
         </div>
       )}
 
-      {/* --- CUSTOM BUILDER VIEW --- */}
-      {activeTab === 'custom' && (
+      {/* --- GOD TIER LIST BUILDER --- */}
+      {activeTab === 'gods' && (
          <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <div className="flex justify-between items-center mb-4">
-                <p className="text-sm text-slate-400">
-                    Select a God from the pool, then click a Tier row to place them.
-                </p>
-                <button onClick={resetCustom} className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm text-slate-300 transition-colors border border-slate-700">
-                    <RotateCcw size={16} /> Reset
-                </button>
+            <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto">
+                    {['All', 'Solo', 'Jungle', 'Mid', 'Carry', 'Support'].map(role => (
+                        <button
+                            key={role}
+                            onClick={() => setGodRoleFilter(role)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors border whitespace-nowrap ${
+                                godRoleFilter === role 
+                                ? 'bg-mythic-gold text-slate-900 border-mythic-gold' 
+                                : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-500'
+                            }`}
+                        >
+                            {role}
+                        </button>
+                    ))}
+                </div>
+                <div className="flex items-center gap-4 w-full md:w-auto justify-end">
+                    <p className="text-xs text-slate-500 hidden md:block">
+                        Click a God to select, then click a Tier to place.
+                    </p>
+                    <button onClick={resetGods} className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold text-slate-300 transition-colors border border-slate-700">
+                        <RotateCcw size={14} /> Reset
+                    </button>
+                </div>
             </div>
 
-            {renderTierList(customTiers, true)}
+            <div className="space-y-3 mb-8">
+                {(Object.keys(tierColors) as TierRank[]).map((rank) => renderTierRow(rank, customGodTiers[rank], true, 'gods'))}
+            </div>
 
-            {/* Custom Pool */}
             <div 
-                className={`bg-slate-800 p-4 rounded-xl border border-slate-700 min-h-[120px] transition-colors ${
+                className={`bg-slate-800 p-4 rounded-xl border border-slate-700 min-h-[140px] transition-colors ${
                     selectedEntryId ? 'cursor-pointer hover:border-mythic-gold hover:bg-slate-800/80' : ''
                 }`}
                 onClick={() => selectedEntryId && moveToTier('pool')}
             >
-                <h3 className="text-xs uppercase text-slate-500 mb-3 font-bold tracking-wider">Unranked Aspects</h3>
+                <div className="flex justify-between items-center mb-3">
+                    <h3 className="text-xs uppercase text-slate-500 font-bold tracking-wider flex items-center gap-2">
+                        <Hexagon size={14} /> God Pool
+                    </h3>
+                    <span className="text-[10px] text-slate-500 uppercase font-bold">{customGodTiers.pool.length} Remaining</span>
+                </div>
                 <div className="flex flex-wrap gap-3">
-                    {customTiers.pool.map(id => renderEntry(id, true))}
-                    {customTiers.pool.length === 0 && <span className="text-slate-600 text-sm italic">All aspects ranked!</span>}
+                    {customGodTiers.pool
+                        .filter(id => {
+                            if (godRoleFilter === 'All') return true;
+                            const { god } = getGodEntry(id);
+                            return god?.lanes.includes(godRoleFilter);
+                        })
+                        .map(id => renderGodEntry(id, true))}
+                    {customGodTiers.pool.length === 0 && <span className="text-slate-600 text-sm italic">All gods ranked!</span>}
+                </div>
+            </div>
+         </div>
+      )}
+
+      {/* --- ITEM TIER LIST BUILDER --- */}
+      {activeTab === 'items' && (
+         <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto custom-scrollbar">
+                    {['All', 'Tier 3', 'Tier 2', 'Tier 1', 'Starter', 'Relic'].map(filter => (
+                        <button
+                            key={filter}
+                            onClick={() => setItemFilter(filter)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors border whitespace-nowrap ${
+                                itemFilter === filter 
+                                ? 'bg-mythic-gold text-slate-900 border-mythic-gold' 
+                                : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-500'
+                            }`}
+                        >
+                            {filter}
+                        </button>
+                    ))}
+                </div>
+                <div className="flex items-center gap-4 w-full md:w-auto justify-end">
+                    <p className="text-xs text-slate-500 hidden md:block">
+                        Select Item -> Place in Tier
+                    </p>
+                    <button onClick={resetItems} className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold text-slate-300 transition-colors border border-slate-700">
+                        <RotateCcw size={14} /> Reset
+                    </button>
+                </div>
+            </div>
+
+            <div className="space-y-3 mb-8">
+                {(Object.keys(tierColors) as TierRank[]).map((rank) => renderTierRow(rank, customItemTiers[rank], true, 'items'))}
+            </div>
+
+            <div 
+                className={`bg-slate-800 p-4 rounded-xl border border-slate-700 min-h-[140px] transition-colors ${
+                    selectedEntryId ? 'cursor-pointer hover:border-mythic-gold hover:bg-slate-800/80' : ''
+                }`}
+                onClick={() => selectedEntryId && moveToTier('pool')}
+            >
+                <div className="flex justify-between items-center mb-3">
+                    <h3 className="text-xs uppercase text-slate-500 font-bold tracking-wider flex items-center gap-2">
+                        <Box size={14} /> Item Pool
+                    </h3>
+                    <span className="text-[10px] text-slate-500 uppercase font-bold">{customItemTiers.pool.length} Remaining</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    {customItemTiers.pool
+                        .filter(id => {
+                            if (itemFilter === 'All') return true;
+                            const item = getItemEntry(id);
+                            if (!item) return false;
+                            
+                            if (itemFilter.startsWith('Tier')) {
+                                const tier = parseInt(itemFilter.split(' ')[1]);
+                                return item.tier === tier;
+                            }
+                            if (itemFilter === 'Starter') return item.type === 'Starter';
+                            if (itemFilter === 'Relic') return item.type === 'Relic';
+                            
+                            return true;
+                        })
+                        .map(id => renderItemEntry(id, true))}
+                     {customItemTiers.pool.length === 0 && <span className="text-slate-600 text-sm italic">All items ranked!</span>}
                 </div>
             </div>
          </div>
