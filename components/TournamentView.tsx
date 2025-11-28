@@ -1,7 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TournamentPlayer, TournamentRole } from '../types';
-import { Trophy, Plus, Trash2, Crown, Medal, Swords, ScrollText, Gem, Flame, Target, Skull, UserPlus, X, Calendar, MapPin, MonitorPlay, Timer, History, ArrowRight } from 'lucide-react';
+import { Trophy, Plus, Trash2, Crown, Medal, Swords, ScrollText, Gem, Flame, Target, Skull, UserPlus, X, Calendar, MapPin, MonitorPlay, Timer, History, ArrowRight, Users, User, ChevronRight } from 'lucide-react';
+import { db, auth } from '../services/firebase';
+import { collection, onSnapshot, addDoc, updateDoc, doc, query, orderBy, limit, setDoc, getDoc, QuerySnapshot, DocumentData, writeBatch, increment } from 'firebase/firestore';
+import * as FirebaseAuth from 'firebase/auth';
 
 const ROLES: TournamentRole[] = ['Solo', 'Jungle', 'Mid', 'Carry', 'Support'];
 const WIN_BONUS = 5;
@@ -18,84 +21,52 @@ const POINTS = {
 const calculateMatchScore = (role: TournamentRole, k: number, d: number, a: number, isWin: boolean) => {
   const config = POINTS[role];
   const performanceScore = (k * config.kill) + (d * config.death) + (a * config.assist);
-  return Math.max(0, performanceScore + (isWin ? WIN_BONUS : 0));
+  // Removed Math.max(0, ...) to allow negative scores
+  return performanceScore + (isWin ? WIN_BONUS : 0);
 };
 
-// Mock Initial Data for Leaderboard
-const INITIAL_PLAYERS: TournamentPlayer[] = [
-    { id: '1', name: 'Weak3n', primaryRole: 'Jungle', offRoles: ['Solo', 'Mid'], mmr: 9999, kills: 667, deaths: 0, assists: 0, score: 280, matchesPlayed: 5, wins: 4 },
-    { id: '2', name: 'Jiggy', primaryRole: 'Support', offRoles: ['Solo', 'Jungle'], mmr: 2900, kills: 10, deaths: 15, assists: 80, score: 245, matchesPlayed: 5, wins: 3 },
-    { id: '3', name: 'Shmeep', primaryRole: 'Solo', offRoles: ['Carry', 'Mid'], mmr: 3100, kills: 30, deaths: 10, assists: 25, score: 260, matchesPlayed: 5, wins: 4 },
-    { id: '4', name: 'Johny', primaryRole: 'Carry', offRoles: ['Mid', 'Jungle'], mmr: 2800, kills: 50, deaths: 20, assists: 15, score: 230, matchesPlayed: 5, wins: 2 },
-    { id: '5', name: 'Paige', primaryRole: 'Mid', offRoles: ['Carry', 'Solo'], mmr: 2750, kills: 40, deaths: 18, assists: 20, score: 220, matchesPlayed: 5, wins: 2 },
-];
+// Interface for Match History stored in Firestore
+interface MatchHistoryItem {
+  id?: string;
+  timestamp: string;
+  matchId: string;
+  order: {
+    result: string;
+    score: number;
+    players: Array<{ name: string; role: string; mmr: number; k: number; d: number; a: number }>;
+  };
+  chaos: {
+    result: string;
+    score: number;
+    players: Array<{ name: string; role: string; mmr: number; k: number; d: number; a: number }>;
+  };
+}
 
-// Mock Match History Data
-const MOCK_MATCHES = [
-  {
-    id: 'm1',
-    timestamp: '11/27/25',
-    matchId: 'Match #002',
-    order: {
-      result: 'Defeat',
-      score: 18,
-      players: [
-        { name: 'Weak3n', role: 'Solo', mmr: 3050, k: 3, d: 6, a: 4 },
-        { name: 'Weak3n', role: 'Jungle', mmr: 3100, k: 5, d: 8, a: 5 },
-        { name: 'Weak3n', role: 'Mid', mmr: 2800, k: 6, d: 7, a: 3 },
-        { name: 'Weak3n', role: 'Carry', mmr: 2750, k: 4, d: 6, a: 2 },
-        { name: 'Weak3n', role: 'Support', mmr: 2850, k: 0, d: 8, a: 8 },
-      ]
-    },
-    chaos: {
-      result: 'Victory',
-      score: 35,
-      players: [
-        { name: 'Weak3n', role: 'Solo', mmr: 3100, k: 5, d: 2, a: 12 },
-        { name: 'Weak3n', role: 'Jungle', mmr: 3200, k: 12, d: 3, a: 8 },
-        { name: 'Weak3n', role: 'Mid', mmr: 2750, k: 8, d: 4, a: 15 },
-        { name: 'Weak3n', role: 'Carry', mmr: 2800, k: 7, d: 2, a: 9 },
-        { name: 'Weak3n', role: 'Support', mmr: 2900, k: 1, d: 5, a: 22 },
-      ]
-    }
-  },
-  {
-    id: 'm2',
-    timestamp: '11/27/25',
-    matchId: 'Match #001',
-    order: {
-      result: 'Victory',
-      score: 42,
-      players: [
-         { name: 'Weak3n', role: 'Solo', mmr: 2950, k: 8, d: 2, a: 15 },
-         { name: 'Weak3n', role: 'Jungle', mmr: 3120, k: 15, d: 4, a: 10 },
-         { name: 'Weak3n', role: 'Mid', mmr: 3000, k: 9, d: 3, a: 12 },
-         { name: 'Weak3n', role: 'Carry', mmr: 2900, k: 8, d: 1, a: 8 },
-         { name: 'Weak3n', role: 'Support', mmr: 2950, k: 2, d: 2, a: 25 },
-      ]
-    },
-    chaos: {
-      result: 'Defeat',
-      score: 15,
-      players: [
-         { name: 'Weak3n', role: 'Solo', mmr: 3080, k: 2, d: 8, a: 3 },
-         { name: 'Weak3n', role: 'Jungle', mmr: 3150, k: 6, d: 9, a: 4 },
-         { name: 'Weak3n', role: 'Mid', mmr: 3200, k: 5, d: 6, a: 2 },
-         { name: 'Weak3n', role: 'Carry', mmr: 3100, k: 2, d: 8, a: 1 },
-         { name: 'Weak3n', role: 'Support', mmr: 3050, k: 0, d: 11, a: 5 },
-      ]
-    }
-  }
-];
+type MMRFilter = 'All' | 'Clay-Gold' | 'Plat-Diamond' | 'Obsidian +';
 
-type MMRFilter = 'All' | 'Clay-Gold' | 'Plat-Diamond' | 'Obsidian';
+// --- Form Types ---
+type TeamData = Record<TournamentRole, { name: string; mmr: number; k: number; d: number; a: number }>;
+
+const getEmptyTeamData = (): TeamData => {
+    return ROLES.reduce((acc, role) => ({
+        ...acc,
+        [role]: { name: '', mmr: 1500, k: 0, d: 0, a: 0 }
+    }), {} as TeamData);
+};
 
 export const TournamentView: React.FC = () => {
-  const [players, setPlayers] = useState<TournamentPlayer[]>(INITIAL_PLAYERS);
+  const [players, setPlayers] = useState<TournamentPlayer[]>([]);
+  const [matches, setMatches] = useState<MatchHistoryItem[]>([]);
   const [activeFilter, setActiveFilter] = useState<MMRFilter>('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  // Form State
+  // --- Form State ---
+  const [matchMode, setMatchMode] = useState<'full' | 'single'>('full');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Single Player Form State
   const [formName, setFormName] = useState('');
   const [formRole, setFormRole] = useState<TournamentRole>('Mid');
   const [formMMR, setFormMMR] = useState(1500);
@@ -104,72 +75,229 @@ export const TournamentView: React.FC = () => {
   const [formAssists, setFormAssists] = useState(0);
   const [formIsWin, setFormIsWin] = useState(false);
 
-  // Helper to pick random off roles for new players
-  const getRandomOffRoles = (mainRole: TournamentRole): TournamentRole[] => {
-      const otherRoles = ROLES.filter(r => r !== mainRole);
-      // Shuffle and pick 2
-      const shuffled = otherRoles.sort(() => 0.5 - Math.random());
-      return shuffled.slice(0, 2);
-  };
+  // Full Match Form State
+  const [orderTeam, setOrderTeam] = useState<TeamData>(getEmptyTeamData());
+  const [chaosTeam, setChaosTeam] = useState<TeamData>(getEmptyTeamData());
+  const [winner, setWinner] = useState<'Order' | 'Chaos'>('Order');
 
-  const handleRecordMatch = () => {
-      if (!formName.trim()) return;
+  useEffect(() => {
+    // Listen for Auth and User Role
+    const unsubAuth = FirebaseAuth.onAuthStateChanged(auth, async (currentUser) => {
+        setUser(currentUser);
+        if (currentUser) {
+            try {
+                // Fetch User Profile to check for Admin Role
+                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                if (userDoc.exists() && userDoc.data().isAdmin === true) {
+                    setIsAdmin(true);
+                } else {
+                    setIsAdmin(false);
+                }
+            } catch (e) {
+                console.error("Error fetching user profile for role check:", e);
+                setIsAdmin(false);
+            }
+        } else {
+            setIsAdmin(false);
+        }
+    });
 
-      const score = calculateMatchScore(formRole, formKills, formDeaths, formAssists, formIsWin);
+    // Listen for Players - Removed orderBy('score') since we calculate it client-side
+    const qPlayers = query(collection(db, 'tournament_players'));
+    const unsubPlayers = onSnapshot(qPlayers, (snapshot: QuerySnapshot<DocumentData>) => {
+      const playersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TournamentPlayer));
+      setPlayers(playersData);
+    });
 
-      setPlayers(prev => {
-          const existingIndex = prev.findIndex(p => p.name.toLowerCase() === formName.toLowerCase());
-          
-          if (existingIndex >= 0) {
-              // Update existing
-              const updated = [...prev];
-              const p = updated[existingIndex];
-              p.kills += formKills;
-              p.deaths += formDeaths;
-              p.assists += formAssists;
-              p.score += score;
-              p.matchesPlayed = (p.matchesPlayed || 0) + 1;
-              p.wins = (p.wins || 0) + (formIsWin ? 1 : 0);
-              // Update Role/MMR to latest? Let's keep MMR static for now or update it
-              p.mmr = formMMR; 
-              // We do not overwrite primaryRole/offRoles for existing players in this simple form
-              // p.primaryRole = formRole; 
-              return updated.sort((a, b) => b.score - a.score);
-          } else {
-              // Create new
-              const newPlayer: TournamentPlayer = {
-                  id: Date.now().toString(),
-                  name: formName,
-                  primaryRole: formRole,
-                  offRoles: getRandomOffRoles(formRole),
-                  mmr: formMMR,
-                  kills: formKills,
-                  deaths: formDeaths,
-                  assists: formAssists,
-                  score: score,
-                  matchesPlayed: 1,
-                  wins: formIsWin ? 1 : 0
-              };
-              return [...prev, newPlayer].sort((a, b) => b.score - a.score);
-          }
-      });
+    // Listen for Matches
+    const qMatches = query(collection(db, 'tournament_matches'), orderBy('timestamp', 'desc'), limit(10));
+    const unsubMatches = onSnapshot(qMatches, (snapshot: QuerySnapshot<DocumentData>) => {
+        const matchesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MatchHistoryItem));
+        setMatches(matchesData);
+    });
 
-      // Reset
-      setIsModalOpen(false);
+    return () => {
+        unsubAuth();
+        unsubPlayers();
+        unsubMatches();
+    };
+  }, []);
+
+  const resetForms = () => {
       setFormName('');
       setFormKills(0);
       setFormDeaths(0);
       setFormAssists(0);
       setFormIsWin(false);
+      setOrderTeam(getEmptyTeamData());
+      setChaosTeam(getEmptyTeamData());
+  };
+
+  const calculateTotalScore = (p: TournamentPlayer) => {
+      // Use the player's primary role for multipliers, defaulting to Mid if unset
+      const role = p.primaryRole || 'Mid';
+      const config = POINTS[role] || POINTS['Mid'];
+      
+      const kScore = (p.kills || 0) * config.kill;
+      const dScore = (p.deaths || 0) * config.death;
+      const aScore = (p.assists || 0) * config.assist;
+      const wScore = (p.wins || 0) * WIN_BONUS;
+      
+      return kScore + dScore + aScore + wScore;
+  };
+
+  const handleRecordSingle = async () => {
+      if (!formName.trim() || isSubmitting) return;
+      setIsSubmitting(true);
+
+      const score = calculateMatchScore(formRole, formKills, formDeaths, formAssists, formIsWin);
+      const playerId = formName.toLowerCase().replace(/\s+/g, '-');
+
+      try {
+        const playerRef = doc(db, 'tournament_players', playerId);
+        
+        await setDoc(playerRef, {
+            id: playerId,
+            name: formName,
+            mmr: formMMR,
+            // primaryRole update handled by merge, but typically we might want to be careful overwriting it
+            // For now, we update it to the latest played role to ensure they have a role for scoring
+            primaryRole: formRole, 
+            kills: increment(formKills),
+            deaths: increment(formDeaths),
+            assists: increment(formAssists),
+            // score: increment(score), // REMOVED: No longer storing aggregate score
+            matchesPlayed: increment(1),
+            wins: increment(formIsWin ? 1 : 0)
+        }, { merge: true });
+
+        // Match Log - We still log the match-specific score for history
+        const matchLog = {
+            timestamp: new Date().toISOString(),
+            matchId: `Partial #${Date.now().toString().slice(-4)}`,
+            order: {
+                result: formIsWin ? 'Victory' : 'Defeat',
+                score: score,
+                players: [{ name: formName, role: formRole, mmr: formMMR, k: formKills, d: formDeaths, a: formAssists }]
+            },
+            chaos: { result: '---', score: 0, players: [] }
+        };
+        await addDoc(collection(db, 'tournament_matches'), matchLog);
+
+        setIsModalOpen(false);
+        resetForms();
+      } catch (error) {
+          console.error("Error recording single match:", error);
+          alert("Failed to save match.");
+      } finally {
+          setIsSubmitting(false);
+      }
+  };
+
+  const handleRecordFullMatch = async () => {
+      setIsSubmitting(true);
+      const batch = writeBatch(db);
+
+      try {
+        const orderPlayersList: any[] = [];
+        const chaosPlayersList: any[] = [];
+        let orderTotalScore = 0;
+        let chaosTotalScore = 0;
+
+        // Process Order Team
+        for (const role of ROLES) {
+            const p = orderTeam[role];
+            if (!p.name.trim()) continue; // Skip empty slots
+
+            const isWin = winner === 'Order';
+            const score = calculateMatchScore(role, p.k, p.d, p.a, isWin);
+            orderTotalScore += score;
+            const playerId = p.name.toLowerCase().replace(/\s+/g, '-');
+            const playerRef = doc(db, 'tournament_players', playerId);
+
+            // Update Player Stats
+            batch.set(playerRef, {
+                id: playerId,
+                name: p.name,
+                mmr: p.mmr,
+                primaryRole: role, // Defaulting to current role
+                kills: increment(p.k),
+                deaths: increment(p.d),
+                assists: increment(p.a),
+                // score: increment(score), // REMOVED: No longer storing aggregate score
+                matchesPlayed: increment(1),
+                wins: increment(isWin ? 1 : 0)
+            }, { merge: true });
+
+            orderPlayersList.push({ name: p.name, role, mmr: p.mmr, k: p.k, d: p.d, a: p.a });
+        }
+
+        // Process Chaos Team
+        for (const role of ROLES) {
+            const p = chaosTeam[role];
+            if (!p.name.trim()) continue; 
+
+            const isWin = winner === 'Chaos';
+            const score = calculateMatchScore(role, p.k, p.d, p.a, isWin);
+            chaosTotalScore += score;
+            const playerId = p.name.toLowerCase().replace(/\s+/g, '-');
+            const playerRef = doc(db, 'tournament_players', playerId);
+
+            batch.set(playerRef, {
+                id: playerId,
+                name: p.name,
+                mmr: p.mmr,
+                primaryRole: role, 
+                kills: increment(p.k),
+                deaths: increment(p.d),
+                assists: increment(p.a),
+                // score: increment(score), // REMOVED: No longer storing aggregate score
+                matchesPlayed: increment(1),
+                wins: increment(isWin ? 1 : 0)
+            }, { merge: true });
+
+            chaosPlayersList.push({ name: p.name, role, mmr: p.mmr, k: p.k, d: p.d, a: p.a });
+        }
+
+        // Create Match Record
+        const matchRef = doc(collection(db, 'tournament_matches'));
+        batch.set(matchRef, {
+            timestamp: new Date().toISOString(),
+            matchId: `Match #${Date.now().toString().slice(-4)}`,
+            order: {
+                result: winner === 'Order' ? 'Victory' : 'Defeat',
+                score: orderTotalScore,
+                players: orderPlayersList
+            },
+            chaos: {
+                result: winner === 'Chaos' ? 'Victory' : 'Defeat',
+                score: chaosTotalScore,
+                players: chaosPlayersList
+            }
+        });
+
+        await batch.commit();
+        setIsModalOpen(false);
+        resetForms();
+
+      } catch (error) {
+          console.error("Error recording full match:", error);
+          alert("Failed to record match. See console for details.");
+      } finally {
+          setIsSubmitting(false);
+      }
   };
 
   const getFilteredPlayers = () => {
-      return players.filter(p => {
+      const filtered = players.filter(p => {
           if (activeFilter === 'Clay-Gold') return p.mmr < 2100;
           if (activeFilter === 'Plat-Diamond') return p.mmr >= 2100 && p.mmr < 3100;
-          if (activeFilter === 'Obsidian') return p.mmr >= 3100;
+          if (activeFilter === 'Obsidian +') return p.mmr >= 3100;
           return true;
       });
+
+      // Sort by dynamically calculated score
+      return filtered.sort((a, b) => calculateTotalScore(b) - calculateTotalScore(a));
   };
 
   const getMMRTierColor = (mmr: number) => {
@@ -189,6 +317,14 @@ export const TournamentView: React.FC = () => {
       if (mmr >= 1400) return 'Silver';
       if (mmr >= 800) return 'Bronze';
       return 'Amber';
+  };
+
+  const formatDate = (isoString: string) => {
+      try {
+          return new Date(isoString).toLocaleDateString();
+      } catch (e) {
+          return isoString;
+      }
   };
 
   const RoleIcon = ({ role, size = 'md', className = '' }: { role: TournamentRole | string, size?: 'sm' | 'md', className?: string }) => (
@@ -294,26 +430,25 @@ export const TournamentView: React.FC = () => {
                         <History className="text-mythic-gold" size={20} />
                     </div>
                     <div>
-                        <h3 className="text-lg font-serif font-bold text-slate-100">Match History</h3>
-                        <p className="text-xs text-slate-400">Detailed results from recent games</p>
+                        <h3 className="text-lg font-serif font-bold text-slate-100">Recent Matches</h3>
+                        <p className="text-xs text-slate-400">Live data from Firestore</p>
                     </div>
                 </div>
                 <div className="text-xs text-slate-500 font-bold uppercase tracking-wider">Live Updates</div>
             </div>
             
             <div className="p-0">
-                 {MOCK_MATCHES.map((match, idx) => (
-                    <div key={match.id} className={`border-b border-slate-800 last:border-0 ${idx % 2 === 0 ? 'bg-slate-950/30' : ''}`}>
+                 {matches.map((match, idx) => (
+                    <div key={match.id || idx} className={`border-b border-slate-800 last:border-0 ${idx % 2 === 0 ? 'bg-slate-950/30' : ''}`}>
                         {/* Match Header */}
                         <div className="px-4 py-2 bg-slate-950/50 border-b border-slate-800/50 flex justify-between items-center text-xs text-slate-500 font-bold uppercase tracking-wider">
-                           <span>{match.matchId}</span>
-                           <span>{match.timestamp}</span>
+                           <span className="flex items-center gap-2"><Swords size={12} /> {match.matchId}</span>
+                           <span>{formatDate(match.timestamp)}</span>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2">
-                           
-                           {/* ORDER SIDE */}
-                           <div className="border-b md:border-b-0 md:border-r border-slate-800">
+                           {/* Order Team */}
+                           <div className="border-r border-slate-800">
                                <div className={`px-4 py-3 flex justify-between items-center border-b border-slate-800/50 bg-gradient-to-r from-blue-900/20 to-transparent`}>
                                    <div className="flex items-center gap-2">
                                        <span className="w-2 h-2 rounded-full bg-blue-500"></span>
@@ -341,12 +476,12 @@ export const TournamentView: React.FC = () => {
                                </div>
                            </div>
 
-                           {/* CHAOS SIDE */}
+                           {/* Chaos Team */}
                            <div>
-                               <div className={`px-4 py-3 flex justify-between items-center border-b border-slate-800/50 bg-gradient-to-r from-orange-900/20 to-transparent`}>
+                               <div className={`px-4 py-3 flex justify-between items-center border-b border-slate-800/50 bg-gradient-to-r from-red-900/20 to-transparent`}>
                                    <div className="flex items-center gap-2">
-                                       <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-                                       <span className="text-orange-400 font-black uppercase tracking-widest text-sm">CHAOS</span>
+                                       <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                                       <span className="text-red-400 font-black uppercase tracking-widest text-sm">CHAOS</span>
                                    </div>
                                    <div className={`font-bold text-sm uppercase ${match.chaos.result === 'Victory' ? 'text-green-400' : 'text-red-400'}`}>
                                        {match.chaos.result}
@@ -369,16 +504,15 @@ export const TournamentView: React.FC = () => {
                                    ))}
                                </div>
                            </div>
-
                         </div>
                     </div>
                  ))}
                  
-                 <div className="p-3 text-center border-t border-slate-800 bg-slate-950/50">
-                     <button className="text-xs font-bold text-slate-400 hover:text-mythic-gold transition-colors flex items-center justify-center gap-1 mx-auto">
-                        Load More Matches <ArrowRight size={10} />
-                     </button>
-                 </div>
+                 {matches.length === 0 && (
+                     <div className="p-8 text-center text-slate-500 italic">
+                         No matches recorded yet.
+                     </div>
+                 )}
             </div>
         </div>
 
@@ -387,7 +521,7 @@ export const TournamentView: React.FC = () => {
             {/* Controls */}
             <div className="p-4 border-b border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-950/50">
                 <div className="flex items-center gap-2 bg-slate-800 p-1 rounded-lg">
-                    {(['All', 'Clay-Gold', 'Plat-Diamond', 'Obsidian'] as MMRFilter[]).map(filter => (
+                    {(['All', 'Clay-Gold', 'Plat-Diamond', 'Obsidian +'] as MMRFilter[]).map(filter => (
                         <button
                             key={filter}
                             onClick={() => setActiveFilter(filter)}
@@ -407,12 +541,16 @@ export const TournamentView: React.FC = () => {
                         <p className="text-xs text-slate-400 font-bold uppercase">Current Season</p>
                         <p className="text-sm font-bold text-white">Season 1</p>
                      </div>
-                     <button 
-                        onClick={() => setIsModalOpen(true)}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-mythic-gold hover:bg-yellow-400 text-slate-900 font-bold rounded-lg transition-all shadow-lg hover:shadow-mythic-gold/20"
-                     >
-                        <Swords size={18} /> Record Match
-                     </button>
+                     
+                     {/* RECORD MATCH BUTTON - ONLY VISIBLE TO ADMINS */}
+                     {isAdmin && (
+                         <button 
+                            onClick={() => setIsModalOpen(true)}
+                            className="flex items-center gap-2 px-5 py-2.5 font-bold rounded-lg transition-all shadow-lg bg-mythic-gold hover:bg-yellow-400 text-slate-900 hover:shadow-mythic-gold/20"
+                         >
+                            <Swords size={18} /> Record Match
+                         </button>
+                     )}
                 </div>
             </div>
 
@@ -434,6 +572,8 @@ export const TournamentView: React.FC = () => {
                         {getFilteredPlayers().map((player, index) => {
                             const rank = index + 1;
                             const winRate = player.matchesPlayed ? Math.round(((player.wins || 0) / player.matchesPlayed) * 100) : 0;
+                            // Calculate Score on the fly
+                            const calculatedScore = calculateTotalScore(player);
                             
                             return (
                                 <tr key={player.id} className="border-b border-slate-800 hover:bg-slate-800/50 transition-colors group">
@@ -491,7 +631,7 @@ export const TournamentView: React.FC = () => {
                                         </div>
                                     </td>
                                     <td className="p-4 text-right">
-                                        <span className="text-xl font-black text-mythic-gold">{player.score}</span>
+                                        <span className={`text-xl font-black ${calculatedScore < 0 ? 'text-red-500' : 'text-mythic-gold'}`}>{calculatedScore}</span>
                                     </td>
                                 </tr>
                             );
@@ -510,117 +650,281 @@ export const TournamentView: React.FC = () => {
       </div>
 
       {/* Record Match Modal */}
-      {isModalOpen && (
+      {isModalOpen && isAdmin && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-slate-900 w-full max-w-md rounded-2xl border border-slate-700 shadow-2xl overflow-hidden relative">
-                <div className="p-4 border-b border-slate-700 bg-slate-950 flex justify-between items-center">
-                    <h3 className="text-lg font-serif font-bold text-slate-100 flex items-center gap-2">
-                        <Swords size={18} className="text-mythic-gold" /> Record Match Stats
-                    </h3>
+            <div className={`bg-slate-900 w-full ${matchMode === 'full' ? 'max-w-6xl h-[90vh]' : 'max-w-md'} rounded-2xl border border-slate-700 shadow-2xl overflow-hidden relative flex flex-col`}>
+                
+                {/* Modal Header */}
+                <div className="p-4 border-b border-slate-700 bg-slate-950 flex justify-between items-center shrink-0">
+                    <div className="flex items-center gap-4">
+                        <h3 className="text-lg font-serif font-bold text-slate-100 flex items-center gap-2">
+                            <Swords size={18} className="text-mythic-gold" /> Record Match
+                        </h3>
+                        {/* Mode Toggle */}
+                        <div className="flex bg-slate-800 p-0.5 rounded-lg border border-slate-700">
+                            <button 
+                                onClick={() => setMatchMode('full')} 
+                                className={`px-3 py-1 rounded text-xs font-bold uppercase transition-all ${matchMode === 'full' ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                            >
+                                5v5 Match
+                            </button>
+                            <button 
+                                onClick={() => setMatchMode('single')} 
+                                className={`px-3 py-1 rounded text-xs font-bold uppercase transition-all ${matchMode === 'single' ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                            >
+                                Single Entry
+                            </button>
+                        </div>
+                    </div>
                     <button onClick={() => setIsModalOpen(false)} className="text-slate-500 hover:text-white">
                         <X size={20} />
                     </button>
                 </div>
 
-                <div className="p-6 space-y-4">
-                    <div>
-                        <label className="block text-xs font-bold uppercase text-slate-500 mb-1">Player Name</label>
-                        <input 
-                            type="text" 
-                            value={formName}
-                            onChange={(e) => setFormName(e.target.value)}
-                            className="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white focus:border-mythic-gold outline-none"
-                            placeholder="Enter In-Game Name"
-                            autoFocus
-                        />
-                        <p className="text-[10px] text-slate-500 mt-1">If player exists, stats will be added to their total.</p>
-                    </div>
+                {/* Modal Body */}
+                <div className="flex-1 overflow-y-auto p-6">
+                    
+                    {/* --- FULL 5v5 MATCH FORM --- */}
+                    {matchMode === 'full' && (
+                        <div className="flex flex-col h-full gap-6">
+                            
+                            {/* Winner Toggle */}
+                            <div className="flex justify-center mb-2">
+                                <div className="flex items-center bg-slate-950 border border-slate-700 rounded-full p-1 gap-4">
+                                    <button 
+                                        onClick={() => setWinner('Order')}
+                                        className={`px-8 py-2 rounded-full font-black uppercase text-sm transition-all flex items-center gap-2 ${winner === 'Order' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'text-slate-500 hover:text-blue-400'}`}
+                                    >
+                                        <div className="w-3 h-3 rounded-full bg-blue-400"></div> ORDER VICTORY
+                                    </button>
+                                    <button 
+                                        onClick={() => setWinner('Chaos')}
+                                        className={`px-8 py-2 rounded-full font-black uppercase text-sm transition-all flex items-center gap-2 ${winner === 'Chaos' ? 'bg-red-600 text-white shadow-lg shadow-red-500/30' : 'text-slate-500 hover:text-red-400'}`}
+                                    >
+                                        CHAOS VICTORY <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                                    </button>
+                                </div>
+                            </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                             <label className="block text-xs font-bold uppercase text-slate-500 mb-1">MMR (If New)</label>
-                             <input 
-                                type="number" 
-                                value={formMMR}
-                                onChange={(e) => setFormMMR(parseInt(e.target.value) || 0)}
-                                className="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white focus:border-mythic-gold outline-none"
-                            />
-                        </div>
-                        <div>
-                             <label className="block text-xs font-bold uppercase text-slate-500 mb-1">Result</label>
-                             <div className="flex gap-2">
+                            {/* Teams Grid */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {/* Order Team */}
+                                <div className="bg-slate-950/50 rounded-xl border border-blue-900/30 overflow-hidden">
+                                    <div className="bg-blue-900/20 p-3 border-b border-blue-900/30 flex justify-between items-center">
+                                        <span className="font-bold text-blue-400 flex items-center gap-2"><Users size={16} /> ORDER TEAM</span>
+                                        <span className={`text-xs font-bold px-2 py-0.5 rounded ${winner === 'Order' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                                            {winner === 'Order' ? 'WINNER' : 'DEFEAT'}
+                                        </span>
+                                    </div>
+                                    <div className="p-4">
+                                        {/* Table Header */}
+                                        <div className="grid grid-cols-[30px_1fr_45px_45px_45px_50px] gap-2 mb-2 px-1 text-[10px] font-bold uppercase text-slate-500">
+                                            <div className="text-center">Role</div>
+                                            <div>Name</div>
+                                            <div className="text-center text-green-500" title="Kills">K</div>
+                                            <div className="text-center text-red-500" title="Deaths">D</div>
+                                            <div className="text-center text-yellow-500" title="Assists">A</div>
+                                            <div className="text-center text-purple-400">MMR</div>
+                                        </div>
+                                        
+                                        <div className="space-y-2">
+                                            {ROLES.map(role => (
+                                                <div key={role} className="grid grid-cols-[30px_1fr_45px_45px_45px_50px] gap-2 items-center bg-slate-900 p-2 rounded border border-slate-800">
+                                                    <div className="flex justify-center"><RoleIcon role={role} /></div>
+                                                    <input 
+                                                        className="bg-transparent border-b border-slate-700 text-sm text-white focus:border-blue-500 outline-none px-1 w-full" 
+                                                        placeholder="Name..."
+                                                        value={orderTeam[role].name}
+                                                        onChange={(e) => setOrderTeam(prev => ({...prev, [role]: { ...prev[role], name: e.target.value }}))}
+                                                    />
+                                                    <input 
+                                                        type="number" className="bg-slate-950 border border-slate-700 rounded text-center text-xs text-white w-full" 
+                                                        value={orderTeam[role].k} onChange={(e) => setOrderTeam(prev => ({...prev, [role]: { ...prev[role], k: parseInt(e.target.value)||0 }}))}
+                                                    />
+                                                    <input 
+                                                        type="number" className="bg-slate-950 border border-slate-700 rounded text-center text-xs text-white w-full"
+                                                        value={orderTeam[role].d} onChange={(e) => setOrderTeam(prev => ({...prev, [role]: { ...prev[role], d: parseInt(e.target.value)||0 }}))}
+                                                    />
+                                                    <input 
+                                                        type="number" className="bg-slate-950 border border-slate-700 rounded text-center text-xs text-white w-full"
+                                                        value={orderTeam[role].a} onChange={(e) => setOrderTeam(prev => ({...prev, [role]: { ...prev[role], a: parseInt(e.target.value)||0 }}))}
+                                                    />
+                                                    <input 
+                                                        type="number" className="bg-slate-950 border border-slate-700 rounded text-center text-xs text-yellow-500 w-full"
+                                                        value={orderTeam[role].mmr} onChange={(e) => setOrderTeam(prev => ({...prev, [role]: { ...prev[role], mmr: parseInt(e.target.value)||1500 }}))}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Chaos Team */}
+                                <div className="bg-slate-950/50 rounded-xl border border-red-900/30 overflow-hidden">
+                                    <div className="bg-red-900/20 p-3 border-b border-red-900/30 flex justify-between items-center">
+                                        <span className="font-bold text-red-400 flex items-center gap-2"><Users size={16} /> CHAOS TEAM</span>
+                                        <span className={`text-xs font-bold px-2 py-0.5 rounded ${winner === 'Chaos' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                                            {winner === 'Chaos' ? 'WINNER' : 'DEFEAT'}
+                                        </span>
+                                    </div>
+                                    <div className="p-4">
+                                        {/* Table Header */}
+                                        <div className="grid grid-cols-[30px_1fr_45px_45px_45px_50px] gap-2 mb-2 px-1 text-[10px] font-bold uppercase text-slate-500">
+                                            <div className="text-center">Role</div>
+                                            <div>Name</div>
+                                            <div className="text-center text-green-500" title="Kills">K</div>
+                                            <div className="text-center text-red-500" title="Deaths">D</div>
+                                            <div className="text-center text-yellow-500" title="Assists">A</div>
+                                            <div className="text-center text-purple-400">MMR</div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            {ROLES.map(role => (
+                                                <div key={role} className="grid grid-cols-[30px_1fr_45px_45px_45px_50px] gap-2 items-center bg-slate-900 p-2 rounded border border-slate-800">
+                                                    <div className="flex justify-center"><RoleIcon role={role} /></div>
+                                                    <input 
+                                                        className="bg-transparent border-b border-slate-700 text-sm text-white focus:border-red-500 outline-none px-1 w-full" 
+                                                        placeholder="Name..."
+                                                        value={chaosTeam[role].name}
+                                                        onChange={(e) => setChaosTeam(prev => ({...prev, [role]: { ...prev[role], name: e.target.value }}))}
+                                                    />
+                                                    <input 
+                                                        type="number" className="bg-slate-950 border border-slate-700 rounded text-center text-xs text-white w-full"
+                                                        value={chaosTeam[role].k} onChange={(e) => setChaosTeam(prev => ({...prev, [role]: { ...prev[role], k: parseInt(e.target.value)||0 }}))}
+                                                    />
+                                                    <input 
+                                                        type="number" className="bg-slate-950 border border-slate-700 rounded text-center text-xs text-white w-full"
+                                                        value={chaosTeam[role].d} onChange={(e) => setChaosTeam(prev => ({...prev, [role]: { ...prev[role], d: parseInt(e.target.value)||0 }}))}
+                                                    />
+                                                    <input 
+                                                        type="number" className="bg-slate-950 border border-slate-700 rounded text-center text-xs text-white w-full"
+                                                        value={chaosTeam[role].a} onChange={(e) => setChaosTeam(prev => ({...prev, [role]: { ...prev[role], a: parseInt(e.target.value)||0 }}))}
+                                                    />
+                                                    <input 
+                                                        type="number" className="bg-slate-950 border border-slate-700 rounded text-center text-xs text-yellow-500 w-full"
+                                                        value={chaosTeam[role].mmr} onChange={(e) => setChaosTeam(prev => ({...prev, [role]: { ...prev[role], mmr: parseInt(e.target.value)||1500 }}))}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className="mt-auto">
                                 <button 
-                                    onClick={() => setFormIsWin(true)}
-                                    className={`flex-1 py-2 rounded font-bold text-sm border transition-colors ${formIsWin ? 'bg-green-600 border-green-500 text-white' : 'bg-slate-800 border-slate-600 text-slate-400'}`}
+                                    onClick={handleRecordFullMatch}
+                                    disabled={isSubmitting}
+                                    className="w-full py-4 bg-gradient-to-r from-mythic-gold to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-slate-900 font-bold rounded-xl uppercase tracking-wider shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-lg flex items-center justify-center gap-2"
                                 >
-                                    WIN
+                                    {isSubmitting ? 'Recording Match...' : 'Submit Full Match Record'}
                                 </button>
-                                <button 
-                                    onClick={() => setFormIsWin(false)}
-                                    className={`flex-1 py-2 rounded font-bold text-sm border transition-colors ${!formIsWin ? 'bg-red-600 border-red-500 text-white' : 'bg-slate-800 border-slate-600 text-slate-400'}`}
-                                >
-                                    LOSS
-                                </button>
-                             </div>
+                            </div>
                         </div>
-                    </div>
+                    )}
 
-                    <div>
-                        <label className="block text-xs font-bold uppercase text-slate-500 mb-1">Role Played in Match</label>
-                        <div className="flex gap-1">
-                            {ROLES.map(role => (
-                                <button
-                                    key={role}
-                                    onClick={() => setFormRole(role)}
-                                    className={`flex-1 py-1.5 rounded text-[10px] font-bold uppercase transition-all ${
-                                        formRole === role 
-                                        ? 'bg-mythic-gold text-slate-900 shadow' 
-                                        : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-                                    }`}
-                                >
-                                    {role}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
+                    {/* --- SINGLE ENTRY FORM (Legacy/Backup) --- */}
+                    {matchMode === 'single' && (
+                        <div className="space-y-4 max-w-sm mx-auto">
+                            <div>
+                                <label className="block text-xs font-bold uppercase text-slate-500 mb-1">Player Name</label>
+                                <input 
+                                    type="text" 
+                                    value={formName}
+                                    onChange={(e) => setFormName(e.target.value)}
+                                    className="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white focus:border-mythic-gold outline-none"
+                                    placeholder="Enter In-Game Name"
+                                    autoFocus
+                                />
+                            </div>
 
-                    <div className="grid grid-cols-3 gap-3 p-3 bg-slate-950 rounded-lg border border-slate-800">
-                        <div className="text-center">
-                             <label className="block text-[10px] font-bold uppercase text-green-500 mb-1">Kills</label>
-                             <input 
-                                type="number" 
-                                value={formKills}
-                                onChange={(e) => setFormKills(parseInt(e.target.value) || 0)}
-                                className="w-full bg-slate-800 border border-slate-700 rounded p-1 text-center text-white focus:border-green-500 outline-none"
-                             />
-                        </div>
-                        <div className="text-center">
-                             <label className="block text-[10px] font-bold uppercase text-red-500 mb-1">Deaths</label>
-                             <input 
-                                type="number" 
-                                value={formDeaths}
-                                onChange={(e) => setFormDeaths(parseInt(e.target.value) || 0)}
-                                className="w-full bg-slate-800 border border-slate-700 rounded p-1 text-center text-white focus:border-red-500 outline-none"
-                             />
-                        </div>
-                        <div className="text-center">
-                             <label className="block text-[10px] font-bold uppercase text-yellow-500 mb-1">Assists</label>
-                             <input 
-                                type="number" 
-                                value={formAssists}
-                                onChange={(e) => setFormAssists(parseInt(e.target.value) || 0)}
-                                className="w-full bg-slate-800 border border-slate-700 rounded p-1 text-center text-white focus:border-yellow-500 outline-none"
-                             />
-                        </div>
-                    </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold uppercase text-slate-500 mb-1">MMR</label>
+                                    <input 
+                                        type="number" 
+                                        value={formMMR}
+                                        onChange={(e) => setFormMMR(parseInt(e.target.value) || 0)}
+                                        className="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white focus:border-mythic-gold outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold uppercase text-slate-500 mb-1">Result</label>
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={() => setFormIsWin(true)}
+                                            className={`flex-1 py-2 rounded font-bold text-sm border transition-colors ${formIsWin ? 'bg-green-600 border-green-500 text-white' : 'bg-slate-800 border-slate-600 text-slate-400'}`}
+                                        >
+                                            WIN
+                                        </button>
+                                        <button 
+                                            onClick={() => setFormIsWin(false)}
+                                            className={`flex-1 py-2 rounded font-bold text-sm border transition-colors ${!formIsWin ? 'bg-red-600 border-red-500 text-white' : 'bg-slate-800 border-slate-600 text-slate-400'}`}
+                                        >
+                                            LOSS
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
 
-                    <button 
-                        onClick={handleRecordMatch}
-                        disabled={!formName}
-                        className="w-full py-3 bg-gradient-to-r from-mythic-gold to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-slate-900 font-bold rounded-lg uppercase tracking-wider shadow-lg disabled:opacity-50 disabled:cursor-not-allowed mt-2"
-                    >
-                        Submit Match Result
-                    </button>
+                            <div>
+                                <label className="block text-xs font-bold uppercase text-slate-500 mb-1">Role Played</label>
+                                <div className="flex gap-1">
+                                    {ROLES.map(role => (
+                                        <button
+                                            key={role}
+                                            onClick={() => setFormRole(role)}
+                                            className={`flex-1 py-1.5 rounded text-[10px] font-bold uppercase transition-all ${
+                                                formRole === role 
+                                                ? 'bg-mythic-gold text-slate-900 shadow' 
+                                                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                                            }`}
+                                        >
+                                            {role}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-3 p-3 bg-slate-950 rounded-lg border border-slate-800">
+                                <div className="text-center">
+                                    <label className="block text-[10px] font-bold uppercase text-green-500 mb-1">Kills</label>
+                                    <input 
+                                        type="number" 
+                                        value={formKills}
+                                        onChange={(e) => setFormKills(parseInt(e.target.value) || 0)}
+                                        className="w-full bg-slate-800 border border-slate-700 rounded p-1 text-center text-white focus:border-green-500 outline-none"
+                                    />
+                                </div>
+                                <div className="text-center">
+                                    <label className="block text-[10px] font-bold uppercase text-red-500 mb-1">Deaths</label>
+                                    <input 
+                                        type="number" 
+                                        value={formDeaths}
+                                        onChange={(e) => setFormDeaths(parseInt(e.target.value) || 0)}
+                                        className="w-full bg-slate-800 border border-slate-700 rounded p-1 text-center text-white focus:border-red-500 outline-none"
+                                    />
+                                </div>
+                                <div className="text-center">
+                                    <label className="block text-[10px] font-bold uppercase text-yellow-500 mb-1">Assists</label>
+                                    <input 
+                                        type="number" 
+                                        value={formAssists}
+                                        onChange={(e) => setFormAssists(parseInt(e.target.value) || 0)}
+                                        className="w-full bg-slate-800 border border-slate-700 rounded p-1 text-center text-white focus:border-yellow-500 outline-none"
+                                    />
+                                </div>
+                            </div>
+
+                            <button 
+                                onClick={handleRecordSingle}
+                                disabled={!formName || isSubmitting}
+                                className="w-full py-3 bg-gradient-to-r from-mythic-gold to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-slate-900 font-bold rounded-lg uppercase tracking-wider shadow-lg disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+                            >
+                                {isSubmitting ? 'Submitting...' : 'Submit Single Result'}
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
