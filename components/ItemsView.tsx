@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { ITEMS } from '../constants';
 import { Item } from '../types';
-import { Search, Shield, Sword, Zap, Briefcase, Coffee, ChevronUp, ChevronDown, X, Diamond, Info, Layers, Sparkles, HandHelping } from 'lucide-react';
+import { Search, Shield, Sword, Zap, Briefcase, Coffee, ChevronUp, ChevronDown, X, Diamond, Info, Layers, Sparkles, HandHelping, Map, Lock } from 'lucide-react';
 
 // Helper to find items that build FROM a specific item ID
 const getUpgrades = (itemId: string) => {
@@ -31,7 +30,7 @@ const TreeConnectorSVG = ({ count, inverted = false }: { count: number, inverted
 };
 
 export const ItemsView: React.FC = () => {
-  const [filter, setFilter] = useState<'All' | 'Offense' | 'Defense' | 'Utility' | 'Support' | 'Starter' | 'Consumable' | 'Relic' | 'Curio' | 'Tier 1' | 'Tier 2' | 'Tier 3'>('All');
+  const [filter, setFilter] = useState<'All' | 'Offense' | 'Defense' | 'Utility' | 'Support' | 'Starter' | 'Consumable' | 'Relic' | 'Curio' | 'Map Droppable' | 'Tier 1' | 'Tier 2' | 'Tier 3'>('All');
   const [search, setSearch] = useState('');
   
   // State for interaction
@@ -39,8 +38,8 @@ export const ItemsView: React.FC = () => {
   const [hoveredItem, setHoveredItem] = useState<Item | null>(null); // For desktop hover
 
   // Determine what to show in the inspector
-  // If hovering, show hovered. Else if selected, show selected. Else null.
-  const activeItem = hoveredItem || selectedItem;
+  // Priority: Selected > Hovered. This allows "locking" the inspector to scroll and read.
+  const activeItem = selectedItem || hoveredItem;
 
   const filteredItems = ITEMS.filter(item => {
     let matchesType = true;
@@ -53,6 +52,8 @@ export const ItemsView: React.FC = () => {
         matchesType = item.type === 'Relic';
     } else if (filter === 'Curio') {
         matchesType = item.type === 'Curio';
+    } else if (filter === 'Map Droppable') {
+        matchesType = item.type === 'Map Droppable';
     } else if (filter === 'Tier 1') {
         matchesType = item.tier === 1;
     } else if (filter === 'Tier 2') {
@@ -194,7 +195,7 @@ export const ItemsView: React.FC = () => {
             {/* Controls */}
             <div className="flex flex-col xl:flex-row gap-4 mb-6 justify-between items-start xl:items-center bg-slate-900 p-4 rounded-xl border border-slate-800">
                 <div className="flex flex-wrap gap-2">
-                {['All', 'Starter', 'Relic', 'Curio', 'Tier 1', 'Tier 2', 'Tier 3', 'Offense', 'Defense', 'Utility', 'Support', 'Consumable'].map(cat => (
+                {['All', 'Starter', 'Relic', 'Curio', 'Map Droppable', 'Tier 1', 'Tier 2', 'Tier 3', 'Offense', 'Defense', 'Utility', 'Support', 'Consumable'].map(cat => (
                     <button
                     key={cat}
                     onClick={() => setFilter(cat as any)}
@@ -208,6 +209,7 @@ export const ItemsView: React.FC = () => {
                     {cat === 'Consumable' && <Coffee size={14} />}
                     {cat === 'Relic' && <Diamond size={14} />}
                     {cat === 'Curio' && <Sparkles size={14} />}
+                    {cat === 'Map Droppable' && <Map size={14} />}
                     {cat === 'Offense' && <Sword size={14} />}
                     {cat === 'Defense' && <Shield size={14} />}
                     {cat === 'Utility' && <Zap size={14} />}
@@ -236,10 +238,10 @@ export const ItemsView: React.FC = () => {
                     key={item.id} 
                     onMouseEnter={() => setHoveredItem(item)}
                     onMouseLeave={() => setHoveredItem(null)}
-                    onClick={() => setSelectedItem(item)} // On desktop this might just highlight, on mobile it opens modal
+                    onClick={() => setSelectedItem(prev => prev?.id === item.id ? null : item)}
                     className={`bg-slate-800 p-4 rounded-xl border transition-all cursor-pointer relative ${
                         (selectedItem?.id === item.id) 
-                        ? 'border-mythic-gold bg-slate-800/80 shadow-[0_0_15px_rgba(251,191,36,0.1)]'
+                        ? 'border-mythic-gold bg-slate-800/80 shadow-[0_0_15px_rgba(251,191,36,0.1)] ring-1 ring-mythic-gold'
                         : 'border-slate-700 hover:border-slate-500 hover:bg-slate-800/80'
                     }`}
                 >
@@ -249,6 +251,12 @@ export const ItemsView: React.FC = () => {
                         {item.tier && (
                             <div className="absolute top-0 right-0 bg-slate-900/90 px-1.5 py-0.5 rounded-bl text-[9px] font-bold text-slate-300 border-l border-b border-slate-700">
                                 T{item.tier}
+                            </div>
+                        )}
+                        {/* Lock Icon if Selected */}
+                        {selectedItem?.id === item.id && (
+                            <div className="absolute inset-0 bg-mythic-gold/10 flex items-center justify-center">
+                                <Lock size={20} className="text-mythic-gold drop-shadow-md" />
                             </div>
                         )}
                     </div>
@@ -264,6 +272,7 @@ export const ItemsView: React.FC = () => {
                             item.type === 'Consumable' ? 'border-orange-500 text-orange-400' :
                             item.type === 'Relic' ? 'border-cyan-500 text-cyan-400' :
                             item.type === 'Curio' ? 'border-pink-500 text-pink-400' :
+                            item.type === 'Map Droppable' ? 'border-emerald-500 text-emerald-400' :
                             item.category === 'Offense' ? 'border-red-900 text-red-400' :
                             item.category === 'Defense' ? 'border-blue-900 text-blue-400' :
                             item.category === 'Support' ? 'border-indigo-900 text-indigo-400' :
@@ -280,7 +289,23 @@ export const ItemsView: React.FC = () => {
 
         {/* Right Column: Inspector Panel (Desktop Only) */}
         <div className="hidden lg:block w-80 xl:w-96 sticky top-24 shrink-0">
-             <div className="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl overflow-hidden min-h-[500px] h-[calc(100vh-8rem)]">
+             <div className="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl overflow-hidden min-h-[500px] h-[calc(100vh-8rem)] relative">
+                 {/* Selection Lock Controls */}
+                 {selectedItem && (
+                    <div className="absolute top-3 right-3 z-50 flex gap-2">
+                        <div className="px-2 py-1 bg-mythic-gold/20 text-mythic-gold text-[10px] font-bold uppercase rounded border border-mythic-gold/30 flex items-center gap-1">
+                             <Lock size={10} /> Locked
+                        </div>
+                        <button 
+                            onClick={() => setSelectedItem(null)}
+                            className="bg-slate-800 hover:bg-red-500/80 text-slate-400 hover:text-white p-1 rounded-full border border-slate-600 transition-colors shadow-lg"
+                            title="Clear Selection (Enable Hover)"
+                        >
+                            <X size={14} />
+                        </button>
+                    </div>
+                 )}
+
                  {activeItem ? (
                      <ItemInspector item={activeItem} />
                  ) : (
@@ -289,7 +314,7 @@ export const ItemsView: React.FC = () => {
                              <Info size={32} />
                          </div>
                          <p className="text-lg font-serif">Select an Item</p>
-                         <p className="text-sm">Hover over any item in the grid to view its stats, passive, and build path details here.</p>
+                         <p className="text-sm">Click an item to lock details, or hover to preview stats and build paths.</p>
                      </div>
                  )}
              </div>

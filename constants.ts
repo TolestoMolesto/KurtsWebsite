@@ -1,4 +1,5 @@
 
+
 import { God, Item, DamageType, NamedTierList, TierRank, GodStats, Tournament } from './types';
 
 // Helper to generate placeholder images
@@ -840,9 +841,9 @@ export const ITEMS: Item[] = [
     { id: 'elixir-strength', name: 'Elixir of Strength', cost: 3000, type: 'Consumable', category: 'Offense', stats: {}, image: getItemImage(64), passive: 'Grants +50 Strength. Lasts 6m.' },
     { id: 'elixir-intelligence', name: 'Elixir of Intelligence', cost: 3000, type: 'Consumable', category: 'Offense', stats: {}, image: getItemImage(65), passive: 'Grants +80 Intelligence. Lasts 6m.' },
     { id: 'eyes-jungle', name: 'Eyes of the Jungle', cost: 0, type: 'Consumable', category: 'Utility', stats: {}, image: getItemImage(19), passive: 'Ping all enemy Gods on minimap.' },
-    { id: 'runic-bomb', name: 'Runic Bomb', cost: 0, type: 'Consumable', category: 'Offense', stats: {}, image: getItemImage(20), passive: 'Throw bomb: 1000 True Dmg to structures, 300 Phys to enemies + Knockback.' },
+    { id: 'runic-bomb', name: 'Runic Bomb', cost: 0, type: 'Map Droppable', category: 'Offense', stats: {}, image: getItemImage(20), passive: 'Throw bomb: 1000 True Dmg to structures, 300 Phys to enemies + Knockback.' },
     { id: 'crystal-egg', name: 'Crystalline Egg', cost: 0, type: 'Consumable', category: 'Utility', stats: {}, image: getItemImage(21), passive: 'Summon 2 Naga familiars to attack target.' },
-    { id: 'obsidian-dagger', name: 'Obsidian Dagger', cost: 0, type: 'Consumable', category: 'Offense', stats: {}, image: getItemImage(22), passive: 'Take 500 True Dmg. Gain +15% Dmg/Atk Speed for 9s. If you would die, heal instead.' },
+    { id: 'obsidian-dagger', name: 'Obsidian Dagger', cost: 0, type: 'Map Droppable', category: 'Offense', stats: {}, image: getItemImage(22), passive: 'Take 500 True Dmg. Gain +15% Dmg/Atk Speed for 9s. If you would die, heal instead.' },
 
     // --- TIER 1 STARTERS ---
     { id: 'selflessness', name: 'Selflessness', cost: 550, type: 'Starter', category: 'Defense', stats: { 'Phys. Prot': '10', 'Mag. Prot': '10', 'Max Health': '60' }, image: getItemImage(100), passive: 'Assist: Bonus Gold/Heal. Ally CC\'d: Shield them.' },

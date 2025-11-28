@@ -1,7 +1,8 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { TournamentPlayer, TournamentRole } from '../types';
-import { Trophy, Plus, Trash2, Crown, Medal, Swords, ScrollText, Gem, Flame, Target, Skull, UserPlus, X, Calendar, MapPin, MonitorPlay, Timer, History, ArrowRight, Users, User, ChevronRight } from 'lucide-react';
+import { Trophy, Plus, Trash2, Crown, Medal, Swords, ScrollText, Gem, Flame, Target, Skull, UserPlus, X, Calendar, MapPin, MonitorPlay, Timer, History, ArrowRight, Users, User, ChevronRight, Lock, Loader2 } from 'lucide-react';
 import { db, auth } from '../services/firebase';
 import { collection, onSnapshot, addDoc, updateDoc, doc, query, orderBy, limit, setDoc, getDoc, QuerySnapshot, DocumentData, writeBatch, increment } from 'firebase/firestore';
 import * as FirebaseAuth from 'firebase/auth';
@@ -61,6 +62,7 @@ export const TournamentView: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
 
   // --- Form State ---
   const [matchMode, setMatchMode] = useState<'full' | 'single'>('full');
@@ -100,6 +102,7 @@ export const TournamentView: React.FC = () => {
         } else {
             setIsAdmin(false);
         }
+        setAuthLoading(false);
     });
 
     // Listen for Players - Removed orderBy('score') since we calculate it client-side
@@ -337,6 +340,38 @@ export const TournamentView: React.FC = () => {
         {role.charAt(0)}
     </div>
   );
+
+  if (authLoading) {
+      return (
+          <div className="flex items-center justify-center min-h-[60vh]">
+              <Loader2 className="animate-spin text-mythic-gold" size={48} />
+          </div>
+      );
+  }
+
+  if (!user) {
+      return (
+          <div className="container mx-auto px-4 py-20 flex justify-center">
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 max-w-lg w-full text-center shadow-2xl relative overflow-hidden">
+                   <div className="absolute inset-0 bg-gradient-to-b from-slate-800/50 to-slate-950/50 pointer-events-none"></div>
+                   <div className="relative z-10 flex flex-col items-center">
+                       <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mb-6 shadow-lg border border-slate-700">
+                           <Lock size={40} className="text-mythic-gold" />
+                       </div>
+                       <h2 className="text-3xl font-serif font-bold text-slate-100 mb-3">Tournament Access Locked</h2>
+                       <p className="text-slate-400 mb-8 leading-relaxed">
+                           The Forge Championship Series data is classified. <br/> 
+                           Only registered champions may view the bracket and standings.
+                       </p>
+                       <div className="bg-slate-950/50 px-6 py-4 rounded-xl border border-slate-800 flex items-center gap-3 text-sm text-slate-300">
+                           <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                           Please Sign In using the button in the top right.
+                       </div>
+                   </div>
+              </div>
+          </div>
+      );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">

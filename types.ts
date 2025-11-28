@@ -79,7 +79,7 @@ export interface God extends AbilityKit {
 }
 
 export type ItemTier = 1 | 2 | 3;
-export type ItemType = 'Item' | 'Consumable' | 'Starter' | 'Active' | 'Relic' | 'Curio';
+export type ItemType = 'Item' | 'Consumable' | 'Starter' | 'Active' | 'Relic' | 'Curio' | 'Map Droppable';
 
 export interface Item {
   id: string;
