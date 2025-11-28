@@ -48,7 +48,7 @@ export const GODS: God[] = [
     role: 'Mage',
     lanes: ['Mid', 'Carry'],
     damageType: DamageType.Magical,
-    image: 'https://webcdn.hirezstudios.com/smite/god-cards/zeus.jpg',
+    image: 'https://image2url.com/images/1764297903067-d12435dd-9847-4167-8b86-978cc13f46ce.jpg',
     statsByLevel: [
       { strength: 0, intelligence: 0, attackSpeed: 1, physicalProtection: 18, magicalProtection: 27, maxHealth: 591, healthRegen: 2, maxMana: 296, manaRegen: 2, cooldownRate: 0, movementSpeed: 365, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0 },
       { strength: 0, intelligence: 0, attackSpeed: 3, physicalProtection: 20, magicalProtection: 29, maxHealth: 684, healthRegen: 2, maxMana: 338, manaRegen: 3, cooldownRate: 0, movementSpeed: 365, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0 },
@@ -874,18 +874,18 @@ export const ITEMS: Item[] = [
     { id: 'blood-shroud', name: 'Blood-soaked Shroud', cost: 2150, type: 'Starter', category: 'Offense', stats: { 'Intelligence': '60', 'Max Health': '275' }, image: getItemImage(123), passive: 'Ability Hit: Heal %HP/Mana. Heal increases with kills.', buildsFrom: ['vampiric'] },
 
     // --- TIER 1 ITEMS ---
-    { id: 'bow', name: 'Bow', cost: 300, tier: 1, type: 'Item', category: 'Offense', stats: { 'Attack Speed': '5%' }, image: getItemImage(200), passive: 'Attack Speed' },
-    { id: 'circlet', name: 'Circlet', cost: 300, tier: 1, type: 'Item', category: 'Utility', stats: { 'Max Mana': '150' }, image: getItemImage(201), passive: 'Mana' },
-    { id: 'medallion', name: 'Medallion', cost: 300, tier: 1, type: 'Item', category: 'Defense', stats: { 'Max Health': '75' }, image: getItemImage(202), passive: 'Health' },
-    { id: 'rune', name: 'Rune', cost: 300, tier: 1, type: 'Item', category: 'Defense', stats: { 'Mag. Prot': '7' }, image: getItemImage(203), passive: 'Magical Protection' },
-    { id: 'shield', name: 'Shield', cost: 300, tier: 1, type: 'Item', category: 'Defense', stats: { 'Phys. Prot': '6' }, image: getItemImage(204), passive: 'Physical Protection' },
-    { id: 'reliquary', name: 'Reliquary', cost: 300, tier: 1, type: 'Item', category: 'Utility', stats: { 'MP5': '2' }, image: getItemImage(205), passive: 'Mana Regen' },
-    { id: 'sash', name: 'Sash', cost: 300, tier: 1, type: 'Item', category: 'Utility', stats: { 'HP5': '2' }, image: getItemImage(206), passive: 'Health Regen' },
-    { id: 'ring', name: 'Ring', cost: 400, tier: 1, type: 'Item', category: 'Utility', stats: { 'Cooldown': '5' }, image: getItemImage(207), passive: 'Cooldown Rate' },
-    { id: 'axe', name: 'Axe', cost: 450, tier: 1, type: 'Item', category: 'Offense', stats: { 'Strength': '10' }, image: getItemImage(208), passive: 'Strength' },
-    { id: 'gem', name: 'Gem', cost: 450, tier: 1, type: 'Item', category: 'Offense', stats: { 'Intelligence': '15' }, image: getItemImage(209), passive: 'Intelligence' },
-    { id: 'scythe', name: 'Scythe', cost: 550, tier: 1, type: 'Item', category: 'Offense', stats: { 'Lifesteal': '4%' }, image: getItemImage(210), passive: 'Lifesteal' },
-    { id: 'sabre', name: 'Sabre', cost: 550, tier: 1, type: 'Item', category: 'Offense', stats: { 'Crit Chance': '7%' }, image: getItemImage(211), passive: 'Crit Chance' },
+    { id: 'bow', name: 'Bow', cost: 300, tier: 1, type: 'Item', category: 'Offense', stats: { 'Attack Speed': '5%' }, image: 'https://image2url.com/images/1764300473285-75232b1a-9715-4131-84d2-86df45e9bc4c.webp',
+    { id: 'circlet', name: 'Circlet', cost: 300, tier: 1, type: 'Item', category: 'Utility', stats: { 'Max Mana': '150' }, image: 'https://image2url.com/images/1764300446371-4508f190-4aa1-49ef-b269-d3152c46a5f5.webp',
+    { id: 'medallion', name: 'Medallion', cost: 300, tier: 1, type: 'Item', category: 'Defense', stats: { 'Max Health': '75' }, image: 'https://image2url.com/images/1764300409667-c6bcc9ff-5574-4d6b-86cc-0cd7ea741693.webp',
+    { id: 'rune', name: 'Rune', cost: 300, tier: 1, type: 'Item', category: 'Defense', stats: { 'Mag. Prot': '7' }, image: 'https://image2url.com/images/1764300358591-e4963a19-98a2-4d5f-ac5f-1bba2b4b5085.webp',
+    { id: 'shield', name: 'Shield', cost: 300, tier: 1, type: 'Item', category: 'Defense', stats: { 'Phys. Prot': '6' }, image: 'https://image2url.com/images/1764300276797-a211e51b-ce8f-4d7e-aacf-1fa4d3986ff9.webp',
+    { id: 'reliquary', name: 'Reliquary', cost: 300, tier: 1, type: 'Item', category: 'Utility', stats: { 'MP5': '2' }, image: 'https://image2url.com/images/1764300393312-24ed5e08-e67f-4fd2-9efa-34be108595f3.webp',
+    { id: 'sash', name: 'Sash', cost: 300, tier: 1, type: 'Item', category: 'Utility', stats: { 'HP5': '2' }, image: 'https://image2url.com/images/1764300323569-45636ba7-4e96-44c9-9f86-8808315c2e1b.webp',
+    { id: 'ring', name: 'Ring', cost: 400, tier: 1, type: 'Item', category: 'Utility', stats: { 'Cooldown': '5' }, image: 'https://image2url.com/images/1764300372648-4aa67ffc-8b8f-4031-a518-9566176e25fd.webp',
+    { id: 'axe', name: 'Axe', cost: 450, tier: 1, type: 'Item', category: 'Offense', stats: { 'Strength': '10' }, image: 'https://image2url.com/images/1764299986685-0b247359-c8fb-4120-ab2a-a3dec285b243.webp',
+    { id: 'gem', name: 'Gem', cost: 450, tier: 1, type: 'Item', category: 'Offense', stats: { 'Intelligence': '15' }, image: 'https://image2url.com/images/1764300431615-91c5aa11-7f97-443a-ba1c-e6ae087670eb.webp',
+    { id: 'scythe', name: 'Scythe', cost: 550, tier: 1, type: 'Item', category: 'Offense', stats: { 'Lifesteal': '4%' }, image: 'https://image2url.com/images/1764300304236-1349a875-8c93-49ea-881b-41597dfb8275.webp',
+    { id: 'sabre', name: 'Sabre', cost: 550, tier: 1, type: 'Item', category: 'Offense', stats: { 'Crit Chance': '7%' }, image: 'https://image2url.com/images/1764300323569-45636ba7-4e96-44c9-9f86-8808315c2e1b.webp',
 
     // --- TIER 2 ITEMS ---
     { id: 'manchu-bow', name: 'Manchu Bow', cost: 950, tier: 2, type: 'Item', category: 'Offense', stats: { 'Strength': '10', 'Atk Speed': '8%' }, image: getItemImage(300), passive: 'Attacks deal +10 Phys Dmg.', buildsFrom: ['axe', 'bow'] },
@@ -917,7 +917,18 @@ export const ITEMS: Item[] = [
 
     // --- TIER 3 ITEMS ---
     // Books
-    { id: 'blood-bound', name: 'Blood-Bound Book', cost: 2600, tier: 3, type: 'Item', category: 'Offense', stats: { 'Intelligence': '60', 'Lifesteal': '7.5%' }, image: getItemImage(501), passive: 'Active: Health Shield (7.5% HP + 75% Int). Shield grants +10% Lifesteal.', buildsFrom: ['cursed-sickle', 'killing-stone'] },
+   { 
+  id: 'blood-bound', 
+  name: 'Blood-Bound Book', 
+  cost: 2250, 
+  tier: 3, 
+  type: 'Item', 
+  category: 'Offense', 
+  stats: { 'Intelligence': '60', 'Lifesteal': '7.5%' }, 
+  image: 'https://image2url.com/images/1764299602168-50dc4c45-cb88-4d32-89e7-9391d6ed9e4e.png', 
+  passive: 'Active: +Health Shield for 6s. Shield = 7.5% Max Health & 75% Intelligence from items. While Shielded: +10% Lifesteal. Cooldown: 80s. Kill a God: -25% Cooldown.', 
+  buildsFrom: ['cursed-sickle', 'killing-stone'] 
+},
     { id: 'book-thoth', name: 'Book of Thoth', cost: 2650, tier: 3, type: 'Item', category: 'Offense', stats: { 'Intell': '30', 'Mana': '350', 'MP5': '4' }, image: getItemImage(502), passive: 'Gain Int (5% Mana). Stacks on kill: +10 Mana (Max 50). Evolve: +20 Int +100 Mana + 2% Mana to Int.', buildsFrom: ['mana-tome'] },
     { id: 'bancrofts', name: 'Bancroft\'s Talon', cost: 2500, tier: 3, type: 'Item', category: 'Offense', stats: { 'Intell': '55', 'Mana': '150', 'MP5': '2', 'Lifesteal': '7.5%' }, image: getItemImage(503), passive: 'Gain Int/Lifesteal from missing HP.', buildsFrom: ['cursed-sickle', 'mana-tome'] },
     { id: 'gluttonous', name: 'Gluttonous Grimoire', cost: 2400, tier: 3, type: 'Item', category: 'Offense', stats: { 'Intell': '40', 'Health': '150', 'Lifesteal': '7.5%' }, image: getItemImage(504), passive: 'Store Lifesteal healing as bonus Dmg on next attack.', buildsFrom: ['cursed-sickle', 'medallion'] },
@@ -1057,53 +1068,26 @@ export const STREAMER_TIER_LISTS: NamedTierList[] = [
       [TierRank.D]: [],
       pool: []
     }
+  },
+    {
+    id: 'weak3n-s2',
+    name: 'Weak3n S1 Jungle Tier List',
+    author: 'Weak3n',
+    description: 'The definitive jungle tier list for Season 1. Based on high MMR ranked play and competitive scrims.',
+    date: 'Jan 2025',
+    streamerInfo: {
+      platform: 'twitch',
+      url: 'https://www.twitch.tv/weak3n',
+      isLive: true,
+      secondaryUrl: 'https://www.youtube.com/@Weak3n'
+    },
+    data: {
+      [TierRank.S]: ['loki:base', 'bellona:base'],
+      [TierRank.A]: ['ymir:base'],
+      [TierRank.B]: ['zeus:base', 'anubis:base'],
+      [TierRank.C]: [],
+      [TierRank.D]: [],
+      pool: []
+    }
   }
 ];
-
-export const MOCK_TOURNAMENT: Tournament = {
-    id: 's1-championship',
-    name: 'Forge Championship Series',
-    rounds: [
-        {
-            name: 'Quarterfinals',
-            matches: [
-                {
-                    id: 'qf1',
-                    date: 'Jan 10',
-                    team1: { id: 't1', name: 'Solar Scarabs', totalScore: 42, players: [] },
-                    team2: { id: 't2', name: 'Lunar Moths', totalScore: 35, players: [] },
-                    winnerId: 't1'
-                },
-                {
-                    id: 'qf2',
-                    date: 'Jan 10',
-                    team1: { id: 't3', name: 'Jade Dragons', totalScore: 50, players: [] },
-                    team2: { id: 't4', name: 'Olympus Bolts', totalScore: 48, players: [] },
-                    winnerId: 't3'
-                }
-            ]
-        },
-        {
-            name: 'Semifinals',
-            matches: [
-                {
-                    id: 'sf1',
-                    date: 'Jan 11',
-                    team1: { id: 't1', name: 'Solar Scarabs', totalScore: 0, players: [] },
-                    team2: { id: 't3', name: 'Jade Dragons', totalScore: 0, players: [] }
-                }
-            ]
-        },
-        {
-            name: 'Grand Finals',
-            matches: [
-                {
-                    id: 'gf1',
-                    date: 'Jan 12',
-                    team1: { id: 'tbd1', name: 'TBD', totalScore: 0, players: [] },
-                    team2: { id: 'tbd2', name: 'TBD', totalScore: 0, players: [] }
-                }
-            ]
-        }
-    ]
-};
