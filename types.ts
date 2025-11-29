@@ -90,7 +90,7 @@ export interface Item {
   stats: Record<string, string>;
   passive?: string;
   image: string;
-  category: 'Offense' | 'Defense' | 'Utility' | 'Support';
+  category: 'Offense' | 'Defense' | 'Utility' | 'Support' | 'Hybrid';
   buildsFrom?: string[]; // IDs of items required to build this
 }
 

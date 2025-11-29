@@ -1,3 +1,5 @@
+
+
 import React, { useState } from 'react';
 import { ITEMS } from '../constants';
 import { Item } from '../types';
@@ -30,7 +32,7 @@ const TreeConnectorSVG = ({ count, inverted = false }: { count: number, inverted
 };
 
 export const ItemsView: React.FC = () => {
-  const [filter, setFilter] = useState<'All' | 'Offense' | 'Defense' | 'Utility' | 'Support' | 'Starter' | 'Consumable' | 'Relic' | 'Curio' | 'Map Droppable' | 'Tier 1' | 'Tier 2' | 'Tier 3'>('All');
+  const [filter, setFilter] = useState<'All' | 'Offense' | 'Defense' | 'Utility' | 'Support' | 'Hybrid' | 'Starter' | 'Consumable' | 'Relic' | 'Curio' | 'Map Droppable' | 'Tier 1' | 'Tier 2' | 'Tier 3'>('All');
   const [search, setSearch] = useState('');
   
   // State for interaction
@@ -195,7 +197,7 @@ export const ItemsView: React.FC = () => {
             {/* Controls */}
             <div className="flex flex-col xl:flex-row gap-4 mb-6 justify-between items-start xl:items-center bg-slate-900 p-4 rounded-xl border border-slate-800">
                 <div className="flex flex-wrap gap-2">
-                {['All', 'Starter', 'Relic', 'Curio', 'Map Droppable', 'Tier 1', 'Tier 2', 'Tier 3', 'Offense', 'Defense', 'Utility', 'Support', 'Consumable'].map(cat => (
+                {['All', 'Starter', 'Relic', 'Curio', 'Map Droppable', 'Tier 1', 'Tier 2', 'Tier 3', 'Offense', 'Defense', 'Utility', 'Support', 'Hybrid', 'Consumable'].map(cat => (
                     <button
                     key={cat}
                     onClick={() => setFilter(cat as any)}
@@ -276,6 +278,7 @@ export const ItemsView: React.FC = () => {
                             item.category === 'Offense' ? 'border-red-900 text-red-400' :
                             item.category === 'Defense' ? 'border-blue-900 text-blue-400' :
                             item.category === 'Support' ? 'border-indigo-900 text-indigo-400' :
+                            item.category === 'Hybrid' ? 'border-purple-900 text-purple-400' :
                             'border-green-900 text-green-400'
                         }`}>
                             {item.type === 'Item' ? item.category : item.type}
