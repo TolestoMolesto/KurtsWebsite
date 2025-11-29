@@ -16,62 +16,80 @@ const SLOT_TYPES = [
 ];
 
 // --- TREE VISUALIZATION HELPERS ---
-const getUpgrades = (itemId: string) => ITEMS.filter(item => item.buildsFrom?.includes(itemId));
-const getComponents = (item: Item) => item.buildsFrom ? ITEMS.filter(i => item.buildsFrom?.includes(i.id)) : [];
-
-const TreeConnectorSVG = ({ count, inverted = false }: { count: number, inverted?: boolean }) => {
-    if (count <= 1) return <div className="w-px h-6 bg-slate-600 mx-auto my-0.5"></div>;
-    return (
-        <div className={`w-full h-6 relative my-0.5 ${inverted ? 'rotate-180' : ''}`}>
-            <div className="absolute left-1/2 top-0 -translate-x-1/2 w-px h-3 bg-slate-600"></div>
-            <div className="absolute top-3 left-[20%] right-[20%] h-px bg-slate-600"></div>
-            <div className="absolute top-3 left-[20%] w-px h-3 bg-slate-600"></div>
-            <div className="absolute top-3 right-[20%] w-px h-3 bg-slate-600"></div>
-            {count > 2 && <div className="absolute top-3 left-1/2 -translate-x-1/2 w-px h-3 bg-slate-600"></div>}
-        </div>
-    );
+const getComponents = (item: Item) => {
+    if (!item.buildsFrom) return [];
+    return item.buildsFrom.map(id => ITEMS.find(i => i.id === id)).filter(Boolean) as Item[];
 };
 
-const renderHierarchyNode = (item: Item, isCenter: boolean = false, onClick?: (item: Item) => void) => {
+const getUpgrades = (item: Item) => {
+    return ITEMS.filter(i => i.buildsFrom?.includes(item.id));
+};
+
+const findRoots = (item: Item, visited = new Set<string>()): Item[] => {
+    if (visited.has(item.id)) return [];
+    visited.add(item.id);
+
+    const upgrades = getUpgrades(item);
+    if (upgrades.length === 0) {
+        return [item];
+    }
+    return upgrades.flatMap(u => findRoots(u, new Set(visited)));
+};
+
+const renderRecursiveNode = (item: Item, selectedId: string | undefined, isRoot = false) => {
     const components = getComponents(item);
-    const hasComponents = components.length > 0;
+    const isSelected = item.id === selectedId;
+
     return (
-        <div key={item.id} className="flex flex-col items-center">
+        <div className="flex flex-col items-center">
+            {/* Connector from Parent */}
+            {!isRoot && (
+                <div className="h-4 w-px bg-slate-600 mb-0.5"></div>
+            )}
+
+            {/* Node Card */}
             <div 
               className={`flex flex-col items-center p-1.5 rounded-lg border relative z-10 group transition-all ${
-                  isCenter 
+                  isSelected 
                   ? 'bg-slate-800 border-mythic-gold shadow-[0_0_10px_rgba(251,191,36,0.2)]' 
                   : 'bg-slate-900 border-slate-700'
               }`}
             >
               <div className="w-10 h-10 bg-black rounded border border-slate-600 overflow-hidden mb-1 relative">
                   <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                  {item.tier && <div className="absolute top-0 right-0 bg-black/60 px-1 rounded-bl text-[8px] text-white">T{item.tier}</div>}
               </div>
-              <span className={`text-[9px] font-bold text-center leading-tight max-w-[70px] ${isCenter ? 'text-mythic-gold' : 'text-slate-400'}`}>
+              <span className={`text-[9px] font-bold text-center leading-tight max-w-[70px] ${isSelected ? 'text-mythic-gold' : 'text-slate-400'}`}>
                   {item.name}
               </span>
               <span className="text-[8px] text-slate-500 font-mono mt-0.5">{item.cost > 0 ? `${item.cost}g` : 'Free'}</span>
             </div>
-            
-            {!isCenter && hasComponents && (
-                <div className="mt-1 flex flex-col items-center">
-                     <div className="w-px h-3 bg-slate-700 mb-0.5"></div>
-                     {components.length > 1 && <div className="w-full h-px bg-slate-700 mb-0.5 relative" style={{ width: `${(components.length - 1) * 36}px` }}></div>}
-                     <div className="flex gap-2">
-                         {components.map(comp => (
-                             <div key={comp.id} className="flex flex-col items-center relative">
-                                 {components.length > 1 && <div className="h-1.5 w-px bg-slate-700 mb-0.5"></div>}
-                                 {renderHierarchyNode(comp, false)}
-                             </div>
-                         ))}
-                     </div>
-                </div>
+
+            {/* Connector to Children */}
+            {components.length > 0 && (
+                <>
+                  <div className="h-4 w-px bg-slate-600"></div>
+                  {components.length > 1 && (
+                      <div className="w-full h-px bg-slate-600" style={{ width: `calc(100% - ${100/components.length}%)` }}></div>
+                  )}
+                  <div className="flex gap-4 items-start pt-0.5">
+                      {components.map((c, i) => (
+                          <div key={`${c.id}-${i}`} className="flex flex-col items-center">
+                              {renderRecursiveNode(c, selectedId)}
+                          </div>
+                      ))}
+                  </div>
+                </>
             )}
         </div>
     );
 };
 
-const ItemInspector: React.FC<{ item: Item }> = ({ item }) => (
+const ItemInspector: React.FC<{ item: Item }> = ({ item }) => {
+    const roots = (item.type === 'Item' || item.type === 'Starter') ? findRoots(item) : [item];
+    const uniqueRoots = Array.from(new Set(roots.map(r => r.id))).map(id => roots.find(r => r.id === id)!);
+
+    return (
     <div className="animate-in fade-in duration-300 h-full flex flex-col bg-slate-900 border border-slate-700 rounded-xl overflow-hidden shadow-2xl">
         <div className="p-5 border-b border-slate-700 bg-slate-800/50 flex gap-4 items-center">
             <div className="w-16 h-16 bg-slate-900 rounded-lg border border-slate-600 overflow-hidden shadow-lg shrink-0">
@@ -84,6 +102,12 @@ const ItemInspector: React.FC<{ item: Item }> = ({ item }) => (
                    <span className="text-[10px] uppercase bg-slate-800 px-2 py-0.5 rounded text-slate-300 border border-slate-700">
                        {item.type === 'Item' ? `Tier ${item.tier}` : item.type}
                    </span>
+                   {item.type === 'God Specific' && (
+                        <span className="text-[10px] uppercase bg-mythic-900/50 px-2 py-0.5 rounded text-mythic-gold border border-mythic-gold/30">
+                            {/* @ts-ignore */}
+                            {item.god} Only
+                        </span>
+                   )}
                </div>
             </div>
         </div>
@@ -105,33 +129,26 @@ const ItemInspector: React.FC<{ item: Item }> = ({ item }) => (
                 </div>
             )}
 
-            {item.type === 'Item' && (
+            {/* Professional Tree Visualization */}
+            {(item.type === 'Item' || item.type === 'Starter') && (
                 <div className="mt-4 pt-4 border-t border-slate-800">
-                    <h3 className="text-[10px] uppercase font-bold text-slate-500 mb-4 tracking-widest text-center">Build Path</h3>
-                    <div className="flex flex-col items-center w-full overflow-x-auto pb-2">
-                        {getUpgrades(item.id).length > 0 && (
-                            <>
-                            <div className="flex gap-4 mb-0">
-                                {getUpgrades(item.id).map(u => renderHierarchyNode(u))}
+                    <h3 className="text-[10px] uppercase font-bold text-slate-500 mb-4 tracking-widest text-center flex items-center justify-center gap-2">
+                        <Info size={12} /> Build Path
+                    </h3>
+                    
+                    <div className="flex flex-col gap-8 pb-4">
+                        {uniqueRoots.map((root) => (
+                            <div key={root.id} className="flex justify-center overflow-x-auto">
+                                {renderRecursiveNode(root, item.id, true)}
                             </div>
-                            <TreeConnectorSVG count={getUpgrades(item.id).length} inverted={true} />
-                            </>
-                        )}
-                        {renderHierarchyNode(item, true)}
-                        {getComponents(item).length > 0 && (
-                            <>
-                            <TreeConnectorSVG count={getComponents(item).length} />
-                            <div className="flex gap-4 items-start">
-                                {getComponents(item).map(c => renderHierarchyNode(c, false))}
-                            </div>
-                            </>
-                        )}
+                        ))}
                     </div>
                 </div>
             )}
         </div>
     </div>
-);
+    );
+};
 
 const StatRow: React.FC<{ 
   icon: React.ReactNode; 
@@ -334,6 +351,16 @@ export const BuilderView: React.FC = () => {
     if (!activeSlotId) return [];
     const slotType = SLOT_TYPES.find(s => s.id === activeSlotId)?.type;
     return ITEMS.filter(item => {
+        // God Specific Logic:
+        // If item is God Specific, it must match the currently selected god's name.
+        if (item.type === 'God Specific') {
+            if (!selectedGod) return false;
+            // @ts-ignore
+            if (item.god !== selectedGod.name) return false;
+            // If it matches, we treat it generally as an Item unless it's strictly enforced by slotType
+            if (slotType === 'Item') return true; 
+        }
+
         const matchesType = item.type === slotType;
         const matchesSearch = item.name.toLowerCase().includes(itemSearch.toLowerCase());
         return matchesType && matchesSearch;
@@ -560,6 +587,12 @@ export const BuilderView: React.FC = () => {
                                 >
                                     <div className="w-12 h-12 rounded bg-black overflow-hidden relative">
                                         <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                                        {/* God Specific Badge */}
+                                        {item.type === 'God Specific' && (
+                                            <div className="absolute top-0 right-0 bg-mythic-gold/90 text-slate-900 text-[8px] font-bold px-1 rounded-bl">
+                                                ★
+                                            </div>
+                                        )}
                                     </div>
                                     <span className="text-[10px] text-center leading-tight text-slate-400 group-hover:text-slate-200 font-semibold line-clamp-2 h-6 flex items-center justify-center">
                                         {item.name}

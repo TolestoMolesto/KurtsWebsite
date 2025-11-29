@@ -92,6 +92,7 @@ export interface Item {
   image: string;
   category: 'Offense' | 'Defense' | 'Utility' | 'Hybrid';
   buildsFrom?: string[]; // IDs of items required to build this
+  god?: string;
 }
 
 export enum TierRank {

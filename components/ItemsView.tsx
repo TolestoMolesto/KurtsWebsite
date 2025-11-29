@@ -1,123 +1,215 @@
 
-
 import React, { useState } from 'react';
 import { ITEMS } from '../constants';
 import { Item } from '../types';
-import { Search, Shield, Sword, Zap, Briefcase, Coffee, ChevronUp, ChevronDown, X, Diamond, Info, Layers, Sparkles, HandHelping, Map, Lock } from 'lucide-react';
-
-// Helper to find items that build FROM a specific item ID
-const getUpgrades = (itemId: string) => {
-    return ITEMS.filter(item => item.buildsFrom?.includes(itemId));
-};
+import { Search, Shield, Sword, Zap, ChevronDown, X, Lock, BicepsFlexed, BookOpen, Heart, Activity, Droplet, Target, Skull, RotateCcw, Crosshair, ArrowDownUp, Info } from 'lucide-react';
 
 // Helper to get component items (buildsFrom)
 const getComponents = (item: Item) => {
     if (!item.buildsFrom) return [];
-    return ITEMS.filter(i => item.buildsFrom?.includes(i.id));
+    // Map each ID in buildsFrom to the item object to preserve duplicates
+    return item.buildsFrom.map(id => ITEMS.find(i => i.id === id)).filter(Boolean) as Item[];
 };
 
-// SVG Tree Generator
-const TreeConnectorSVG = ({ count, inverted = false }: { count: number, inverted?: boolean }) => {
-    if (count <= 1) return <div className="w-px h-6 bg-slate-600 mx-auto my-0.5"></div>;
+// Helper to find upgrade items (items that build FROM this item)
+const getUpgrades = (item: Item) => {
+    return ITEMS.filter(i => i.buildsFrom?.includes(item.id));
+};
 
+// Recursively find the "Root" items (Final Upgrades) for a given item
+const findRoots = (item: Item, visited = new Set<string>()): Item[] => {
+    if (visited.has(item.id)) return [];
+    visited.add(item.id);
+
+    const upgrades = getUpgrades(item);
+    if (upgrades.length === 0) {
+        return [item];
+    }
+    return upgrades.flatMap(u => findRoots(u, new Set(visited)));
+};
+
+const parseStatValue = (val: string): number => {
+    if (!val) return 0;
+    const clean = val.replace(/[^0-9.-]/g, '');
+    const num = parseFloat(clean);
+    return isNaN(num) ? 0 : num;
+};
+
+// --- Professional Tree Connector ---
+const TreeConnector = ({ childCount }: { childCount: number }) => {
+    if (childCount === 0) return null;
     return (
-        <div className={`w-full h-6 relative my-0.5 ${inverted ? 'rotate-180' : ''}`}>
-            <div className="absolute left-1/2 top-0 -translate-x-1/2 w-px h-3 bg-slate-600"></div>
-            <div className="absolute top-3 left-[20%] right-[20%] h-px bg-slate-600"></div>
-            <div className="absolute top-3 left-[20%] w-px h-3 bg-slate-600"></div>
-            <div className="absolute top-3 right-[20%] w-px h-3 bg-slate-600"></div>
-            {count > 2 && <div className="absolute top-3 left-1/2 -translate-x-1/2 w-px h-3 bg-slate-600"></div>}
+        <div className="w-full h-4 relative">
+            <svg className="w-full h-full absolute top-0 left-0 overflow-visible" preserveAspectRatio="none">
+                {/* Vertical line from parent */}
+                <line x1="50%" y1="0" x2="50%" y2="50%" stroke="#475569" strokeWidth="1.5" />
+                
+                {/* Horizontal bar covering children */}
+                {childCount > 1 && (
+                    <line x1="25%" y1="50%" x2="75%" y2="50%" stroke="#475569" strokeWidth="1.5" />
+                )}
+                
+                {/* Vertical lines to children are handled by the children themselves visually or we assume strictly centered alignment */}
+            </svg>
         </div>
     );
 };
 
-export const ItemsView: React.FC = () => {
-  const [filter, setFilter] = useState<'All' | 'Offense' | 'Defense' | 'Utility' | 'Support' | 'Hybrid' | 'Starter' | 'Consumable' | 'Relic' | 'Curio' | 'Map Droppable' | 'Tier 1' | 'Tier 2' | 'Tier 3'>('All');
-  const [search, setSearch] = useState('');
-  
-  // State for interaction
-  const [selectedItem, setSelectedItem] = useState<Item | null>(null); // For click (mobile modal or desktop lock)
-  const [hoveredItem, setHoveredItem] = useState<Item | null>(null); // For desktop hover
+const STAT_FILTERS = [
+    { id: 'Strength', label: 'Strength', icon: <BicepsFlexed size={14} />, keys: ['Strength', 'Physical Power'] },
+    { id: 'Intelligence', label: 'Intelligence', icon: <BookOpen size={14} />, keys: ['Intelligence', 'Magical Power'] },
+    { id: 'Attack Speed', label: 'Atk Speed', icon: <Zap size={14} />, keys: ['Attack Speed'] },
+    { id: 'Crit', label: 'Crit', icon: <Target size={14} />, keys: ['Crit'] },
+    { id: 'Pen', label: 'Pen', icon: <Crosshair size={14} />, keys: ['Penetration'] },
+    { id: 'Lifesteal', label: 'Lifesteal', icon: <Heart size={14} className="text-red-400" />, keys: ['Lifesteal'] },
+    { id: 'Cooldown', label: 'CDR', icon: <RotateCcw size={14} />, keys: ['Cooldown'] },
+    { id: 'Max Health', label: 'Health', icon: <Heart size={14} className="text-green-500" />, keys: ['Max Health'] },
+    { id: 'Max Mana', label: 'Mana', icon: <Droplet size={14} className="text-blue-500" />, keys: ['Max Mana'] },
+    { id: 'HP5', label: 'HP5', icon: <Activity size={14} className="text-green-400" />, keys: ['HP5', 'Health Regen'] },
+    { id: 'MP5', label: 'MP5', icon: <Activity size={14} className="text-blue-400" />, keys: ['MP5', 'Mana Regen'] },
+    { id: 'Physical Protection', label: 'Phys Prot', icon: <Shield size={14} />, keys: ['Phys'] },
+    { id: 'Magical Protection', label: 'Mag Prot', icon: <Shield size={14} className="text-purple-400" />, keys: ['Mag'] },
+];
 
-  // Determine what to show in the inspector
-  // Priority: Selected > Hovered. This allows "locking" the inspector to scroll and read.
+type SortOption = 'NameAsc' | 'NameDesc' | 'CostAsc' | 'CostDesc' | 'StatHigh' | 'StatLow';
+
+export const ItemsView: React.FC = () => {
+  const [activeType, setActiveType] = useState<string>('All');
+  const [activeCategory, setActiveCategory] = useState<string>('All');
+  const [activeStats, setActiveStats] = useState<string[]>([]);
+  const [search, setSearch] = useState('');
+  const [sortMethod, setSortMethod] = useState<SortOption>('NameAsc');
+  
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  const [hoveredItem, setHoveredItem] = useState<Item | null>(null);
+
   const activeItem = selectedItem || hoveredItem;
 
+  const toggleStat = (stat: string) => {
+      setActiveStats(prev => 
+          prev.includes(stat) ? prev.filter(s => s !== stat) : [...prev, stat]
+      );
+  };
+
+  const getStatScore = (item: Item) => {
+      let score = 0;
+      activeStats.forEach(statId => {
+          const filter = STAT_FILTERS.find(f => f.id === statId);
+          if (filter) {
+              Object.entries(item.stats).forEach(([key, val]) => {
+                  if (filter.keys.some(k => key.toLowerCase().includes(k.toLowerCase()))) {
+                      score += parseStatValue(val);
+                  }
+              });
+          }
+      });
+      return score;
+  };
+
   const filteredItems = ITEMS.filter(item => {
+    // 1. Filter by Type
     let matchesType = true;
-    
-    if (filter === 'Starter') {
-        matchesType = item.type === 'Starter';
-    } else if (filter === 'Consumable') {
-        matchesType = item.type === 'Consumable';
-    } else if (filter === 'Relic') {
-        matchesType = item.type === 'Relic';
-    } else if (filter === 'Curio') {
-        matchesType = item.type === 'Curio';
-    } else if (filter === 'Map Droppable') {
-        matchesType = item.type === 'Map Droppable';
-    } else if (filter === 'Tier 1') {
-        matchesType = item.tier === 1;
-    } else if (filter === 'Tier 2') {
-        matchesType = item.tier === 2;
-    } else if (filter === 'Tier 3') {
-        matchesType = item.tier === 3;
-    } else if (filter !== 'All') {
-        matchesType = item.category === filter && item.type === 'Item';
-    } else {
-        matchesType = true;
+    if (activeType !== 'All') {
+        if (activeType === 'Tier 1') matchesType = item.tier === 1;
+        else if (activeType === 'Tier 2') matchesType = item.tier === 2;
+        else if (activeType === 'Tier 3') matchesType = item.tier === 3;
+        else matchesType = item.type === activeType;
     }
 
+    // 2. Filter by Category
+    let matchesCategory = true;
+    if (activeCategory !== 'All') {
+        matchesCategory = item.category === activeCategory;
+    }
+
+    // 3. Filter by Stats
+    let matchesStats = true;
+    if (activeStats.length > 0) {
+        matchesStats = activeStats.every(statId => {
+            const filter = STAT_FILTERS.find(f => f.id === statId);
+            if (!filter) return false;
+            return Object.keys(item.stats).some(itemKey => 
+                filter.keys.some(filterKey => itemKey.toLowerCase().includes(filterKey.toLowerCase()))
+            );
+        });
+    }
+
+    // 4. Search
     const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase());
-    return matchesType && matchesSearch;
+
+    return matchesType && matchesCategory && matchesStats && matchesSearch;
+  }).sort((a, b) => {
+      switch (sortMethod) {
+          case 'NameAsc': return a.name.localeCompare(b.name);
+          case 'NameDesc': return b.name.localeCompare(a.name);
+          case 'CostAsc': return a.cost - b.cost;
+          case 'CostDesc': return b.cost - a.cost;
+          case 'StatHigh': return getStatScore(b) - getStatScore(a);
+          case 'StatLow': return getStatScore(a) - getStatScore(b);
+          default: return 0;
+      }
   });
 
-  const renderHierarchyNode = (item: Item, isCenter: boolean = false) => {
+  const renderRecursiveNode = (item: Item, selectedId: string | undefined, isRoot = false) => {
       const components = getComponents(item);
-      const hasComponents = components.length > 0;
+      const isSelected = item.id === selectedId;
 
       return (
-          <div key={item.id} className="flex flex-col items-center">
+          <div className="flex flex-col items-center">
+              {/* Connector from Parent (Visual only, implemented via padding/pseudo elements in strict CSS trees, but here handled by layout) */}
+              {!isRoot && (
+                  <div className="h-4 w-px bg-slate-600 mb-0.5"></div>
+              )}
+
+              {/* Node Card */}
               <div 
-                // On the tree, clicking navigates to that item (locks selection)
                 onClick={(e) => { e.stopPropagation(); setSelectedItem(item); }}
                 onMouseEnter={() => setHoveredItem(item)}
                 onMouseLeave={() => setHoveredItem(null)}
-                className={`flex flex-col items-center p-1.5 rounded-lg cursor-pointer transition-all border relative z-10 group ${
-                    isCenter 
-                    ? 'bg-slate-800 border-mythic-gold shadow-[0_0_10px_rgba(251,191,36,0.2)]' 
+                className={`flex flex-col items-center p-2 rounded-lg cursor-pointer transition-all border relative z-10 group ${
+                    isSelected 
+                    ? 'bg-slate-800 border-mythic-gold shadow-[0_0_15px_rgba(251,191,36,0.3)] scale-105 ring-1 ring-mythic-gold' 
                     : 'bg-slate-900 border-slate-700 hover:border-slate-500 hover:bg-slate-800'
                 }`}
               >
-                <div className="w-10 h-10 bg-black rounded border border-slate-600 overflow-hidden mb-1 relative">
+                <div className="w-10 h-10 bg-black rounded border border-slate-600 overflow-hidden mb-1 relative shadow-md">
                     <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                    {item.tier && <div className="absolute top-0 right-0 bg-black/60 px-1 rounded-bl text-[8px] text-white">T{item.tier}</div>}
                 </div>
-                <span className={`text-[9px] font-bold text-center leading-tight max-w-[70px] ${isCenter ? 'text-mythic-gold' : 'text-slate-400'}`}>
+                <span className={`text-[9px] font-bold text-center leading-tight max-w-[80px] ${isSelected ? 'text-mythic-gold' : 'text-slate-400 group-hover:text-slate-200'}`}>
                     {item.name}
                 </span>
                 <span className="text-[8px] text-slate-500 font-mono mt-0.5">{item.cost > 0 ? `${item.cost}g` : 'Free'}</span>
               </div>
-              
-              {!isCenter && hasComponents && (
-                  <div className="mt-1 flex flex-col items-center">
-                       <div className="w-px h-3 bg-slate-700 mb-0.5"></div>
-                       {components.length > 1 && <div className="w-full h-px bg-slate-700 mb-0.5 relative" style={{ width: `${(components.length - 1) * 36}px` }}></div>}
-                       
-                       <div className="flex gap-2">
-                           {components.map(comp => (
-                               <div key={comp.id} className="flex flex-col items-center relative">
-                                   {components.length > 1 && <div className="h-1.5 w-px bg-slate-700 mb-0.5"></div>}
-                                   {renderHierarchyNode(comp, false)}
-                               </div>
-                           ))}
-                       </div>
-                  </div>
+
+              {/* Connector to Children */}
+              {components.length > 0 && (
+                  <>
+                    <div className="h-4 w-px bg-slate-600"></div>
+                    {components.length > 1 && (
+                        <div className="w-full h-px bg-slate-600" style={{ width: `calc(100% - ${100/components.length}%)` }}></div>
+                    )}
+                    <div className="flex gap-4 items-start pt-0.5">
+                        {components.map((c, i) => (
+                            <div key={`${c.id}-${i}`} className="flex flex-col items-center">
+                                {renderRecursiveNode(c, selectedId)}
+                            </div>
+                        ))}
+                    </div>
+                  </>
               )}
           </div>
       );
   };
 
-  const ItemInspector = ({ item }: { item: Item }) => (
+  const ItemInspector = ({ item }: { item: Item }) => {
+    // Find all "roots" (final upgrades) for this item to build the tree top-down
+    const roots = (item.type === 'Item' || item.type === 'Starter') ? findRoots(item) : [item];
+    
+    // De-duplicate roots (in case of complex upgrade paths, though unlikely in Smite)
+    const uniqueRoots = Array.from(new Set(roots.map(r => r.id))).map(id => roots.find(r => r.id === id)!);
+
+    return (
     <div className="animate-in fade-in slide-in-from-right-4 duration-300 h-full flex flex-col">
         <div className="p-5 border-b border-slate-700 bg-slate-800/50 flex gap-4 items-center rounded-t-xl">
             <div className="w-20 h-20 bg-slate-900 rounded-lg border border-slate-600 overflow-hidden shadow-lg shrink-0">
@@ -125,11 +217,17 @@ export const ItemsView: React.FC = () => {
             </div>
             <div>
             <h2 className="text-xl font-serif font-bold text-mythic-gold leading-tight">{item.name}</h2>
-            <div className="flex items-center gap-2 mt-2">
+            <div className="flex flex-wrap items-center gap-2 mt-2">
                 <span className="text-lg text-yellow-500 font-mono font-bold">{item.cost > 0 ? `${item.cost}g` : 'Free'}</span>
                 <span className="text-[10px] uppercase bg-slate-800 px-2 py-0.5 rounded text-slate-300 border border-slate-700">
                     {item.type === 'Item' ? `Tier ${item.tier}` : item.type}
                 </span>
+                {item.type === 'God Specific' && (
+                    <span className="text-[10px] uppercase bg-mythic-900/50 px-2 py-0.5 rounded text-mythic-gold border border-mythic-gold/30">
+                        {/* @ts-ignore */}
+                        {item.god} Only
+                    </span>
+                )}
             </div>
             </div>
         </div>
@@ -153,88 +251,143 @@ export const ItemsView: React.FC = () => {
                 </div>
             )}
 
-            {/* Tree Visualization */}
-            {item.type === 'Item' && (
-                <div className="mt-4 pt-4 border-t border-slate-800">
-                    <h3 className="text-xs uppercase font-bold text-slate-500 mb-4 tracking-widest text-center">Build Path</h3>
+            {/* Professional Top-Down Tree Visualization */}
+            {(item.type === 'Item' || item.type === 'Starter') && (
+                <div className="mt-6 pt-6 border-t border-slate-800">
+                    <h3 className="text-xs uppercase font-bold text-slate-500 mb-6 tracking-widest text-center flex items-center justify-center gap-2">
+                        <Info size={12} /> Build Path
+                    </h3>
                     
-                    <div className="flex flex-col items-center w-full overflow-x-auto pb-2">
-                        {/* Upgrades Into */}
-                        {getUpgrades(item.id).length > 0 && (
-                            <>
-                            <div className="flex gap-6 mb-0">
-                                {getUpgrades(item.id).map(u => renderHierarchyNode(u))}
+                    <div className="flex flex-col gap-8 pb-8">
+                        {uniqueRoots.map((root) => (
+                            <div key={root.id} className="flex justify-center overflow-x-auto">
+                                {renderRecursiveNode(root, item.id, true)}
                             </div>
-                            <TreeConnectorSVG count={getUpgrades(item.id).length} inverted={true} />
-                            </>
-                        )}
-
-                        {/* Current Item */}
-                        {renderHierarchyNode(item, true)}
-
-                        {/* Builds From */}
-                        {getComponents(item).length > 0 && (
-                            <>
-                            <TreeConnectorSVG count={getComponents(item).length} />
-                            <div className="flex gap-6 items-start">
-                                {getComponents(item).map(c => renderHierarchyNode(c, false))}
-                            </div>
-                            </>
-                        )}
+                        ))}
                     </div>
                 </div>
             )}
         </div>
     </div>
-  );
+    );
+  };
 
   return (
     <div className="container mx-auto px-4 py-8 relative">
-      <div className="flex gap-8 items-start">
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
         
-        {/* Left Column: Controls & Grid */}
-        <div className="flex-1 w-full">
-            {/* Controls */}
-            <div className="flex flex-col xl:flex-row gap-4 mb-6 justify-between items-start xl:items-center bg-slate-900 p-4 rounded-xl border border-slate-800">
-                <div className="flex flex-wrap gap-2">
-                {['All', 'Starter', 'Relic', 'Curio', 'Map Droppable', 'Tier 1', 'Tier 2', 'Tier 3', 'Offense', 'Defense', 'Utility', 'Support', 'Hybrid', 'Consumable'].map(cat => (
-                    <button
-                    key={cat}
-                    onClick={() => setFilter(cat as any)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors border ${
-                        filter === cat 
-                        ? 'bg-mythic-gold text-slate-900 border-mythic-gold' 
-                        : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
-                    }`}
-                    >
-                    {cat === 'Starter' && <Briefcase size={14} />}
-                    {cat === 'Consumable' && <Coffee size={14} />}
-                    {cat === 'Relic' && <Diamond size={14} />}
-                    {cat === 'Curio' && <Sparkles size={14} />}
-                    {cat === 'Map Droppable' && <Map size={14} />}
-                    {cat === 'Offense' && <Sword size={14} />}
-                    {cat === 'Defense' && <Shield size={14} />}
-                    {cat === 'Utility' && <Zap size={14} />}
-                    {cat === 'Support' && <HandHelping size={14} />}
-                    {(cat === 'Tier 1' || cat === 'Tier 2' || cat === 'Tier 3') && <Layers size={14} />}
-                    {cat}
-                    </button>
-                ))}
-                </div>
-                <div className="relative w-full xl:w-64">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-                    <input 
-                        type="text" 
-                        placeholder="Search items..." 
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-700 rounded-lg py-2 pl-10 pr-4 text-sm text-slate-200 focus:outline-none focus:border-mythic-gold"
-                    />
+        {/* Left Column: Filters (Desktop Sticky) */}
+        <div className="w-full lg:w-64 shrink-0 bg-slate-900 border border-slate-800 rounded-xl p-4 lg:sticky lg:top-24 h-auto lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto custom-scrollbar">
+            <h3 className="text-sm font-bold text-slate-100 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <Search size={14} /> Filter Shop
+            </h3>
+            
+            <div className="mb-4 space-y-2">
+               <input 
+                   type="text" 
+                   placeholder="Search items..." 
+                   value={search}
+                   onChange={(e) => setSearch(e.target.value)}
+                   className="w-full bg-slate-950 border border-slate-700 rounded-lg py-2 pl-3 pr-3 text-xs text-slate-200 focus:outline-none focus:border-mythic-gold"
+               />
+               
+               {/* Sort Control */}
+               <div className="relative">
+                   <div className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">
+                       <ArrowDownUp size={12} />
+                   </div>
+                   <select 
+                       value={sortMethod} 
+                       onChange={(e) => setSortMethod(e.target.value as SortOption)}
+                       className="w-full bg-slate-950 border border-slate-700 rounded-lg py-1.5 pl-8 pr-2 text-xs text-slate-300 focus:outline-none focus:border-mythic-gold appearance-none cursor-pointer"
+                   >
+                       <option value="NameAsc">Name (A-Z)</option>
+                       <option value="NameDesc">Name (Z-A)</option>
+                       <option value="CostAsc">Price (Low-High)</option>
+                       <option value="CostDesc">Price (High-Low)</option>
+                       {activeStats.length > 0 && (
+                           <>
+                               <option disabled>──────────</option>
+                               <option value="StatHigh">Stat Value (High-Low)</option>
+                               <option value="StatLow">Stat Value (Low-High)</option>
+                           </>
+                       )}
+                   </select>
+                   <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+               </div>
+            </div>
+
+            {/* Category */}
+            <div className="mb-6">
+                <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Category</h4>
+                <div className="space-y-1">
+                    {['All', 'Offense', 'Defense', 'Hybrid'].map(cat => (
+                        <button
+                            key={cat}
+                            onClick={() => setActiveCategory(cat)}
+                            className={`w-full text-left px-3 py-1.5 rounded text-xs font-semibold transition-colors flex items-center justify-between ${
+                                activeCategory === cat ? 'bg-mythic-gold text-slate-900' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                            }`}
+                        >
+                            {cat}
+                            {activeCategory === cat && <Shield size={12} className={cat === 'Offense' ? 'hidden' : ''} />}
+                        </button>
+                    ))}
                 </div>
             </div>
 
-            {/* Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+            {/* Item Type */}
+            <div className="mb-6">
+                <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Item Type</h4>
+                <div className="space-y-1">
+                    {['All', 'Starter', 'Tier 1', 'Tier 2', 'Tier 3', 'Relic', 'Curio', 'Map Droppable', 'Consumable', 'God Specific'].map(type => (
+                        <button
+                            key={type}
+                            onClick={() => setActiveType(type)}
+                            className={`w-full text-left px-3 py-1.5 rounded text-xs font-semibold transition-colors ${
+                                activeType === type ? 'bg-slate-700 text-white border-l-2 border-mythic-gold' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                            }`}
+                        >
+                            {type}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Stats Filter */}
+            <div>
+                <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Has Stats</h4>
+                <div className="grid grid-cols-2 gap-2">
+                    {STAT_FILTERS.map(stat => (
+                        <button
+                            key={stat.id}
+                            onClick={() => toggleStat(stat.id)}
+                            className={`flex flex-col items-center justify-center p-2 rounded border text-[10px] font-bold transition-all ${
+                                activeStats.includes(stat.id) 
+                                ? 'bg-slate-800 border-mythic-gold text-mythic-gold shadow-[0_0_10px_rgba(251,191,36,0.1)]' 
+                                : 'bg-slate-950 border-slate-800 text-slate-500 hover:border-slate-600 hover:text-slate-300'
+                            }`}
+                            title={stat.label}
+                        >
+                            <div className="mb-1">{stat.icon}</div>
+                            {stat.label}
+                        </button>
+                    ))}
+                </div>
+                {activeStats.length > 0 && (
+                    <button 
+                        onClick={() => setActiveStats([])}
+                        className="w-full mt-4 text-[10px] text-red-400 hover:text-red-300 flex items-center justify-center gap-1"
+                    >
+                        <X size={12} /> Clear Stat Filters
+                    </button>
+                )}
+            </div>
+        </div>
+
+        {/* Middle Column: Grid */}
+        <div className="flex-1 w-full min-h-[500px]">
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
                 {filteredItems.map(item => (
                 <div 
                     key={item.id} 
@@ -267,7 +420,7 @@ export const ItemsView: React.FC = () => {
                         {item.name}
                     </h4>
                     
-                    <div className="flex items-center gap-2 mt-2 justify-center">
+                    <div className="flex items-center gap-2 mt-2 justify-center flex-wrap">
                         <span className="text-xs bg-slate-950 px-2 py-0.5 rounded text-yellow-500 font-mono">{item.cost > 0 ? `${item.cost}g` : 'Free'}</span>
                         <span className={`text-[9px] px-1.5 py-0.5 rounded border uppercase ${
                             item.type === 'Starter' ? 'border-purple-500 text-purple-400' :
@@ -275,23 +428,34 @@ export const ItemsView: React.FC = () => {
                             item.type === 'Relic' ? 'border-cyan-500 text-cyan-400' :
                             item.type === 'Curio' ? 'border-pink-500 text-pink-400' :
                             item.type === 'Map Droppable' ? 'border-emerald-500 text-emerald-400' :
+                            item.type === 'God Specific' ? 'border-yellow-200 text-yellow-100' :
                             item.category === 'Offense' ? 'border-red-900 text-red-400' :
                             item.category === 'Defense' ? 'border-blue-900 text-blue-400' :
-                            item.category === 'Support' ? 'border-indigo-900 text-indigo-400' :
                             item.category === 'Hybrid' ? 'border-purple-900 text-purple-400' :
                             'border-green-900 text-green-400'
                         }`}>
-                            {item.type === 'Item' ? item.category : item.type}
+                            {item.type === 'Item' ? item.category : (item.type === 'God Specific' ? 'God Only' : item.type)}
                         </span>
                         </div>
                     </div>
                 </div>
                 ))}
             </div>
+            {filteredItems.length === 0 && (
+                <div className="text-center py-20 text-slate-500">
+                    <p>No items found matching your criteria.</p>
+                    <button 
+                        onClick={() => { setActiveType('All'); setActiveCategory('All'); setActiveStats([]); setSearch(''); }}
+                        className="mt-4 text-mythic-gold hover:underline flex items-center gap-2 mx-auto"
+                    >
+                        <RotateCcw size={14} /> Reset All Filters
+                    </button>
+                </div>
+            )}
         </div>
 
         {/* Right Column: Inspector Panel (Desktop Only) */}
-        <div className="hidden lg:block w-80 xl:w-96 sticky top-24 shrink-0">
+        <div className="hidden xl:block w-80 sticky top-24 shrink-0">
              <div className="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl overflow-hidden min-h-[500px] h-[calc(100vh-8rem)] relative">
                  {/* Selection Lock Controls */}
                  {selectedItem && (
@@ -326,7 +490,7 @@ export const ItemsView: React.FC = () => {
 
       {/* Modal for Mobile (or if selected on Mobile) */}
       {selectedItem && (
-        <div className="lg:hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="xl:hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
            <div className="bg-slate-900 w-full max-w-lg max-h-[90vh] sm:rounded-2xl rounded-t-2xl border border-slate-700 shadow-2xl flex flex-col relative overflow-hidden">
               <button 
                  onClick={() => setSelectedItem(null)}
