@@ -1,7 +1,9 @@
+
 import React from 'react';
-import { Sword, Shield, List, ArrowRight, Twitch, Youtube, ExternalLink, Play, MessageCircle, Rocket, Star, Heart, Snowflake } from 'lucide-react';
-import { STREAMER_TIER_LISTS } from '../constants';
+import { Sword, Shield, List, ExternalLink, Play, Heart, Rocket, Star } from 'lucide-react';
 import { NamedTierList } from '../types';
+import { useData } from '../contexts/DataContext';
+import { Twitch, Youtube } from 'lucide-react'; // Explicit re-import to ensure no unused variable errors if icons were removed from main body but used in sub-components
 
 interface HomeViewProps {
   onNavigate: (view: 'gods' | 'items' | 'tierlist') => void;
@@ -114,6 +116,7 @@ const YouTubeCard: React.FC<{ streamer: NamedTierList, url: string }> = ({ strea
 };
 
 export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
+  const { tierLists: STREAMER_TIER_LISTS } = useData();
   const liveStreamers = STREAMER_TIER_LISTS.filter(list => list.streamerInfo.isLive);
   
   const streamCards: React.ReactNode[] = [];
@@ -296,34 +299,6 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
                 </div>
             </div>
         </div>
-      </div>
-
-      {/* Discord Community Section */}
-      <div className="mt-20 mb-10">
-        <a 
-          href="https://discord.gg/weak3n" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="block bg-[#5865F2] rounded-2xl p-8 md:p-12 relative overflow-hidden group hover:shadow-[0_0_40px_rgba(88,101,242,0.4)] transition-all transform hover:-translate-y-1"
-        >
-          <div className="absolute -right-10 -bottom-10 opacity-20 transform rotate-12 group-hover:scale-110 transition-transform duration-700">
-             <MessageCircle size={300} fill="currentColor" className="text-white" />
-          </div>
-          
-          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
-            <div className="text-center md:text-left space-y-2">
-              <h2 className="text-3xl md:text-4xl font-serif font-bold text-white">Join Weak3n's Discord</h2>
-              <p className="text-blue-100 text-lg max-w-xl">
-                 Connect with the community, submit your builds, and get feedback from high-level players.
-              </p>
-            </div>
-            
-            <div className="px-8 py-4 bg-white text-[#5865F2] font-bold rounded-full shadow-lg flex items-center gap-3 group-hover:bg-blue-50 transition-colors">
-               <span className="text-lg">Join Server</span>
-               <ArrowRight size={20} />
-            </div>
-          </div>
-        </a>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 
-
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { TournamentPlayer, TournamentRole } from '../types';
 import { Trophy, Plus, Trash2, Crown, Medal, Swords, ScrollText, Gem, Flame, Target, Skull, UserPlus, X, Calendar, MapPin, MonitorPlay, Timer, History, ArrowRight, Users, User, ChevronRight, Lock, Loader2 } from 'lucide-react';
 import { db, auth } from '../services/firebase';
@@ -374,7 +374,7 @@ export const TournamentView: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="container mx-auto px-4 py-8 pb-24 max-w-7xl">
       
       <div className="flex flex-col gap-6">
         {/* Header */}
@@ -685,8 +685,8 @@ export const TournamentView: React.FC = () => {
       </div>
 
       {/* Record Match Modal */}
-      {isModalOpen && isAdmin && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+      {isModalOpen && isAdmin && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
             <div className={`bg-slate-900 w-full ${matchMode === 'full' ? 'max-w-6xl h-[90vh]' : 'max-w-md'} rounded-2xl border border-slate-700 shadow-2xl overflow-hidden relative flex flex-col`}>
                 
                 {/* Modal Header */}
@@ -962,7 +962,8 @@ export const TournamentView: React.FC = () => {
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

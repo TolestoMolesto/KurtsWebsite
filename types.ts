@@ -34,6 +34,8 @@ export interface Aspect extends AbilityKit {
   id: string;
   name: string;
   description: string;
+  image?: string;
+  levelingOrder?: number[]; // Array of 20 integers representing ability index (1-4) to level up
 }
 
 export interface GodStats {
@@ -64,6 +66,11 @@ export interface RecommendedBuild {
   aspectId?: string; // Optional: Link build to a specific aspect. 'base' for base kit.
 }
 
+export interface AspectMatchupData {
+  goodAgainst: string[];
+  badAgainst: string[];
+}
+
 export interface God extends AbilityKit {
   id: string;
   name: string;
@@ -76,6 +83,11 @@ export interface God extends AbilityKit {
   aspects: Aspect[];
   statsByLevel: GodStats[]; // Array of 20 GodStats objects (Index 0 = Level 1, Index 19 = Level 20)
   recommendedBuilds: RecommendedBuild[];
+  levelingOrder: number[]; // Array of 20 integers (1-4)
+  goodAgainst: string[]; // Array of God IDs
+  badAgainst: string[]; // Array of God IDs
+  aspectLevelingOrders?: Record<string, number[]>; // Overrides for aspect leveling
+  aspectMatchups?: Record<string, AspectMatchupData>; // Overrides for aspect matchups
 }
 
 export type ItemTier = 1 | 2 | 3;
@@ -118,6 +130,7 @@ export interface NamedTierList {
   author: string;
   description: string;
   date: string;
+  type?: 'gods' | 'items'; // Differentiate between list types
   data: TierListState;
   streamerInfo: {
     platform: 'twitch' | 'youtube';

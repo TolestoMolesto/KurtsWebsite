@@ -1,8 +1,9 @@
 
 import React, { useState } from 'react';
-import { GODS, ITEMS } from '../constants';
+import { createPortal } from 'react-dom';
 import { God, Item, GodStats, RecommendedBuild, DamageType } from '../types';
-import { Hexagon, Plus, X, Search, Heart, BicepsFlexed, BookOpen, Shield, Move, Zap, Star, Activity, Target, Skull, Layers, Droplet, RotateCcw, Info } from 'lucide-react';
+import { useData } from '../contexts/DataContext';
+import { Hexagon, Plus, X, Search, Heart, BicepsFlexed, BookOpen, Shield, Move, Zap, Star, Activity, Target, Skull, Layers, Droplet, RotateCcw, Info, AlertTriangle } from 'lucide-react';
 
 const SLOT_TYPES = [
   { id: 'starter', label: 'Starter', type: 'Starter', icon: <Hexagon size={16} /> },
@@ -16,28 +17,46 @@ const SLOT_TYPES = [
 ];
 
 // --- TREE VISUALIZATION HELPERS ---
-const getComponents = (item: Item) => {
+const getComponents = (item: Item, allItems: Item[]) => {
     if (!item.buildsFrom) return [];
-    return item.buildsFrom.map(id => ITEMS.find(i => i.id === id)).filter(Boolean) as Item[];
+    return item.buildsFrom.map(id => allItems.find(i => i.id === id)).filter(Boolean) as Item[];
 };
 
-const getUpgrades = (item: Item) => {
-    return ITEMS.filter(i => i.buildsFrom?.includes(item.id));
+const getUpgrades = (item: Item, allItems: Item[]) => {
+    return allItems.filter(i => i.buildsFrom?.includes(item.id));
 };
 
-const findRoots = (item: Item, visited = new Set<string>()): Item[] => {
+const findRoots = (item: Item, allItems: Item[], visited = new Set<string>()): Item[] => {
     if (visited.has(item.id)) return [];
     visited.add(item.id);
 
-    const upgrades = getUpgrades(item);
+    const upgrades = getUpgrades(item, allItems);
     if (upgrades.length === 0) {
         return [item];
     }
-    return upgrades.flatMap(u => findRoots(u, new Set(visited)));
+    return upgrades.flatMap(u => findRoots(u, allItems, new Set(visited)));
 };
 
-const renderRecursiveNode = (item: Item, selectedId: string | undefined, isRoot = false) => {
-    const components = getComponents(item);
+export const BuilderView: React.FC = () => {
+  const { gods: GODS, items: ITEMS } = useData();
+  const [selectedGod, setSelectedGod] = useState<God | null>(null);
+  const [level, setLevel] = useState(1);
+  const [build, setBuild] = useState<Record<string, Item | null>>({
+    starter: null,
+    item1: null, item2: null, item3: null, item4: null, item5: null, item6: null,
+    relic: null
+  });
+
+  const [isItemModalOpen, setIsItemModalOpen] = useState(false);
+  const [activeSlotId, setActiveSlotId] = useState<string | null>(null);
+  const [itemSearch, setItemSearch] = useState('');
+  
+  // Hover states for inspector
+  const [hoveredSlotItem, setHoveredSlotItem] = useState<Item | null>(null);
+  const [hoveredPickerItem, setHoveredPickerItem] = useState<Item | null>(null);
+
+  const renderRecursiveNode = (item: Item, selectedId: string | undefined, isRoot = false) => {
+    const components = getComponents(item, ITEMS);
     const isSelected = item.id === selectedId;
 
     return (
@@ -83,10 +102,10 @@ const renderRecursiveNode = (item: Item, selectedId: string | undefined, isRoot 
             )}
         </div>
     );
-};
+  };
 
-const ItemInspector: React.FC<{ item: Item }> = ({ item }) => {
-    const roots = (item.type === 'Item' || item.type === 'Starter') ? findRoots(item) : [item];
+  const ItemInspector: React.FC<{ item: Item }> = ({ item }) => {
+    const roots = (item.type === 'Item' || item.type === 'Starter') ? findRoots(item, ITEMS) : [item];
     const uniqueRoots = Array.from(new Set(roots.map(r => r.id))).map(id => roots.find(r => r.id === id)!);
 
     return (
@@ -148,71 +167,7 @@ const ItemInspector: React.FC<{ item: Item }> = ({ item }) => {
         </div>
     </div>
     );
-};
-
-const StatRow: React.FC<{ 
-  icon: React.ReactNode; 
-  label: string; 
-  value: number; 
-  color?: string; 
-  bonus?: number; 
-  isPercent?: boolean 
-}> = ({ icon, label, value, color, bonus = 0, isPercent = false }) => {
-  const base = value - bonus;
-  
-  const format = (num: number) => {
-      const rounded = Math.round(num * 10) / 10;
-      return isPercent ? `${rounded}%` : rounded;
   };
-
-  const formatBonus = (num: number) => {
-    const rounded = Math.round(num * 10) / 10;
-    if (rounded === 0) return isPercent ? '0%' : '+0';
-    return isPercent ? `${rounded}%` : `+${rounded}`;
-};
-
-  return (
-    <div className="grid grid-cols-[1fr_50px_50px_55px] items-center py-1.5 border-b border-slate-800 last:border-0 gap-2">
-        {/* Label */}
-        <div className={`flex items-center gap-2 ${color || 'text-slate-400'} overflow-hidden`}>
-            <div className="shrink-0">{icon}</div>
-            <span className="text-[10px] md:text-xs font-semibold uppercase truncate">{label}</span>
-        </div>
-        
-        {/* Base */}
-        <div className="text-slate-500 font-mono text-xs text-right">
-            {format(base)}
-        </div>
-
-        {/* Bonus */}
-        <div className={`font-mono text-xs text-right ${Math.abs(bonus) > 0.01 ? 'text-mythic-gold font-bold' : 'text-slate-700'}`}>
-            {formatBonus(bonus)}
-        </div>
-
-        {/* Final */}
-        <div className="text-slate-200 font-mono text-xs text-right font-bold">
-            {format(value)}
-        </div>
-    </div>
-  );
-};
-
-export const BuilderView: React.FC = () => {
-  const [selectedGod, setSelectedGod] = useState<God | null>(null);
-  const [level, setLevel] = useState(1);
-  const [build, setBuild] = useState<Record<string, Item | null>>({
-    starter: null,
-    item1: null, item2: null, item3: null, item4: null, item5: null, item6: null,
-    relic: null
-  });
-
-  const [isItemModalOpen, setIsItemModalOpen] = useState(false);
-  const [activeSlotId, setActiveSlotId] = useState<string | null>(null);
-  const [itemSearch, setItemSearch] = useState('');
-  
-  // Hover states for inspector
-  const [hoveredSlotItem, setHoveredSlotItem] = useState<Item | null>(null);
-  const [hoveredPickerItem, setHoveredPickerItem] = useState<Item | null>(null);
 
   const getBaseGodStats = (): GodStats | null => {
     if (!selectedGod) return null;
@@ -367,8 +322,85 @@ export const BuilderView: React.FC = () => {
     });
   };
 
+  const StatRow: React.FC<{ 
+    icon: React.ReactNode; 
+    label: string; 
+    value: number; 
+    color?: string; 
+    bonus?: number; 
+    isPercent?: boolean 
+  }> = ({ icon, label, value, color, bonus = 0, isPercent = false }) => {
+    const base = value - bonus;
+    
+    const format = (num: number) => {
+        const rounded = Math.round(num * 10) / 10;
+        return isPercent ? `${rounded}%` : rounded;
+    };
+
+    const formatBonus = (num: number) => {
+      const rounded = Math.round(num * 10) / 10;
+      if (rounded === 0) return isPercent ? '0%' : '+0';
+      return isPercent ? `${rounded}%` : `+${rounded}`;
+  };
+
+    return (
+      <div className="grid grid-cols-[1fr_50px_50px_55px] items-center py-1.5 border-b border-slate-800 last:border-0 gap-2">
+          {/* Label */}
+          <div className={`flex items-center gap-2 ${color || 'text-slate-400'} overflow-hidden`}>
+              <div className="shrink-0">{icon}</div>
+              <span className="text-[10px] md:text-xs font-semibold uppercase truncate">{label}</span>
+          </div>
+          
+          {/* Base */}
+          <div className="text-slate-500 font-mono text-xs text-right">
+              {format(base)}
+          </div>
+
+          {/* Bonus */}
+          <div className={`font-mono text-xs text-right ${Math.abs(bonus) > 0.01 ? 'text-mythic-gold font-bold' : 'text-slate-700'}`}>
+              {formatBonus(bonus)}
+          </div>
+
+          {/* Final */}
+          <div className="text-slate-200 font-mono text-xs text-right font-bold">
+              {format(value)}
+          </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="container mx-auto px-4 py-8 relative">
+    <div className="container mx-auto px-4 py-8 pb-24 relative">
+      
+      <style>
+      {`
+        @keyframes flash-warning {
+          0%, 100% { border-color: rgba(239, 68, 68, 0.6); box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); background-color: rgba(69, 10, 10, 0.4); }
+          50% { border-color: rgba(234, 179, 8, 0.8); box-shadow: 0 0 25px rgba(234, 179, 8, 0.5); background-color: rgba(113, 63, 18, 0.4); }
+        }
+        .animate-flash-warning {
+          animation: flash-warning 1.5s infinite;
+        }
+      `}
+      </style>
+
+      {/* Disclaimer Banner */}
+      <div className="animate-flash-warning border-2 rounded-xl p-6 mb-8 flex items-center gap-6 backdrop-blur-md">
+         <div className="p-3 bg-red-500/20 rounded-full border-2 border-red-500 shrink-0 shadow-lg">
+             <AlertTriangle className="text-yellow-400 fill-yellow-900" size={32} />
+         </div>
+         <div>
+             <h4 className="text-yellow-400 font-black text-xl uppercase tracking-widest mb-2 flex items-center gap-2 drop-shadow-md">
+                <span className="text-red-500">⚠</span> WORK IN PROGRESS <span className="text-red-500">⚠</span>
+             </h4>
+             <p className="text-slate-200 font-bold text-sm leading-relaxed">
+                 This Builder is <span className="text-red-400 underline">NOT DONE</span>. 
+                 Advanced features like damage calculations, heal previews, and enemy comparisons are in development.
+                 <span className="block mt-1 text-yellow-200 text-base font-black">MANY MORE FEATURES WILL BE ADDED!</span>
+             </p>
+         </div>
+      </div>
+
       <div className="flex flex-col xl:flex-row gap-6 h-full items-start">
         
         {/* Left Column: God Selector & Stats */}
@@ -551,8 +583,8 @@ export const BuilderView: React.FC = () => {
       </div>
 
       {/* Item Selection Modal */}
-      {isItemModalOpen && activeSlotId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+      {isItemModalOpen && activeSlotId && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
            <div className="bg-slate-900 w-full max-w-5xl h-[80vh] rounded-2xl border border-slate-700 shadow-2xl flex flex-col overflow-hidden relative">
                 <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800">
                     <h3 className="text-xl font-serif font-bold text-slate-100">Select {SLOT_TYPES.find(s => s.id === activeSlotId)?.label}</h3>
@@ -615,7 +647,8 @@ export const BuilderView: React.FC = () => {
                     </div>
                 </div>
            </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

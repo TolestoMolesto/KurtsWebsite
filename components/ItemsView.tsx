@@ -1,31 +1,31 @@
 
 import React, { useState } from 'react';
-import { ITEMS } from '../constants';
+import { createPortal } from 'react-dom';
 import { Item } from '../types';
+import { useData } from '../contexts/DataContext';
 import { Search, Shield, Sword, Zap, ChevronDown, X, Lock, BicepsFlexed, BookOpen, Heart, Activity, Droplet, Target, Skull, RotateCcw, Crosshair, ArrowDownUp, Info } from 'lucide-react';
 
 // Helper to get component items (buildsFrom)
-const getComponents = (item: Item) => {
+const getComponents = (item: Item, allItems: Item[]) => {
     if (!item.buildsFrom) return [];
-    // Map each ID in buildsFrom to the item object to preserve duplicates
-    return item.buildsFrom.map(id => ITEMS.find(i => i.id === id)).filter(Boolean) as Item[];
+    return item.buildsFrom.map(id => allItems.find(i => i.id === id)).filter(Boolean) as Item[];
 };
 
 // Helper to find upgrade items (items that build FROM this item)
-const getUpgrades = (item: Item) => {
-    return ITEMS.filter(i => i.buildsFrom?.includes(item.id));
+const getUpgrades = (item: Item, allItems: Item[]) => {
+    return allItems.filter(i => i.buildsFrom?.includes(item.id));
 };
 
-// Recursively find the "Root" items (Final Upgrades) for a given item
-const findRoots = (item: Item, visited = new Set<string>()): Item[] => {
+// Recursively find the "Root" items (Final Upgrades)
+const findRoots = (item: Item, allItems: Item[], visited = new Set<string>()): Item[] => {
     if (visited.has(item.id)) return [];
     visited.add(item.id);
 
-    const upgrades = getUpgrades(item);
+    const upgrades = getUpgrades(item, allItems);
     if (upgrades.length === 0) {
         return [item];
     }
-    return upgrades.flatMap(u => findRoots(u, new Set(visited)));
+    return upgrades.flatMap(u => findRoots(u, allItems, new Set(visited)));
 };
 
 const parseStatValue = (val: string): number => {
@@ -33,26 +33,6 @@ const parseStatValue = (val: string): number => {
     const clean = val.replace(/[^0-9.-]/g, '');
     const num = parseFloat(clean);
     return isNaN(num) ? 0 : num;
-};
-
-// --- Professional Tree Connector ---
-const TreeConnector = ({ childCount }: { childCount: number }) => {
-    if (childCount === 0) return null;
-    return (
-        <div className="w-full h-4 relative">
-            <svg className="w-full h-full absolute top-0 left-0 overflow-visible" preserveAspectRatio="none">
-                {/* Vertical line from parent */}
-                <line x1="50%" y1="0" x2="50%" y2="50%" stroke="#475569" strokeWidth="1.5" />
-                
-                {/* Horizontal bar covering children */}
-                {childCount > 1 && (
-                    <line x1="25%" y1="50%" x2="75%" y2="50%" stroke="#475569" strokeWidth="1.5" />
-                )}
-                
-                {/* Vertical lines to children are handled by the children themselves visually or we assume strictly centered alignment */}
-            </svg>
-        </div>
-    );
 };
 
 const STAT_FILTERS = [
@@ -74,6 +54,7 @@ const STAT_FILTERS = [
 type SortOption = 'NameAsc' | 'NameDesc' | 'CostAsc' | 'CostDesc' | 'StatHigh' | 'StatLow';
 
 export const ItemsView: React.FC = () => {
+  const { items: ITEMS } = useData();
   const [activeType, setActiveType] = useState<string>('All');
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [activeStats, setActiveStats] = useState<string[]>([]);
@@ -151,12 +132,12 @@ export const ItemsView: React.FC = () => {
   });
 
   const renderRecursiveNode = (item: Item, selectedId: string | undefined, isRoot = false) => {
-      const components = getComponents(item);
+      const components = getComponents(item, ITEMS);
       const isSelected = item.id === selectedId;
 
       return (
           <div className="flex flex-col items-center">
-              {/* Connector from Parent (Visual only, implemented via padding/pseudo elements in strict CSS trees, but here handled by layout) */}
+              {/* Connector from Parent */}
               {!isRoot && (
                   <div className="h-4 w-px bg-slate-600 mb-0.5"></div>
               )}
@@ -204,9 +185,7 @@ export const ItemsView: React.FC = () => {
 
   const ItemInspector = ({ item }: { item: Item }) => {
     // Find all "roots" (final upgrades) for this item to build the tree top-down
-    const roots = (item.type === 'Item' || item.type === 'Starter') ? findRoots(item) : [item];
-    
-    // De-duplicate roots (in case of complex upgrade paths, though unlikely in Smite)
+    const roots = (item.type === 'Item' || item.type === 'Starter') ? findRoots(item, ITEMS) : [item];
     const uniqueRoots = Array.from(new Set(roots.map(r => r.id))).map(id => roots.find(r => r.id === id)!);
 
     return (
@@ -273,7 +252,7 @@ export const ItemsView: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 relative">
+    <div className="container mx-auto px-4 py-8 pb-24 relative">
       <div className="flex flex-col lg:flex-row gap-6 items-start">
         
         {/* Left Column: Filters (Desktop Sticky) */}
@@ -489,8 +468,8 @@ export const ItemsView: React.FC = () => {
       </div>
 
       {/* Modal for Mobile (or if selected on Mobile) */}
-      {selectedItem && (
-        <div className="xl:hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+      {selectedItem && createPortal(
+        <div className="xl:hidden fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
            <div className="bg-slate-900 w-full max-w-lg max-h-[90vh] sm:rounded-2xl rounded-t-2xl border border-slate-700 shadow-2xl flex flex-col relative overflow-hidden">
               <button 
                  onClick={() => setSelectedItem(null)}
@@ -501,7 +480,8 @@ export const ItemsView: React.FC = () => {
               
               <ItemInspector item={selectedItem} />
            </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

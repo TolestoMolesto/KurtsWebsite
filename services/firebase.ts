@@ -1,5 +1,5 @@
-import { initializeApp } from 'firebase/app';
-import * as FirebaseAuth from 'firebase/auth';
+import * as firebase from 'firebase/app';
+import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 // Your web app's Firebase configuration
@@ -13,6 +13,9 @@ const firebaseConfig = {
   measurementId: "G-WZSQLTY24Z"
 };
 
-const app = initializeApp(firebaseConfig);
-export const auth = FirebaseAuth.getAuth(app);
-export const db = getFirestore(app);
+// Initialize Firebase
+// Handles both modular (v9+) named export and compat/v8 default export scenarios
+const app = firebase.initializeApp ? firebase.initializeApp(firebaseConfig) : (firebase as any).default.initializeApp(firebaseConfig);
+
+export const auth = getAuth(app as any);
+export const db = getFirestore(app as any);

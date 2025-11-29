@@ -1,19 +1,22 @@
+
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Zap, Sword, Shield, List, Hammer, LogIn, LogOut, User, X, Mail, Lock, Loader2, Snowflake, Trophy } from 'lucide-react';
 import { auth, db } from '../services/firebase'; // Added db import
 import * as FirebaseAuth from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore'; // Added Firestore imports
+import { doc, setDoc, getDoc } from 'firebase/firestore'; // Added Firestore imports
 import { 
   User as FirebaseUser 
 } from 'firebase/auth';
 
 interface HeaderProps {
-  currentView: 'home' | 'gods' | 'items' | 'tierlist' | 'builder' | 'tournament';
-  setCurrentView: (view: 'home' | 'gods' | 'items' | 'tierlist' | 'builder' | 'tournament') => void;
+  currentView: 'home' | 'gods' | 'items' | 'tierlist' | 'builder' | 'tournament' | 'profile';
+  setCurrentView: (view: 'home' | 'gods' | 'items' | 'tierlist' | 'builder' | 'tournament' | 'profile') => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView }) => {
   const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   
@@ -25,8 +28,18 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView }) =
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = FirebaseAuth.onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = FirebaseAuth.onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
+      if (currentUser) {
+          const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+          if (userDoc.exists() && userDoc.data().isAdmin === true) {
+              setIsAdmin(true);
+          } else {
+              setIsAdmin(false);
+          }
+      } else {
+          setIsAdmin(false);
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -75,9 +88,11 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView }) =
     }
   };
 
-  const handleLogout = async () => {
+  const handleLogout = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering profile view
     try {
       await FirebaseAuth.signOut(auth);
+      if (currentView === 'profile') setCurrentView('home');
     } catch (error) {
       console.error("Logout failed:", error);
     }
@@ -156,23 +171,26 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView }) =
               {/* Auth Section */}
               <div className="flex items-center">
                   {user ? (
-                      <div 
-                          className="flex items-center gap-3 cursor-pointer bg-slate-800/50 hover:bg-slate-800 pr-4 pl-1.5 py-1.5 rounded-full border border-slate-700/50 hover:border-slate-600 transition-all group relative"
-                          title="Click to Log Out"
-                      >
-                          <div className="w-8 h-8 bg-gradient-to-br from-mythic-gold to-yellow-600 rounded-full flex items-center justify-center text-slate-900 font-bold shadow-md border border-white/10">
-                              {user.displayName ? user.displayName.charAt(0).toUpperCase() : (user.email ? user.email.charAt(0).toUpperCase() : 'U')}
-                          </div>
-                          
-                          <div className="hidden sm:block text-right leading-tight">
-                              <div className="text-xs text-slate-200 font-bold group-hover:text-white max-w-[100px] truncate">
-                                  {user.displayName || user.email?.split('@')[0] || 'Champion'}
+                      <div className="flex items-center gap-2">
+                          <div 
+                              onClick={() => setCurrentView('profile')}
+                              className={`flex items-center gap-3 cursor-pointer bg-slate-800/50 hover:bg-slate-800 pr-4 pl-1.5 py-1.5 rounded-full border transition-all group relative ${currentView === 'profile' ? 'border-mythic-gold bg-slate-800' : 'border-slate-700/50 hover:border-slate-600'}`}
+                              title="View Profile"
+                          >
+                              <div className="w-8 h-8 bg-gradient-to-br from-mythic-gold to-yellow-600 rounded-full flex items-center justify-center text-slate-900 font-bold shadow-md border border-white/10">
+                                  {user.displayName ? user.displayName.charAt(0).toUpperCase() : (user.email ? user.email.charAt(0).toUpperCase() : 'U')}
                               </div>
-                              <div className="text-[9px] text-mythic-gold uppercase font-bold tracking-wider">Member</div>
-                          </div>
-                          
-                          <div onClick={handleLogout} className="p-1 hover:text-red-400 text-slate-500 transition-colors" title="Sign Out">
-                              <LogOut size={14} />
+                              
+                              <div className="hidden sm:block text-right leading-tight">
+                                  <div className="text-xs text-slate-200 font-bold group-hover:text-white max-w-[100px] truncate">
+                                      {user.displayName || user.email?.split('@')[0] || 'Champion'}
+                                  </div>
+                                  <div className="text-[9px] text-mythic-gold uppercase font-bold tracking-wider">{isAdmin ? 'Admin' : 'Member'}</div>
+                              </div>
+                              
+                              <div onClick={handleLogout} className="p-1 hover:text-red-400 text-slate-500 transition-colors border-l border-slate-700 pl-2 ml-2" title="Sign Out">
+                                  <LogOut size={14} />
+                              </div>
                           </div>
                       </div>
                   ) : (
@@ -206,8 +224,8 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView }) =
       </header>
 
       {/* Auth Modal */}
-      {isAuthModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+      {isAuthModalOpen && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-slate-900 w-full max-w-sm rounded-2xl border border-slate-700 shadow-2xl relative overflow-hidden">
                 <button 
                   onClick={() => setIsAuthModalOpen(false)}
@@ -305,7 +323,8 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView }) =
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
