@@ -1,8 +1,9 @@
 
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { God, Aspect, GodStats, RecommendedBuild, Item } from '../types';
-import { X, Shield, Zap, Sword, Hexagon, Search, RotateCcw, Heart, Droplet, Activity, Move, Target, BicepsFlexed, BookOpen, Skull, Layers, Sparkles, Star, ChevronDown, ArrowDownUp, Filter, ThumbsUp, ThumbsDown, Edit2, Save, Plus, Trash2, Check, Lock } from 'lucide-react';
+import { X, Shield, Zap, Sword, Hexagon, Search, RotateCcw, Heart, Droplet, Activity, Move, Target, BicepsFlexed, BookOpen, Skull, Layers, Sparkles, Star, ChevronDown, ArrowDownUp, Filter, ThumbsUp, ThumbsDown, Edit2, Save, Plus, Trash2, Check, Lock, Youtube } from 'lucide-react';
 import { db, auth } from '../services/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import * as FirebaseAuth from 'firebase/auth';
@@ -85,6 +86,13 @@ const StatRow: React.FC<{ icon: React.ReactNode; label: string; value: string | 
     </div>
   </div>
 );
+
+// Helper to extract YouTube ID
+const getYoutubeId = (url: string) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+};
 
 type SortOption = 'NameAsc' | 'NameDesc';
 
@@ -802,6 +810,31 @@ export const GodsView: React.FC = () => {
                             )}
                         </div>
                     </div>
+
+                    {/* NEW: Video Guide Section */}
+                    {displayGod.videoGuideUrl && (
+                        <div className="mb-8">
+                            <div className="flex justify-between items-center mb-3">
+                                <h4 className="text-mythic-gold font-serif font-bold uppercase text-sm tracking-wider flex items-center gap-2">
+                                    <Youtube size={14} className="text-mythic-gold fill-mythic-gold" /> God Guide
+                                </h4>
+                            </div>
+                            <div className="w-full rounded-lg overflow-hidden border border-slate-700 shadow-lg bg-black relative group">
+                                <div className="aspect-video">
+                                    <iframe 
+                                        width="100%" 
+                                        height="100%" 
+                                        src={`https://www.youtube.com/embed/${getYoutubeId(displayGod.videoGuideUrl)}`} 
+                                        title={`${displayGod.name} Guide`}
+                                        frameBorder="0" 
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                        allowFullScreen
+                                        className="absolute inset-0 w-full h-full"
+                                    ></iframe>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Combat Intel / Matchups */}
                     <div className="mb-8">

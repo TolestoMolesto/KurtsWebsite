@@ -88,6 +88,7 @@ export interface God extends AbilityKit {
   badAgainst: string[]; // Array of God IDs
   aspectLevelingOrders?: Record<string, number[]>; // Overrides for aspect leveling
   aspectMatchups?: Record<string, AspectMatchupData>; // Overrides for aspect matchups
+  videoGuideUrl?: string; // YouTube URL for a guide
 }
 
 export type ItemTier = 1 | 2 | 3;

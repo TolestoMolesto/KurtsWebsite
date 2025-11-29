@@ -158,6 +158,7 @@ export const GODS: God[] = [
   lanes: ['Solo', 'Jungle'],
   damageType: DamageType.Physical,
   image: 'https://image2url.com/images/1764245135551-88023a41-1d37-4125-9314-03ba669deb09.jpg',
+  videoGuideUrl: 'https://www.youtube.com/watch?v=cNbS6-7Sksg',
   goodAgainst: [],
   badAgainst: [],
   levelingOrder: [],
@@ -564,7 +565,7 @@ export const GODS: God[] = [
   abilities: {
     1: {
       name: 'Plague Of Locusts',
-      description: 'Locusts fly from your mouth, repeatedly dealing Magical Damage in an area in front of you.\n\n• This is a Channeled ability\n• You are Displacement Immune and move at reduced Movement Speed while Channeling\n\nThis ability hits 12 times over 2.5 seconds.',
+      description: 'Locusts fly from your mouth, repeatedly dealing Magical Damage in an area in front of you.\n\n• This is a Channeled ability\n\n• You are Displacement Immune and move at reduced Movement Speed while Channeling\n\nThis ability hits 12 times over 2.5 seconds.',
       cooldown: '10 | 9.5 | 9 | 8.5 | 8s',
       cost: '30 | 40 | 50 | 60 | 70',
       attributes: [
