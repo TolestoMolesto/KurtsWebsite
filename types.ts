@@ -153,6 +153,7 @@ export type TournamentRole = 'Solo' | 'Jungle' | 'Mid' | 'Carry' | 'Support';
 export interface TournamentPlayer {
   id: string;
   name: string;
+  trackerLink?: string;
   primaryRole: TournamentRole;
   offRoles: TournamentRole[];
   mmr: number;

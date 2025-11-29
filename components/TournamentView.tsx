@@ -1,10 +1,11 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { TournamentPlayer, TournamentRole } from '../types';
-import { Trophy, Plus, Trash2, Crown, Medal, Swords, ScrollText, Gem, Flame, Target, Skull, UserPlus, X, Calendar, MapPin, MonitorPlay, Timer, History, ArrowRight, Users, User, ChevronRight, Lock, Loader2 } from 'lucide-react';
+import { Trophy, Plus, Trash2, Crown, Medal, Swords, ScrollText, Gem, Flame, Target, Skull, UserPlus, X, Calendar, MapPin, MonitorPlay, Timer, History, ArrowRight, Users, User, ChevronRight, Lock, Loader2, ClipboardList, CheckCircle2, AlertTriangle, Settings, Unlock, ExternalLink, MessageCircle } from 'lucide-react';
 import { db, auth } from '../services/firebase';
-import { collection, onSnapshot, addDoc, updateDoc, doc, query, orderBy, limit, setDoc, getDoc, QuerySnapshot, DocumentData, writeBatch, increment } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, updateDoc, doc, query, orderBy, limit, setDoc, getDoc, QuerySnapshot, DocumentData, writeBatch, increment, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import * as FirebaseAuth from 'firebase/auth';
 
 const ROLES: TournamentRole[] = ['Solo', 'Jungle', 'Mid', 'Carry', 'Support'];
@@ -64,6 +65,17 @@ export const TournamentView: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
 
+  // --- Registration State ---
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [signupStatus, setSignupStatus] = useState<'none' | 'signed_up' | 'checked_in'>('none');
+  const [isCheckInOpen, setIsCheckInOpen] = useState(false);
+  const [isRegLoading, setIsRegLoading] = useState(false);
+
+  // --- Admin Management State ---
+  const [isManageModalOpen, setIsManageModalOpen] = useState(false);
+  const [signups, setSignups] = useState<any[]>([]);
+  const [checkins, setCheckins] = useState<any[]>([]);
+
   // --- Form State ---
   const [matchMode, setMatchMode] = useState<'full' | 'single'>('full');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -88,24 +100,47 @@ export const TournamentView: React.FC = () => {
         setUser(currentUser);
         if (currentUser) {
             try {
-                // Fetch User Profile to check for Admin Role
-                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-                if (userDoc.exists() && userDoc.data().isAdmin === true) {
-                    setIsAdmin(true);
+                // Fetch User Profile
+                const userDocRef = doc(db, 'users', currentUser.uid);
+                const userDoc = await getDoc(userDocRef);
+                
+                if (userDoc.exists()) {
+                    const data = userDoc.data();
+                    setIsAdmin(data.isAdmin === true);
+                    setUserProfile(data);
                 } else {
                     setIsAdmin(false);
                 }
+
+                // Check Signup Status
+                const signupDoc = await getDoc(doc(db, 'tournament_signups', currentUser.uid));
+                if (signupDoc.exists()) {
+                    // Check Checkin Status
+                    const checkinDoc = await getDoc(doc(db, 'tournament_checkins', currentUser.uid));
+                    setSignupStatus(checkinDoc.exists() ? 'checked_in' : 'signed_up');
+                } else {
+                    setSignupStatus('none');
+                }
+
             } catch (e) {
-                console.error("Error fetching user profile for role check:", e);
+                console.error("Error fetching user data:", e);
                 setIsAdmin(false);
             }
         } else {
             setIsAdmin(false);
+            setUserProfile(null);
         }
         setAuthLoading(false);
     });
 
-    // Listen for Players - Removed orderBy('score') since we calculate it client-side
+    // Listen for Global Check-in Status
+    const unsubConfig = onSnapshot(doc(db, 'tournament_config', 'status'), (doc) => {
+        if (doc.exists()) {
+            setIsCheckInOpen(doc.data().isCheckInOpen === true);
+        }
+    });
+
+    // Listen for Players
     const qPlayers = query(collection(db, 'tournament_players'));
     const unsubPlayers = onSnapshot(qPlayers, (snapshot: QuerySnapshot<DocumentData>) => {
       const playersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TournamentPlayer));
@@ -123,8 +158,31 @@ export const TournamentView: React.FC = () => {
         unsubAuth();
         unsubPlayers();
         unsubMatches();
+        unsubConfig();
     };
   }, []);
+
+  // --- Admin Data Listener ---
+  useEffect(() => {
+      if (!isAdmin) return;
+
+      const qSignups = query(collection(db, 'tournament_signups'), orderBy('signupTime', 'desc'));
+      const unsubSignups = onSnapshot(qSignups, (snapshot) => {
+          const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setSignups(data);
+      });
+
+      const qCheckins = query(collection(db, 'tournament_checkins'), orderBy('checkInTime', 'desc'));
+      const unsubCheckins = onSnapshot(qCheckins, (snapshot) => {
+          const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setCheckins(data);
+      });
+
+      return () => {
+          unsubSignups();
+          unsubCheckins();
+      };
+  }, [isAdmin]);
 
   const resetForms = () => {
       setFormName('');
@@ -149,6 +207,57 @@ export const TournamentView: React.FC = () => {
       return kScore + dScore + aScore + wScore;
   };
 
+  // --- Registration Handlers ---
+
+  const handleSignUp = async () => {
+      if (!user || !userProfile) return;
+      setIsRegLoading(true);
+      try {
+          await setDoc(doc(db, 'tournament_signups', user.uid), {
+              userId: user.uid,
+              displayName: userProfile.displayName || user.displayName,
+              trackerLink: userProfile.trackerLink,
+              discordHandle: userProfile.discordHandle,
+              signupTime: serverTimestamp()
+          });
+          setSignupStatus('signed_up');
+      } catch (err) {
+          console.error("Signup failed", err);
+          alert("Failed to sign up.");
+      } finally {
+          setIsRegLoading(false);
+      }
+  };
+
+  const handleCheckIn = async () => {
+      if (!user || !isCheckInOpen || signupStatus !== 'signed_up') return;
+      setIsRegLoading(true);
+      try {
+          await setDoc(doc(db, 'tournament_checkins', user.uid), {
+              userId: user.uid,
+              displayName: userProfile.displayName || user.displayName,
+              checkInTime: serverTimestamp()
+          });
+          setSignupStatus('checked_in');
+      } catch (err) {
+          console.error("Checkin failed", err);
+          alert("Failed to check in.");
+      } finally {
+          setIsRegLoading(false);
+      }
+  };
+
+  const toggleCheckInState = async () => {
+      if (!isAdmin) return;
+      try {
+          await setDoc(doc(db, 'tournament_config', 'status'), {
+              isCheckInOpen: !isCheckInOpen
+          }, { merge: true });
+      } catch (err) {
+          console.error("Toggle failed", err);
+      }
+  };
+
   const handleRecordSingle = async () => {
       if (!formName.trim() || isSubmitting) return;
       setIsSubmitting(true);
@@ -163,13 +272,10 @@ export const TournamentView: React.FC = () => {
             id: playerId,
             name: formName,
             mmr: formMMR,
-            // primaryRole update handled by merge, but typically we might want to be careful overwriting it
-            // For now, we update it to the latest played role to ensure they have a role for scoring
             primaryRole: formRole, 
             kills: increment(formKills),
             deaths: increment(formDeaths),
             assists: increment(formAssists),
-            // score: increment(score), // REMOVED: No longer storing aggregate score
             matchesPlayed: increment(1),
             wins: increment(formIsWin ? 1 : 0)
         }, { merge: true });
@@ -218,6 +324,10 @@ export const TournamentView: React.FC = () => {
             const playerId = p.name.toLowerCase().replace(/\s+/g, '-');
             const playerRef = doc(db, 'tournament_players', playerId);
 
+            // Find tracker link from signups if available
+            const signupData = signups.find(s => s.displayName === p.name);
+            const trackerData = signupData?.trackerLink ? { trackerLink: signupData.trackerLink } : {};
+
             // Update Player Stats
             batch.set(playerRef, {
                 id: playerId,
@@ -227,9 +337,9 @@ export const TournamentView: React.FC = () => {
                 kills: increment(p.k),
                 deaths: increment(p.d),
                 assists: increment(p.a),
-                // score: increment(score), // REMOVED: No longer storing aggregate score
                 matchesPlayed: increment(1),
-                wins: increment(isWin ? 1 : 0)
+                wins: increment(isWin ? 1 : 0),
+                ...trackerData
             }, { merge: true });
 
             orderPlayersList.push({ name: p.name, role, mmr: p.mmr, k: p.k, d: p.d, a: p.a });
@@ -246,6 +356,10 @@ export const TournamentView: React.FC = () => {
             const playerId = p.name.toLowerCase().replace(/\s+/g, '-');
             const playerRef = doc(db, 'tournament_players', playerId);
 
+            // Find tracker link from signups if available
+            const signupData = signups.find(s => s.displayName === p.name);
+            const trackerData = signupData?.trackerLink ? { trackerLink: signupData.trackerLink } : {};
+
             batch.set(playerRef, {
                 id: playerId,
                 name: p.name,
@@ -254,9 +368,9 @@ export const TournamentView: React.FC = () => {
                 kills: increment(p.k),
                 deaths: increment(p.d),
                 assists: increment(p.a),
-                // score: increment(score), // REMOVED: No longer storing aggregate score
                 matchesPlayed: increment(1),
-                wins: increment(isWin ? 1 : 0)
+                wins: increment(isWin ? 1 : 0),
+                ...trackerData
             }, { merge: true });
 
             chaosPlayersList.push({ name: p.name, role, mmr: p.mmr, k: p.k, d: p.d, a: p.a });
@@ -330,6 +444,17 @@ export const TournamentView: React.FC = () => {
       }
   };
 
+  const formatDateTime = (timestamp: any) => {
+      if (!timestamp) return 'N/A';
+      try {
+          // Handle Firestore Timestamp or ISO string
+          const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+          return date.toLocaleString();
+      } catch(e) {
+          return 'Invalid Date';
+      }
+  }
+
   const RoleIcon = ({ role, size = 'md', className = '' }: { role: TournamentRole | string, size?: 'sm' | 'md', className?: string }) => (
     <div title={role} className={`rounded flex items-center justify-center font-bold text-white shadow-sm shrink-0 ${
         role === 'Support' ? 'bg-green-600' : 
@@ -340,6 +465,9 @@ export const TournamentView: React.FC = () => {
         {role.charAt(0)}
     </div>
   );
+
+  // Checks for Sign Up
+  const hasProfileRequirements = userProfile?.trackerLink && userProfile?.discordHandle;
 
   if (authLoading) {
       return (
@@ -378,12 +506,104 @@ export const TournamentView: React.FC = () => {
       
       <div className="flex flex-col gap-6">
         {/* Header */}
-        <div className="text-center md:text-left">
-           <h1 className="text-3xl md:text-4xl font-serif font-bold text-slate-100 flex items-center justify-center md:justify-start gap-3">
-              <Trophy className="text-mythic-gold" size={32} /> 
-              Forge Championship Series
-           </h1>
-           <p className="text-slate-400 mt-2">Open bracket. No preset teams. Prove your worth in the queue.</p>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+            <div className="text-center md:text-left mb-4 md:mb-0">
+                <h1 className="text-3xl md:text-4xl font-serif font-bold text-slate-100 flex items-center justify-center md:justify-start gap-3">
+                    <Trophy className="text-mythic-gold" size={32} /> 
+                    Forge Championship Series
+                </h1>
+                <p className="text-slate-400 mt-2">Open bracket. No preset teams. Prove your worth in the queue.</p>
+            </div>
+            {isAdmin && (
+                <div className="bg-slate-900 border border-slate-700 p-2 rounded-lg flex flex-col sm:flex-row items-center gap-3">
+                    <span className="text-xs font-bold uppercase text-slate-500 flex items-center gap-1"><Settings size={12}/> Admin Controls:</span>
+                    <div className="flex gap-2">
+                        <button 
+                            onClick={toggleCheckInState}
+                            className={`px-3 py-1.5 rounded text-xs font-bold uppercase flex items-center gap-2 transition-all ${isCheckInOpen ? 'bg-green-600 text-white shadow-green-500/20 shadow-lg' : 'bg-red-900/50 text-red-200 border border-red-800'}`}
+                        >
+                            {isCheckInOpen ? <Unlock size={12}/> : <Lock size={12}/>}
+                            {isCheckInOpen ? 'Check-in Open' : 'Check-in Closed'}
+                        </button>
+                        <button 
+                            onClick={() => setIsManageModalOpen(true)}
+                            className="px-3 py-1.5 rounded text-xs font-bold uppercase flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-slate-200 transition-colors"
+                        >
+                            <Users size={12} /> Manage Players
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
+
+        {/* REGISTRATION CARD */}
+        <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 shadow-xl relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 opacity-50"></div>
+            {signupStatus === 'checked_in' && (
+                <div className="absolute top-0 right-0 p-4 opacity-10 text-green-500">
+                    <CheckCircle2 size={100} />
+                </div>
+            )}
+            
+            <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
+                <div className="flex-1">
+                    <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                        <ClipboardList className="text-mythic-gold" /> Tournament Registration
+                    </h3>
+                    <p className="text-slate-400 text-sm mb-4">
+                        Join the queue for the next tournament. You must sign up first, then check in when the window opens (15 mins before start).
+                    </p>
+                    
+                    {!hasProfileRequirements && (
+                        <div className="bg-red-900/20 border border-red-500/30 p-3 rounded-lg flex items-start gap-3 text-sm text-red-200 mb-4 animate-in fade-in">
+                            <AlertTriangle className="shrink-0 text-red-500" size={18} />
+                            <div>
+                                <strong className="block text-red-400 font-bold uppercase text-xs mb-1">Action Required</strong>
+                                You must link your <span className="text-white font-bold">Smite Tracker</span> and <span className="text-white font-bold">Discord</span> in your profile to participate.
+                                <a href="/profile" className="block mt-2 text-xs font-bold underline hover:text-white" onClick={(e) => { e.preventDefault(); window.location.href = '/profile'; }}>Go to Profile Settings</a>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                    {/* Sign Up Button */}
+                    <button 
+                        onClick={handleSignUp}
+                        disabled={isRegLoading || !hasProfileRequirements || signupStatus !== 'none'}
+                        className={`px-6 py-4 rounded-xl font-bold uppercase tracking-wider flex items-center justify-center gap-2 min-w-[160px] transition-all border ${
+                            signupStatus !== 'none'
+                            ? 'bg-slate-800 border-green-500 text-green-400 cursor-default'
+                            : hasProfileRequirements 
+                                ? 'bg-mythic-gold hover:bg-yellow-400 text-slate-900 border-transparent shadow-lg hover:shadow-mythic-gold/20' 
+                                : 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed'
+                        }`}
+                    >
+                        {isRegLoading ? <Loader2 className="animate-spin" /> : (
+                            signupStatus !== 'none' ? <><CheckCircle2 size={18}/> Signed Up</> : "Sign Up"
+                        )}
+                    </button>
+
+                    {/* Check In Button */}
+                    <button 
+                        onClick={handleCheckIn}
+                        disabled={isRegLoading || signupStatus !== 'signed_up' || !isCheckInOpen}
+                        className={`px-6 py-4 rounded-xl font-bold uppercase tracking-wider flex items-center justify-center gap-2 min-w-[160px] transition-all border ${
+                            signupStatus === 'checked_in'
+                            ? 'bg-green-600/20 border-green-500 text-green-400 cursor-default'
+                            : (signupStatus === 'signed_up' && isCheckInOpen)
+                                ? 'bg-green-600 hover:bg-green-500 text-white border-transparent shadow-lg hover:shadow-green-500/20 animate-pulse'
+                                : 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed'
+                        }`}
+                    >
+                        {signupStatus === 'checked_in' ? (
+                            <><CheckCircle2 size={18}/> Ready</>
+                        ) : (
+                            <>{!isCheckInOpen && <Lock size={14}/>} Check In</>
+                        )}
+                    </button>
+                </div>
+            </div>
         </div>
 
         {/* Rules & Rewards Section */}
@@ -624,7 +844,20 @@ export const TournamentView: React.FC = () => {
                                     </td>
                                     <td className="p-4">
                                         <div className="flex flex-col">
-                                            <span className="font-bold text-slate-200 group-hover:text-white text-base">{player.name}</span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-bold text-slate-200 group-hover:text-white text-base">{player.name}</span>
+                                                {player.trackerLink && (
+                                                    <a 
+                                                        href={player.trackerLink} 
+                                                        target="_blank" 
+                                                        rel="noopener noreferrer" 
+                                                        className="text-mythic-gold/70 hover:text-mythic-gold transition-colors"
+                                                        title="Smite Tracker Profile"
+                                                    >
+                                                        <ExternalLink size={12} />
+                                                    </a>
+                                                )}
+                                            </div>
                                             <div className={`text-[10px] font-bold px-1.5 py-0.5 rounded border inline-block w-fit mt-1 ${getMMRTierColor(player.mmr)}`}>
                                                 {getMMRLabel(player.mmr)} • {player.mmr} MMR
                                             </div>
@@ -684,6 +917,83 @@ export const TournamentView: React.FC = () => {
         </div>
       </div>
 
+      {/* Admin Management Modal */}
+      {isManageModalOpen && isAdmin && createPortal(
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+              <div className="bg-slate-900 w-full max-w-5xl h-[80vh] rounded-2xl border border-slate-700 shadow-2xl flex flex-col overflow-hidden relative">
+                  <div className="p-4 border-b border-slate-700 bg-slate-950 flex justify-between items-center shrink-0">
+                      <h3 className="text-lg font-serif font-bold text-slate-100 flex items-center gap-2">
+                          <Users size={18} className="text-mythic-gold" /> Tournament Management
+                      </h3>
+                      <button onClick={() => setIsManageModalOpen(false)} className="text-slate-500 hover:text-white bg-slate-800 p-2 rounded-full transition-colors">
+                          <X size={20} />
+                      </button>
+                  </div>
+                  
+                  <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
+                      {/* Left: Sign Ups */}
+                      <div className="flex-1 flex flex-col border-r border-slate-800">
+                          <div className="p-4 bg-slate-900 border-b border-slate-800 flex justify-between items-center">
+                              <h4 className="text-sm font-bold text-slate-300 uppercase tracking-wider">Sign Ups</h4>
+                              <span className="text-xs bg-slate-800 px-2 py-1 rounded text-slate-400 border border-slate-700">{signups.length} Players</span>
+                          </div>
+                          <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-slate-950/30">
+                              {signups.map((player) => (
+                                  <div key={player.id} className="bg-slate-900 border border-slate-800 p-3 rounded-lg hover:border-slate-600 transition-colors flex items-center justify-between">
+                                      <div>
+                                          <div className="font-bold text-slate-200 text-sm">{player.displayName}</div>
+                                          <div className="text-[10px] text-slate-500 flex items-center gap-2 mt-1">
+                                              <span className="flex items-center gap-1"><Calendar size={10}/> {formatDateTime(player.signupTime)}</span>
+                                          </div>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                          {player.discordHandle && (
+                                              <div className="p-2 bg-[#5865F2]/10 rounded text-[#5865F2] border border-[#5865F2]/20" title={player.discordHandle}>
+                                                  <MessageCircle size={14} />
+                                              </div>
+                                          )}
+                                          {player.trackerLink && (
+                                              <a href={player.trackerLink} target="_blank" rel="noreferrer" className="p-2 bg-mythic-gold/10 rounded text-mythic-gold border border-mythic-gold/20 hover:bg-mythic-gold hover:text-black transition-colors">
+                                                  <ExternalLink size={14} />
+                                              </a>
+                                          )}
+                                      </div>
+                                  </div>
+                              ))}
+                              {signups.length === 0 && <div className="text-center text-slate-500 py-10 italic">No sign ups yet.</div>}
+                          </div>
+                      </div>
+
+                      {/* Right: Check Ins */}
+                      <div className="flex-1 flex flex-col">
+                          <div className="p-4 bg-slate-900 border-b border-slate-800 flex justify-between items-center">
+                              <h4 className="text-sm font-bold text-green-400 uppercase tracking-wider flex items-center gap-2"><CheckCircle2 size={14}/> Checked In</h4>
+                              <span className="text-xs bg-slate-800 px-2 py-1 rounded text-green-400 border border-green-900">{checkins.length} Players</span>
+                          </div>
+                          <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-slate-950/30">
+                              {checkins.map((player) => (
+                                  <div key={player.id} className="bg-slate-900 border border-green-900/30 p-3 rounded-lg flex items-center justify-between shadow-sm">
+                                      <div className="flex items-center gap-3">
+                                          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                                          <div>
+                                              <div className="font-bold text-slate-200 text-sm">{player.displayName}</div>
+                                              <div className="text-[10px] text-slate-500 mt-0.5">{formatDateTime(player.checkInTime)}</div>
+                                          </div>
+                                      </div>
+                                      <div className="px-2 py-1 bg-green-900/20 text-green-400 text-[10px] font-bold uppercase rounded border border-green-900/50">
+                                          Ready
+                                      </div>
+                                  </div>
+                              ))}
+                              {checkins.length === 0 && <div className="text-center text-slate-500 py-10 italic">No check ins yet.</div>}
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>,
+          document.body
+      )}
+
       {/* Record Match Modal */}
       {isModalOpen && isAdmin && createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
@@ -723,6 +1033,13 @@ export const TournamentView: React.FC = () => {
                     {matchMode === 'full' && (
                         <div className="flex flex-col h-full gap-6">
                             
+                            {/* Autocomplete Datalist */}
+                            <datalist id="signed-up-players">
+                                {signups.map((s, i) => (
+                                    <option key={`${s.userId || i}`} value={s.displayName} />
+                                ))}
+                            </datalist>
+
                             {/* Winner Toggle */}
                             <div className="flex justify-center mb-2">
                                 <div className="flex items-center bg-slate-950 border border-slate-700 rounded-full p-1 gap-4">
@@ -767,6 +1084,7 @@ export const TournamentView: React.FC = () => {
                                                 <div key={role} className="grid grid-cols-[30px_1fr_45px_45px_45px_50px] gap-2 items-center bg-slate-900 p-2 rounded border border-slate-800">
                                                     <div className="flex justify-center"><RoleIcon role={role} /></div>
                                                     <input 
+                                                        list="signed-up-players"
                                                         className="bg-transparent border-b border-slate-700 text-sm text-white focus:border-blue-500 outline-none px-1 w-full" 
                                                         placeholder="Name..."
                                                         value={orderTeam[role].name}
@@ -818,6 +1136,7 @@ export const TournamentView: React.FC = () => {
                                                 <div key={role} className="grid grid-cols-[30px_1fr_45px_45px_45px_50px] gap-2 items-center bg-slate-900 p-2 rounded border border-slate-800">
                                                     <div className="flex justify-center"><RoleIcon role={role} /></div>
                                                     <input 
+                                                        list="signed-up-players"
                                                         className="bg-transparent border-b border-slate-700 text-sm text-white focus:border-red-500 outline-none px-1 w-full" 
                                                         placeholder="Name..."
                                                         value={chaosTeam[role].name}
