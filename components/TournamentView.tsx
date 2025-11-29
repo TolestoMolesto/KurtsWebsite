@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { TournamentPlayer, TournamentRole } from '../types';
@@ -93,6 +91,9 @@ export const TournamentView: React.FC = () => {
   const [orderTeam, setOrderTeam] = useState<TeamData>(getEmptyTeamData());
   const [chaosTeam, setChaosTeam] = useState<TeamData>(getEmptyTeamData());
   const [winner, setWinner] = useState<'Order' | 'Chaos'>('Order');
+
+  // Checks for Sign Up
+  const hasProfileRequirements = userProfile?.trackerLink && userProfile?.discordHandle;
 
   useEffect(() => {
     // Listen for Auth and User Role
@@ -211,6 +212,10 @@ export const TournamentView: React.FC = () => {
 
   const handleSignUp = async () => {
       if (!user || !userProfile) return;
+      if (!hasProfileRequirements) {
+          alert("Please complete your profile requirements (Discord & Tracker Link) before signing up.");
+          return;
+      }
       setIsRegLoading(true);
       try {
           await setDoc(doc(db, 'tournament_signups', user.uid), {
@@ -231,6 +236,10 @@ export const TournamentView: React.FC = () => {
 
   const handleCheckIn = async () => {
       if (!user || !isCheckInOpen || signupStatus !== 'signed_up') return;
+      if (!hasProfileRequirements) {
+          alert("Your profile is incomplete. Please add your Discord and Tracker Link to check in.");
+          return;
+      }
       setIsRegLoading(true);
       try {
           await setDoc(doc(db, 'tournament_checkins', user.uid), {
@@ -466,9 +475,6 @@ export const TournamentView: React.FC = () => {
     </div>
   );
 
-  // Checks for Sign Up
-  const hasProfileRequirements = userProfile?.trackerLink && userProfile?.discordHandle;
-
   if (authLoading) {
       return (
           <div className="flex items-center justify-center min-h-[60vh]">
@@ -587,11 +593,11 @@ export const TournamentView: React.FC = () => {
                     {/* Check In Button */}
                     <button 
                         onClick={handleCheckIn}
-                        disabled={isRegLoading || signupStatus !== 'signed_up' || !isCheckInOpen}
+                        disabled={isRegLoading || signupStatus !== 'signed_up' || !isCheckInOpen || !hasProfileRequirements}
                         className={`px-6 py-4 rounded-xl font-bold uppercase tracking-wider flex items-center justify-center gap-2 min-w-[160px] transition-all border ${
                             signupStatus === 'checked_in'
                             ? 'bg-green-600/20 border-green-500 text-green-400 cursor-default'
-                            : (signupStatus === 'signed_up' && isCheckInOpen)
+                            : (signupStatus === 'signed_up' && isCheckInOpen && hasProfileRequirements)
                                 ? 'bg-green-600 hover:bg-green-500 text-white border-transparent shadow-lg hover:shadow-green-500/20 animate-pulse'
                                 : 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed'
                         }`}
