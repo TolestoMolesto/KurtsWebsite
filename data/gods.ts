@@ -515,6 +515,7 @@ export const GODS: God[] = [
   lanes: ['Mid'],
   damageType: DamageType.Magical,
   image: 'https://image2url.com/images/1764245604669-8ce611e2-f558-4c62-b972-d29e8a2a21e2.jpg',
+  videoGuideUrl: '', // Add YouTube URL when available
   goodAgainst: [],
   badAgainst: [],
   levelingOrder: [],
@@ -528,12 +529,12 @@ export const GODS: God[] = [
     { strength: 0, intelligence: 0, attackSpeed: 10, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 35, magicalProtection: 36, maxHealth: 1147, healthRegen: 3, maxMana: 592, manaRegen: 4, cooldownRate: 0, movementSpeed: 375 },
     { strength: 0, intelligence: 0, attackSpeed: 11, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 38, magicalProtection: 37, maxHealth: 1240, healthRegen: 3, maxMana: 637, manaRegen: 4, cooldownRate: 0, movementSpeed: 375 },
     { strength: 0, intelligence: 0, attackSpeed: 13, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 40, magicalProtection: 39, maxHealth: 1332, healthRegen: 3, maxMana: 683, manaRegen: 4, cooldownRate: 0, movementSpeed: 375 },
-    { strength: 0, intelligence: 0, attackSpeed: 14, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 43, magicalProtection: 40, maxHealth: 1425, healthRegen: 4, maxMana: 728, manaRegen: 5, cooldownRate: 0, movementSpeed: 375 },
-    { strength: 0, intelligence: 0, attackSpeed: 15, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 46, magicalProtection: 42, maxHealth: 1518, healthRegen: 4, maxMana: 773, manaRegen: 5, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 14, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 43, magicalProtection: 40, maxHealth: 1425, healthRegen: 3, maxMana: 728, manaRegen: 4, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 16, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 46, magicalProtection: 42, maxHealth: 1518, healthRegen: 4, maxMana: 773, manaRegen: 5, cooldownRate: 0, movementSpeed: 375 },
     { strength: 0, intelligence: 0, attackSpeed: 17, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 49, magicalProtection: 43, maxHealth: 1610, healthRegen: 4, maxMana: 819, manaRegen: 5, cooldownRate: 0, movementSpeed: 375 },
-    { strength: 0, intelligence: 0, attackSpeed: 18, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 52, magicalProtection: 45, maxHealth: 1703, healthRegen: 4, maxMana: 864, manaRegen: 5, cooldownRate: 0, movementSpeed: 375 },
-    { strength: 0, intelligence: 0, attackSpeed: 20, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 55, magicalProtection: 46, maxHealth: 1796, healthRegen: 4, maxMana: 909, manaRegen: 6, cooldownRate: 0, movementSpeed: 375 },
-    { strength: 0, intelligence: 0, attackSpeed: 21, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 57, magicalProtection: 47, maxHealth: 1888, healthRegen: 4, maxMana: 955, manaRegen: 6, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 19, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 52, magicalProtection: 45, maxHealth: 1703, healthRegen: 4, maxMana: 864, manaRegen: 5, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 20, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 54, magicalProtection: 46, maxHealth: 1796, healthRegen: 4, maxMana: 909, manaRegen: 5, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 22, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 57, magicalProtection: 48, maxHealth: 1888, healthRegen: 5, maxMana: 955, manaRegen: 6, cooldownRate: 0, movementSpeed: 375 },
     { strength: 0, intelligence: 0, attackSpeed: 22, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 60, magicalProtection: 49, maxHealth: 1981, healthRegen: 5, maxMana: 1000, manaRegen: 6, cooldownRate: 0, movementSpeed: 375 },
     { strength: 0, intelligence: 0, attackSpeed: 24, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 63, magicalProtection: 50, maxHealth: 2073, healthRegen: 5, maxMana: 1045, manaRegen: 6, cooldownRate: 0, movementSpeed: 375 },
     { strength: 0, intelligence: 0, attackSpeed: 25, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 66, magicalProtection: 52, maxHealth: 2166, healthRegen: 5, maxMana: 1091, manaRegen: 7, cooldownRate: 0, movementSpeed: 375 },
@@ -542,6 +543,7 @@ export const GODS: God[] = [
   ],
   basicAttack: {
     name: 'Anubis Basic Attack',
+    image: 'https://static.smite2.live/smite2/GODS/common/Icon_BasicAttack_Magical.webp',
     description: 'Fire a projectile that deals Magical Damage to the first enemy hit.\n\nProjectile stops on first target hit, and does not pass through walls.',
     cooldown: '-',
     cost: '-',
@@ -553,6 +555,7 @@ export const GODS: God[] = [
   },
   passive: {
     name: 'The Scales',
+    image: 'https://static.smite2.live/smite2/GODS/Anubis/Abilities/Icons_Anubis_Passive.webp',
     description: 'Gain bonus Lifesteal, Physical Protection, and Magical Protection. These bonuses increase as your health declines.\n\nGain 1 Stack of this buff for each 10% Health missing. At maximum stacks, bonus Protections are doubled. At maximum stacks, bonus Lifesteal is tripled.',
     cooldown: '-',
     cost: '-',
@@ -565,6 +568,7 @@ export const GODS: God[] = [
   abilities: {
     1: {
       name: 'Plague Of Locusts',
+      image: 'https://static.smite2.live/smite2/GODS/Anubis/Abilities/Icons_Anubis_A01.webp',
       description: 'Locusts fly from your mouth, repeatedly dealing Magical Damage in an area in front of you.\n\n• This is a Channeled ability\n\n• You are Displacement Immune and move at reduced Movement Speed while Channeling\n\nThis ability hits 12 times over 2.5 seconds.',
       cooldown: '10 | 9.5 | 9 | 8.5 | 8s',
       cost: '30 | 40 | 50 | 60 | 70',
@@ -578,6 +582,7 @@ export const GODS: God[] = [
     },
     2: {
       name: 'Mummify',
+      image: 'https://static.smite2.live/smite2/GODS/Anubis/Abilities/Icons_Anubis_A02.webp',
       description: 'Fire a bandage projectile, mummifying and Stunning the first god hit.\n\n• This ability deals Magical Damage, only to gods\n\nProjectile ignores minions, and stops on walls.',
       cooldown: '16 | 15.5 | 15 | 14.5 | 14s',
       cost: '50 | 55 | 60 | 65 | 70',
@@ -591,6 +596,7 @@ export const GODS: God[] = [
     },
     3: {
       name: 'Grasping Hands',
+      image: 'https://static.smite2.live/smite2/GODS/Anubis/Abilities/Icons_Anubis_A03.webp',
       description: 'Summon allies from the underworld, dealing Magical Damage repeatedly to enemies in an area.\n\n• This also Slows enemies in the area\n\nThis ability hits 4 times over 1.5 seconds. Slow is refreshed on each hit, and does not stack.',
       cooldown: '14 | 13 | 12 | 11 | 10s',
       cost: '40 | 50 | 60 | 70 | 80',
@@ -605,6 +611,7 @@ export const GODS: God[] = [
     },
     4: {
       name: 'Death Gaze',
+      image: 'https://static.smite2.live/smite2/GODS/Anubis/Abilities/Icons_Anubis_A04.webp',
       description: 'Your piercing gaze burns enemies in a line.\n\n• This deals an initial burst of Magical Damage\n• Then Channels to repeatedly deal Magical Damage\n• You are CC Immune while using this ability\n\nAbility hits 24 times, plus the initial burst, over 2.4 seconds. You are Rooted while Channeling.',
       cooldown: '90s',
       cost: '90',
@@ -825,6 +832,579 @@ export const GODS: God[] = [
       }
     }
   ],
+  recommendedBuilds: []
+},
+{
+  id: 'achilles',
+  name: 'Achilles',
+  title: 'Hero of the Trojan War',
+  pantheon: 'Greek',
+  role: 'Warrior',
+  lanes: ['Solo', 'Jungle'],
+  damageType: DamageType.Physical,
+  image: '', // Add god portrait image URL
+  videoGuideUrl: '', // Add YouTube URL when available
+  goodAgainst: [],
+  badAgainst: [],
+  levelingOrder: [],
+  statsByLevel: [
+    { strength: 0, intelligence: 0, attackSpeed: 1, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 19, magicalProtection: 27.5, maxHealth: 622.5, healthRegen: 1.77, maxMana: 296, manaRegen: 2.25, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 2, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 22, magicalProtection: 29, maxHealth: 720, healthRegen: 2, maxMana: 336, manaRegen: 2.5, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 4, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 25, magicalProtection: 30.5, maxHealth: 817, healthRegen: 2.2, maxMana: 376, manaRegen: 2.75, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 5, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 28, magicalProtection: 32, maxHealth: 914, healthRegen: 2.4, maxMana: 416, manaRegen: 3, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 7, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 31, magicalProtection: 33.5, maxHealth: 1011, healthRegen: 2.6, maxMana: 456, manaRegen: 3.25, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 8, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 34, magicalProtection: 35, maxHealth: 1108, healthRegen: 2.8, maxMana: 496, manaRegen: 3.5, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 10, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 37, magicalProtection: 36.5, maxHealth: 1205, healthRegen: 3, maxMana: 536, manaRegen: 3.75, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 11, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 40, magicalProtection: 38, maxHealth: 1302, healthRegen: 3.2, maxMana: 576, manaRegen: 4, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 13, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 43, magicalProtection: 39.5, maxHealth: 1399, healthRegen: 3.4, maxMana: 616, manaRegen: 4.25, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 14, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 46, magicalProtection: 41, maxHealth: 1496, healthRegen: 3.6, maxMana: 656, manaRegen: 4.5, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 16, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 49, magicalProtection: 42.5, maxHealth: 1593, healthRegen: 3.8, maxMana: 696, manaRegen: 4.75, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 17, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 52, magicalProtection: 44, maxHealth: 1690, healthRegen: 4, maxMana: 736, manaRegen: 5, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 19, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 55, magicalProtection: 45.5, maxHealth: 1787, healthRegen: 4.2, maxMana: 776, manaRegen: 5.25, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 20, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 58, magicalProtection: 47, maxHealth: 1884, healthRegen: 4.4, maxMana: 816, manaRegen: 5.5, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 22, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 61, magicalProtection: 48.5, maxHealth: 1981, healthRegen: 4.6, maxMana: 856, manaRegen: 5.75, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 23, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 64, magicalProtection: 50, maxHealth: 2078, healthRegen: 4.8, maxMana: 896, manaRegen: 6, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 25, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 67, magicalProtection: 51.5, maxHealth: 2175, healthRegen: 5, maxMana: 936, manaRegen: 6.25, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 26, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 70, magicalProtection: 53, maxHealth: 2272, healthRegen: 5.2, maxMana: 976, manaRegen: 6.5, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 28, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 73, magicalProtection: 54.5, maxHealth: 2369, healthRegen: 5.4, maxMana: 1016, manaRegen: 6.75, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 29, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 76, magicalProtection: 56, maxHealth: 2466, healthRegen: 5.6, maxMana: 1056, manaRegen: 7, cooldownRate: 0, movementSpeed: 375 },
+  ],
+  basicAttack: {
+    name: 'Achilles Basic Attack',
+    image: 'https://static.smite2.live/smite2/GODS/common/Icon_BasicAttack_Physical.webp',
+    description: 'Deal Physical Damage to an enemy in front of you.\n\nIf multiple enemies are in the area, the enemy closest to the center of the area will be hit.',
+    cooldown: '-',
+    cost: '-',
+    attributes: [
+      { label: 'Damage Scaling', value: '100% Strength + 20% Intelligence' },
+      { label: 'Range', value: '2.56m' },
+      { label: 'Cone Angle', value: '120 degrees' }
+    ]
+  },
+  passive: {
+    name: 'Gift of the Gods',
+    image: 'https://static.smite2.live/smite2/GODS/Achilles/Abilities/t_Achilles_Passive.webp',
+    description: 'Choose to wear armor or forgo it. Wearing armor grants bonus Health and Protections, while forgoing it grants bonus Strength and Movement Speed.\n\n• Swap between armor states by using Basic Attacks while the Passive targeter is active inside the Fountain.\n• Your chosen armor state also adds effects to Radiant Glory and Combat Dodge.',
+    cooldown: '-',
+    cost: '-',
+    attributes: [
+      { label: 'Armored Health', value: '25 + 10 Per Level' },
+      { label: 'Armored Protections', value: '5 + 2 Per Level' },
+      { label: 'Unarmored Strength', value: '3 + 1.5 Per Level' },
+      { label: 'Unarmored Movement Speed', value: '1% + 0.25% Per Level' }
+    ]
+  },
+  abilities: {
+    1: {
+      name: 'Shield of Achilles',
+      image: 'https://static.smite2.live/smite2/GODS/Achilles/Abilities/t_Achilles_A01.webp',
+      description: 'Punch forward with your shield, dealing Physical Damage and Stunning enemies in a short cone. The force of the shield radiates further, dealing reduced damage.\n\n• The radiated force deals 80% Damage\n• Non-God targets take 115% Damage\n• Increased Stun duration when Armored, increased Scaling when forgoing your Armor\n\nThis ability can hit through walls.',
+      cooldown: '14s',
+      cost: '60 | 65 | 70 | 75 | 80',
+      attributes: [
+        { label: 'Damage', value: '100 | 155 | 210 | 265 | 320' },
+        { label: 'Damage Scaling', value: '80% Strength' },
+        { label: 'Stun Duration', value: '0.8s' },
+        { label: 'Bonus Stun Duration (Armored)', value: '0.2s' },
+        { label: 'Bonus Damage Scaling (Unarmored)', value: '15% Strength' },
+        { label: 'Cone Angle', value: '80 degrees' },
+        { label: 'Small Radius', value: '3.2m' },
+        { label: 'Large Radius', value: '8m' }
+      ]
+    },
+    2: {
+      name: 'Radiant Glory',
+      image: 'https://static.smite2.live/smite2/GODS/Achilles/Abilities/t_Achilles_A02.webp',
+      description: 'You are blessed by the Gods, gaining bonus Strength, Protections, and Crowd Control Reduction for a short duration. Damaging enemies with abilities during this time Heals you.\n\n• When Armored, the Gods\' blessings also grant you a Physical Shield\n• When forgoing your Armor, hitting an enemy god with your attacks from behind reduces their Protections\n\nYou may only heal up to 4 times per ability hit. Healing 12 times during the buff\'s duration will cause the crowd to cheer for you.',
+      cooldown: '9s',
+      cost: '40 | 45 | 50 | 55 | 60',
+      attributes: [
+        { label: 'Strength', value: '10%' },
+        { label: 'Protections', value: '20%' },
+        { label: 'Crowd Control Reduction', value: '20 | 22.5 | 25 | 27.5 | 30%' },
+        { label: 'Buff Duration', value: '6.1s' },
+        { label: 'Heal', value: '16 | 18 | 20 | 22 | 24' },
+        { label: 'Physical Shield Health (Armored)', value: '50 + 10 Per Level' },
+        { label: 'Protections Reduced (Unarmored)', value: '1 Per Level' },
+        { label: 'Debuff Duration', value: '3s' }
+      ]
+    },
+    3: {
+      name: 'Combat Dodge',
+      image: 'https://static.smite2.live/smite2/GODS/Achilles/Abilities/t_Achilles_B03.webp',
+      description: 'Dodge in your current direction and ready your spear to strike enemies for Physical Damage. Hitting an enemy god with the strike allows you to recast the ability once before it goes on cooldown.\n\n• When Armored, striking an enemy god with your spear Slows them, stacking up to 2 times\n• When forgoing your Armor, the speed of your dodge is doubled\n\nYou can use Abilities and Basic Attacks between dashes. After readying your spear, you have 4 seconds to strike before the ability ends.',
+      cooldown: '12 | 11.5 | 11 | 10.5 | 10s',
+      cost: '22 | 24 | 26 | 28 | 30',
+      attributes: [
+        { label: 'Damage', value: '65 | 100 | 135 | 170 | 205' },
+        { label: 'Damage Scaling', value: '45% Strength' },
+        { label: 'Slow (Armored)', value: '7.5% Per Stack' },
+        { label: 'Slow Duration', value: '3s' },
+        { label: 'Dodge Range', value: '3.2m' },
+        { label: 'Spear Strike Range', value: '5.6m' },
+        { label: 'Spear Strike Radius', value: '0.96m' }
+      ]
+    },
+    4: {
+      name: 'Fatal Strike',
+      image: 'https://static.smite2.live/smite2/GODS/Achilles/Abilities/t_Achilles_A04.webp',
+      description: 'Prepare briefly, then Dash forward, dealing Physical Damage to enemies and Executing gods that are low health. Killing a god allows you to recast this ability up to five times.\n\n• Each kill exposes your heel, increasing your damage taken\n\nThe dash ends early upon hitting an enemy god. You are immune to Crowd Control during the preparation phase, and while Dashing. The preparation before the dash lasts 1 second.',
+      cooldown: '90s',
+      cost: '60 | 65 | 70 | 75 | 80',
+      attributes: [
+        { label: 'Damage', value: '180 | 270 | 360 | 450 | 540' },
+        { label: 'Damage Scaling', value: '100% Strength' },
+        { label: 'Execute Health %', value: '35%' },
+        { label: 'Increased Damage Taken', value: '5%' },
+        { label: 'Debuff Duration', value: '10s' },
+        { label: 'Dash Range', value: '5.6m' },
+        { label: 'Dash Radius', value: '0.96m' }
+      ]
+    }
+  },
+  aspects: [
+    {
+      id: 'prowess',
+      name: 'Aspect of Prowess',
+      image: '', // Add aspect image URL when available
+      description: 'Combat Dodge can now be recast after striking a Jungle Monster or Boss, with Spear Strike gaining increased Scaling when forgoing your Armor. Radiant Glory no longer grants increased Protections or Crowd Control Reduction.',
+      basicAttack: {
+        name: 'Achilles Basic Attack',
+        image: 'https://static.smite2.live/smite2/GODS/common/Icon_BasicAttack_Physical.webp',
+        description: 'Deal Physical Damage to an enemy in front of you.\n\nIf multiple enemies are in the area, the enemy closest to the center of the area will be hit.',
+        cooldown: '-',
+        cost: '-',
+        attributes: [
+          { label: 'Damage Scaling', value: '100% Strength + 20% Intelligence' },
+          { label: 'Range', value: '2.56m' },
+          { label: 'Cone Angle', value: '120 degrees' }
+        ]
+      },
+      passive: {
+        name: 'Gift of the Gods',
+        image: 'https://static.smite2.live/smite2/GODS/Achilles/Abilities/t_Achilles_Passive.webp',
+        description: 'Choose to wear armor or forgo it. Wearing armor grants bonus Health and Protections, while forgoing it grants bonus Strength and Movement Speed.\n\n• Swap between armor states by using Basic Attacks while the Passive targeter is active inside the Fountain.\n• Your chosen armor state also adds effects to Radiant Glory and Combat Dodge.',
+        cooldown: '-',
+        cost: '-',
+        attributes: [
+          { label: 'Armored Health', value: '25 + 10 Per Level' },
+          { label: 'Armored Protections', value: '5 + 2 Per Level' },
+          { label: 'Unarmored Strength', value: '3 + 1.5 Per Level' },
+          { label: 'Unarmored Movement Speed', value: '1% + 0.25% Per Level' }
+        ]
+      },
+      abilities: {
+        1: {
+          name: 'Shield of Achilles',
+          image: 'https://static.smite2.live/smite2/GODS/Achilles/Abilities/t_Achilles_A01.webp',
+          description: 'Punch forward with your shield, dealing Physical Damage and Stunning enemies in a short cone. The force of the shield radiates further, dealing reduced damage.\n\n• The radiated force deals 80% Damage\n• Non-God targets take 115% Damage\n• Increased Stun duration when Armored, increased Scaling when forgoing your Armor\n\nThis ability can hit through walls.',
+          cooldown: '14s',
+          cost: '60 | 65 | 70 | 75 | 80',
+          attributes: [
+            { label: 'Damage', value: '100 | 155 | 210 | 265 | 320' },
+            { label: 'Damage Scaling', value: '80% Strength' },
+            { label: 'Stun Duration', value: '0.8s' },
+            { label: 'Bonus Stun Duration (Armored)', value: '0.2s' },
+            { label: 'Bonus Damage Scaling (Unarmored)', value: '15% Strength' },
+            { label: 'Cone Angle', value: '80 degrees' },
+            { label: 'Small Radius', value: '3.2m' },
+            { label: 'Large Radius', value: '8m' }
+          ]
+        },
+        2: {
+          name: 'Radiant Glory',
+          image: 'https://static.smite2.live/smite2/GODS/Achilles/Abilities/t_Achilles_A02.webp',
+          description: 'You are blessed by the Gods, gaining bonus Strength for a short duration. Damaging enemies with abilities during this time Heals you.\n\n• When Armored, the Gods\' blessings also grant you a Physical Shield\n• When forgoing your Armor, hitting an enemy god with your attacks from behind reduces their Protections\n• NO LONGER GRANTS INCREASED PROTECTIONS OR CROWD CONTROL REDUCTION\n\nYou may only heal up to 4 times per ability hit. Healing 12 times during the buff\'s duration will cause the crowd to cheer for you.',
+          cooldown: '9s',
+          cost: '40 | 45 | 50 | 55 | 60',
+          attributes: [
+            { label: 'Strength', value: '10%' },
+            { label: 'Buff Duration', value: '6.1s' },
+            { label: 'Heal', value: '16 | 18 | 20 | 22 | 24' },
+            { label: 'Physical Shield Health (Armored)', value: '50 + 10 Per Level' },
+            { label: 'Protections Reduced (Unarmored)', value: '1 Per Level' },
+            { label: 'Debuff Duration', value: '3s' }
+          ]
+        },
+        3: {
+          name: 'Combat Dodge',
+          image: 'https://static.smite2.live/smite2/GODS/Achilles/Abilities/t_Achilles_B03.webp',
+          description: 'Dodge in your current direction and ready your spear to strike enemies for Physical Damage. Hitting a God or Jungle Monster with the strike allows you to recast the ability once before it goes on cooldown.\n\n• When Armored, striking an enemy god with your spear Slows them, stacking up to 2 times\n• When forgoing your Armor, the speed of your dodge is doubled, AND SPEAR STRIKE HAS INCREASED SCALING\n• CAN NOW RECAST AFTER STRIKING A JUNGLE MONSTER OR BOSS\n\nYou can use Abilities and Basic Attacks between dashes. After readying your spear, you have 4 seconds to strike before the ability ends.',
+          cooldown: '14 | 13.5 | 13 | 12.5 | 12s',
+          cost: '22 | 24 | 26 | 28 | 30',
+          attributes: [
+            { label: 'Damage', value: '65 | 105 | 145 | 185 | 225' },
+            { label: 'Damage Scaling', value: '45% Strength' },
+            { label: 'Slow (Armored)', value: '7.5% Per Stack' },
+            { label: 'Slow Duration', value: '3s' },
+            { label: 'Dodge Range', value: '3.2m' },
+            { label: 'Spear Strike Range', value: '5.6m' },
+            { label: 'Spear Strike Radius', value: '0.96m' }
+          ]
+        },
+        4: {
+          name: 'Fatal Strike',
+          image: 'https://static.smite2.live/smite2/GODS/Achilles/Abilities/t_Achilles_A04.webp',
+          description: 'Prepare briefly, then Dash forward, dealing Physical Damage to enemies and Executing gods that are low health. Killing a god allows you to recast this ability up to five times.\n\n• Each kill exposes your heel, increasing your damage taken\n\nThe dash ends early upon hitting an enemy god. You are immune to Crowd Control during the preparation phase, and while Dashing. The preparation before the dash lasts 1 second.',
+          cooldown: '90s',
+          cost: '60 | 65 | 70 | 75 | 80',
+          attributes: [
+            { label: 'Damage', value: '180 | 270 | 360 | 450 | 540' },
+            { label: 'Damage Scaling', value: '100% Strength' },
+            { label: 'Execute Health %', value: '35%' },
+            { label: 'Increased Damage Taken', value: '5%' },
+            { label: 'Debuff Duration', value: '10s' },
+            { label: 'Dash Range', value: '5.6m' },
+            { label: 'Dash Radius', value: '0.96m' }
+          ]
+        }
+      }
+    }
+  ],
+  recommendedBuilds: []
+},
+{
+  id: 'agni',
+  name: 'Agni',
+  title: 'God of Fire',
+  pantheon: 'Hindu',
+  role: 'Mage',
+  lanes: ['Mid'],
+  damageType: DamageType.Magical,
+  image: '', // Add god portrait image URL
+  videoGuideUrl: '', // Add YouTube URL when available
+  goodAgainst: [],
+  badAgainst: [],
+  levelingOrder: [],
+  statsByLevel: [
+    { strength: 0, intelligence: 0, attackSpeed: 1, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 17.57, magicalProtection: 27.43, maxHealth: 617.62, healthRegen: 1.7, maxMana: 296, manaRegen: 2.34, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 2, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 20, magicalProtection: 29, maxHealth: 710, healthRegen: 2, maxMana: 336, manaRegen: 2.6, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 4, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 23, magicalProtection: 30, maxHealth: 803, healthRegen: 2, maxMana: 376, manaRegen: 2.9, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 5, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 26, magicalProtection: 32, maxHealth: 896, healthRegen: 2, maxMana: 416, manaRegen: 3.2, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 7, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 29, magicalProtection: 33, maxHealth: 989, healthRegen: 3, maxMana: 456, manaRegen: 3.5, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 8, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 32, magicalProtection: 35, maxHealth: 1082, healthRegen: 3, maxMana: 496, manaRegen: 3.8, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 9, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 35, magicalProtection: 36, maxHealth: 1175, healthRegen: 3, maxMana: 536, manaRegen: 4.1, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 11, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 38, magicalProtection: 38, maxHealth: 1268, healthRegen: 3, maxMana: 576, manaRegen: 4.4, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 12, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 40, magicalProtection: 39, maxHealth: 1361, healthRegen: 3, maxMana: 616, manaRegen: 4.7, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 14, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 43, magicalProtection: 41, maxHealth: 1454, healthRegen: 4, maxMana: 656, manaRegen: 5, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 15, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 46, magicalProtection: 42, maxHealth: 1547, healthRegen: 4, maxMana: 696, manaRegen: 5.3, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 17, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 49, magicalProtection: 44, maxHealth: 1640, healthRegen: 4, maxMana: 736, manaRegen: 5.6, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 18, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 52, magicalProtection: 45, maxHealth: 1733, healthRegen: 4, maxMana: 776, manaRegen: 5.9, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 20, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 54, magicalProtection: 47, maxHealth: 1826, healthRegen: 4, maxMana: 816, manaRegen: 6.2, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 21, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 57, magicalProtection: 48, maxHealth: 1919, healthRegen: 5, maxMana: 856, manaRegen: 6.5, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 22, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 60, magicalProtection: 50, maxHealth: 2012, healthRegen: 5, maxMana: 896, manaRegen: 6.8, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 24, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 63, magicalProtection: 51, maxHealth: 2105, healthRegen: 5, maxMana: 936, manaRegen: 7.1, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 25, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 66, magicalProtection: 53, maxHealth: 2198, healthRegen: 5, maxMana: 976, manaRegen: 7.4, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 27, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 69, magicalProtection: 54, maxHealth: 2291, healthRegen: 5, maxMana: 1016, manaRegen: 7.7, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 28, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 72, magicalProtection: 56, maxHealth: 2384, healthRegen: 6, maxMana: 1056, manaRegen: 8, cooldownRate: 0, movementSpeed: 365 },
+  ],
+  basicAttack: {
+    name: 'Agni Basic Attack',
+    image: '', // Placeholder
+    description: 'Fire a projectile that deals Magical Damage to the first enemy hit.\n\nProjectile stops on first target hit, and does not pass through walls.',
+    cooldown: '-',
+    cost: '-',
+    attributes: [
+      { label: 'Damage Scaling', value: '100% Strength + 20% Intelligence' },
+      { label: 'Range', value: '8.8m' },
+      { label: 'Radius', value: '0.48m' }
+    ]
+  },
+  passive: {
+    name: 'Combustion',
+    image: '', // Placeholder
+    description: 'Hitting an enemy with a Basic Attack provides 1 stack of Combustion. Hitting an enemy god provides 2. At 4 stacks Agni\'s next Flame Wave or Rain Fire will ignite all enemies hit, dealing Magical Damage every 0.5s for 3s.\n\nWhen Agni kills an enemy god, he goes on a Hot Streak. When on a Hot Streak, Combustion is fully charged and using Flame Wave or Rain Fire does not consume Combustion.\n\nCombustion Damage is increased by 25% per additional stack of ignite.',
+    cooldown: '-',
+    cost: '-',
+    attributes: [
+      { label: 'Combustion Damage', value: '5' },
+      { label: 'Combustion Scaling', value: '6% Intelligence' },
+      { label: 'Hot Streak Duration', value: '10s' }
+    ]
+  },
+  abilities: {
+    1: {
+      name: 'Noxious Fumes',
+      image: '', // Placeholder
+      description: 'Summon a cloud of noxious fumes which deals Magical Damage every second. Hitting the fumes with any of your other abilities detonates the gas, Stunning and dealing Magical Damage to enemies in the area.\n\n• Reduces enemy Healing\n\nFumes last for 10s.',
+      cooldown: '13s',
+      cost: '60 | 65 | 70 | 75 | 80',
+      attributes: [
+        { label: 'Damage', value: '10 | 20 | 30 | 40 | 50' },
+        { label: 'Damage Scaling', value: '5% Intelligence' },
+        { label: 'Explode Damage', value: '20 | 40 | 60 | 80 | 100' },
+        { label: 'Explode Damage Scaling', value: '20% Intelligence' },
+        { label: 'Stun Duration', value: '0.8s' },
+        { label: 'Healing Reduction', value: '25%' },
+        { label: 'Range', value: '8.8m' },
+        { label: 'Radius', value: '3.2m' }
+      ]
+    },
+    2: {
+      name: 'Flame Wave',
+      image: '', // Placeholder
+      description: 'Summon a wave of fire, dealing Magical Damage.\n\n• Ignites Noxious Fumes\n\nPersists for 1s after reaching max distance.',
+      cooldown: '15 | 14.5 | 14 | 13.5 | 13s',
+      cost: '60 | 65 | 70 | 75 | 80',
+      attributes: [
+        { label: 'Damage', value: '100 | 155 | 210 | 265 | 320' },
+        { label: 'Damage Scaling', value: '65% Intelligence' },
+        { label: 'Range', value: '8m' },
+        { label: 'Radius', value: '2.59m' }
+      ]
+    },
+    3: {
+      name: 'Path of Flames',
+      image: '', // Placeholder
+      description: 'Dash forward and leave a trail of fire behind you. Enemies that enter the area take Magical Damage every 0.5s for 2s.\n\n• You are Displacement Immune while Dashing\n• Ignites Noxious Fumes\n\nFlame trail lasts for 3s. Enemies that are being damaged and touch the area again have their damage duration refreshed.',
+      cooldown: '16s',
+      cost: '70 | 75 | 80 | 85 | 90',
+      attributes: [
+        { label: 'Damage', value: '20 | 30 | 40 | 50 | 60' },
+        { label: 'Damage Scaling', value: '15% Intelligence' },
+        { label: 'Range', value: '9.6m' }
+      ]
+    },
+    4: {
+      name: 'Rain Fire',
+      image: '', // Placeholder
+      description: 'Summon a meteor, dealing Magical Damage. You can have up to 3 charges of this ability.\n\n• Ignites Noxious Fumes\n\nYou are Slowed by 50% while summoning a meteor.',
+      cooldown: '18s',
+      cost: '10',
+      attributes: [
+        { label: 'Damage', value: '135 | 175 | 215 | 255 | 295' },
+        { label: 'Damage Scaling', value: '60% Intelligence' },
+        { label: 'Range', value: '10.4m' },
+        { label: 'Radius', value: '3.2m' }
+      ]
+    }
+  },
+  aspects: [
+    {
+      id: 'combustion',
+      name: 'Aspect of Combustion',
+      image: '', // Placeholder
+      description: 'Your Basic Attacks now ignite enemies dealing damage over time and stacking 5 times. Flame Wave and Rain of Fire consume ignites dealing a burst of damage. Rain of Fire deals reduced damage.',
+      basicAttack: {
+        name: 'Agni Basic Attack',
+        image: '', // Placeholder
+        description: 'Fire a projectile that deals Magical Damage to the first enemy hit.\n\nProjectile stops on first target hit, and does not pass through walls.',
+        cooldown: '-',
+        cost: '-',
+        attributes: [
+          { label: 'Damage Scaling', value: '100% Strength + 20% Intelligence' },
+          { label: 'Range', value: '8.8m' },
+          { label: 'Radius', value: '0.48m' }
+        ]
+      },
+      passive: {
+        name: 'Combustion',
+        image: '', // Placeholder
+        description: 'Your Basic Attacks now ignite enemies dealing damage over time and stacking 5 times. Flame Wave and Rain of Fire consume ignites dealing a burst of damage.\n\n• BASIC ATTACKS IGNITE ENEMIES INSTEAD OF BUILDING STACKS\n• IGNITE STACKS UP TO 5 TIMES\n• FLAME WAVE AND RAIN OF FIRE CONSUME IGNITES FOR BURST DAMAGE\n• RAIN OF FIRE DEALS REDUCED DAMAGE',
+        cooldown: '-',
+        cost: '-',
+        attributes: [
+          { label: 'Ignite Damage', value: '3' },
+          { label: 'Ignite Scaling', value: '2% Strength' },
+          { label: 'Ignite Duration', value: '3s' },
+          { label: 'Max Stacks', value: '5' },
+          { label: 'Consume Damage', value: '30' },
+          { label: 'Consume Scaling', value: '70% Strength' }
+        ]
+      },
+      abilities: {
+        1: {
+          name: 'Noxious Fumes',
+          image: '', // Placeholder
+          description: 'Summon a cloud of noxious fumes which deals Magical Damage every second. Hitting the fumes with any of your other abilities detonates the gas, Stunning and dealing Magical Damage to enemies in the area.\n\n• Reduces enemy Healing\n\nFumes last for 10s.',
+          cooldown: '13s',
+          cost: '60 | 65 | 70 | 75 | 80',
+          attributes: [
+            { label: 'Damage', value: '10 | 20 | 30 | 40 | 50' },
+            { label: 'Damage Scaling', value: '5% Intelligence' },
+            { label: 'Explode Damage', value: '20 | 40 | 60 | 80 | 100' },
+            { label: 'Explode Damage Scaling', value: '20% Intelligence' },
+            { label: 'Stun Duration', value: '0.8s' },
+            { label: 'Healing Reduction', value: '25%' },
+            { label: 'Range', value: '8.8m' },
+            { label: 'Radius', value: '3.2m' }
+          ]
+        },
+        2: {
+          name: 'Flame Wave',
+          image: '', // Placeholder
+          description: 'Summon a wave of fire, dealing Magical Damage.\n\n• Ignites Noxious Fumes\n• CONSUMES IGNITE STACKS FOR BURST DAMAGE\n\nPersists for 1s after reaching max distance.',
+          cooldown: '15 | 14.5 | 14 | 13.5 | 13s',
+          cost: '60 | 65 | 70 | 75 | 80',
+          attributes: [
+            { label: 'Damage', value: '100 | 155 | 210 | 265 | 320' },
+            { label: 'Damage Scaling', value: '65% Intelligence' },
+            { label: 'Range', value: '8m' },
+            { label: 'Radius', value: '2.59m' }
+          ]
+        },
+        3: {
+          name: 'Path of Flames',
+          image: '', // Placeholder
+          description: 'Dash forward and leave a trail of fire behind you. Enemies that enter the area take Magical Damage every 0.5s for 2s.\n\n• You are Displacement Immune while Dashing\n• Ignites Noxious Fumes\n\nFlame trail lasts for 3s. Enemies that are being damaged and touch the area again have their damage duration refreshed.',
+          cooldown: '16s',
+          cost: '70 | 75 | 80 | 85 | 90',
+          attributes: [
+            { label: 'Damage', value: '20 | 30 | 40 | 50 | 60' },
+            { label: 'Damage Scaling', value: '15% Intelligence' },
+            { label: 'Range', value: '9.6m' }
+          ]
+        },
+        4: {
+          name: 'Rain Fire',
+          image: '', // Placeholder
+          description: 'Summon a meteor, dealing Magical Damage. You can have up to 3 charges of this ability.\n\n• Ignites Noxious Fumes\n• CONSUMES IGNITE STACKS FOR BURST DAMAGE\n• DEALS REDUCED DAMAGE\n\nYou are Slowed by 50% while summoning a meteor.',
+          cooldown: '18s',
+          cost: '10',
+          attributes: [
+            { label: 'Damage', value: '135 | 175 | 215 | 255 | 295' },
+            { label: 'Damage Scaling', value: '60% Intelligence' },
+            { label: 'Range', value: '10.4m' },
+            { label: 'Radius', value: '3.2m' }
+          ]
+        }
+      }
+    }
+  ],
+  recommendedBuilds: []
+},
+{
+  id: 'aladdin',
+  name: 'Aladdin',
+  title: 'The Sultan',
+  pantheon: 'Tales Of Arabia',
+  role: 'Assassin',
+  lanes: ['Jungle', 'Solo', 'Mid'],
+  damageType: DamageType.Magical,
+  image: '', // Add god portrait image URL
+  videoGuideUrl: '', // Add YouTube URL when available
+  goodAgainst: [],
+  badAgainst: [],
+  levelingOrder: [],
+  statsByLevel: [
+    { strength: 0, intelligence: 0, attackSpeed: 1, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 18.1, magicalProtection: 26.1, maxHealth: 622.5, healthRegen: 1.7, maxMana: 296, manaRegen: 2.25, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 2, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 21, magicalProtection: 28, maxHealth: 715, healthRegen: 2, maxMana: 336, manaRegen: 2.5, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 4, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 24, magicalProtection: 29, maxHealth: 808, healthRegen: 2, maxMana: 376, manaRegen: 2.75, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 5, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 27, magicalProtection: 31, maxHealth: 901, healthRegen: 2, maxMana: 416, manaRegen: 3, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 7, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 30, magicalProtection: 32, maxHealth: 994, healthRegen: 3, maxMana: 456, manaRegen: 3.25, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 8, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 33, magicalProtection: 34, maxHealth: 1087, healthRegen: 3, maxMana: 496, manaRegen: 3.5, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 10, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 36, magicalProtection: 35, maxHealth: 1180, healthRegen: 3, maxMana: 536, manaRegen: 3.75, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 11, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 39, magicalProtection: 37, maxHealth: 1273, healthRegen: 3, maxMana: 576, manaRegen: 4, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 13, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 42, magicalProtection: 38, maxHealth: 1366, healthRegen: 3, maxMana: 616, manaRegen: 4.25, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 14, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 45, magicalProtection: 40, maxHealth: 1459, healthRegen: 4, maxMana: 656, manaRegen: 4.5, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 16, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 48, magicalProtection: 41, maxHealth: 1552, healthRegen: 4, maxMana: 696, manaRegen: 4.75, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 17, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 51, magicalProtection: 43, maxHealth: 1645, healthRegen: 4, maxMana: 736, manaRegen: 5, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 19, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 54, magicalProtection: 44, maxHealth: 1738, healthRegen: 4, maxMana: 776, manaRegen: 5.25, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 20, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 57, magicalProtection: 46, maxHealth: 1831, healthRegen: 4, maxMana: 816, manaRegen: 5.5, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 22, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 60, magicalProtection: 47, maxHealth: 1924, healthRegen: 5, maxMana: 856, manaRegen: 5.75, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 23, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 63, magicalProtection: 49, maxHealth: 2017, healthRegen: 5, maxMana: 896, manaRegen: 6, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 25, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 66, magicalProtection: 50, maxHealth: 2110, healthRegen: 5, maxMana: 936, manaRegen: 6.25, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 26, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 69, magicalProtection: 52, maxHealth: 2203, healthRegen: 5, maxMana: 976, manaRegen: 6.5, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 28, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 72, magicalProtection: 53, maxHealth: 2296, healthRegen: 5, maxMana: 1016, manaRegen: 6.75, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 29, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 75, magicalProtection: 55, maxHealth: 2389, healthRegen: 6, maxMana: 1056, manaRegen: 7, cooldownRate: 0, movementSpeed: 365 },
+  ],
+  basicAttack: {
+    name: 'Aladdin Basic Attack',
+    image: '', // Placeholder
+    description: 'Deal Magical Damage to an enemy in front of you.\n\nIf multiple enemies are in the area, the enemy closest to the center of the area will be hit. Has a 5 hit chain. Attacks in order of 1, 1, 0.33, 0.33, 0.5x damage and swing time. Final 3 Hits Cleave.',
+    cooldown: '-',
+    cost: '-',
+    attributes: [
+      { label: 'Damage Scaling', value: '100% Strength + 30% Intelligence' },
+      { label: 'Range', value: '1.92m' },
+      { label: 'Cone Angle', value: '120 degrees' }
+    ]
+  },
+  passive: {
+    name: 'Three Wishes',
+    image: '', // Placeholder
+    description: 'Make 3 wishes at any time. Gain a charge of Genie\'s Strength every 10s (-1s per enemy slain, -5s for gods).\n\n• Wish: Wealth. +250 Gold. +10% Gold Gains. God Kills/Assists grant +33 Gold for 3m.\n• Wish: Immortality. While dead, instantly revive. Gain 75% Movement Speed for 10s when leaving fountain.\n• Wish: Power. Reset ability and item cooldowns. Gain a charge of Genie\'s Strength.\n\nThe Lamp also provides bonus stats from all your items (1% + 0.4% Per Level, up to 9% at Level 20).',
+    cooldown: '-',
+    cost: '-',
+    attributes: [
+      { label: 'Genie Charge Cooldown', value: '10s' },
+      { label: 'Cooldown Reduction Per Kill', value: '1s (5s for Gods)' },
+      { label: 'Wealth Gold', value: '250' },
+      { label: 'Wealth Gold Bonus', value: '+10% Gold Gains' },
+      { label: 'Wealth Kill Bonus', value: '+33 Gold for 3m' },
+      { label: 'Immortality Move Speed', value: '75% for 10s' },
+      { label: 'Lamp Stat Bonus', value: '1% + 0.4% Per Level' }
+    ]
+  },
+  abilities: {
+    1: {
+      name: 'Kufic Invocation',
+      image: '', // Placeholder
+      description: 'Fire 5 Kufic symbols dealing Magical Damage in a cone. Charge to narrow the cone. Fully charged symbols merge, dealing Magical Damage.\n\n• When fully charged the symbol travels further and hits a larger area\n• Use a charge of Genie\'s Strength to send symbols back to Aladdin, dealing Magical Damage when small or Magical Damage when large\n\nMust have a charge of Genie\'s Strength when cast to be able to refire. You have 5s to refire. Subsequent hits deal 20% of the initial damage. When sent back, the Kufic symbol(s) will fly to where Aladdin was when he refired.',
+      cooldown: '13s',
+      cost: '85',
+      attributes: [
+        { label: 'Small Damage', value: '35 | 65 | 95 | 125 | 155' },
+        { label: 'Small Scaling', value: '40% Intelligence + 35% Strength' },
+        { label: 'Large Damage', value: '60 | 115 | 170 | 225 | 280' },
+        { label: 'Large Scaling', value: '72% Intelligence + 63% Strength' },
+        { label: 'Return Small Damage', value: '20 | 40 | 60 | 80 | 100' },
+        { label: 'Return Small Scaling', value: '25% Intelligence + 35% Strength' },
+        { label: 'Return Large Damage', value: '35 | 70 | 105 | 140 | 175' },
+        { label: 'Return Large Scaling', value: '50% Intelligence + 55% Strength' },
+        { label: 'Range', value: '8.8m / 11.2m (charged)' },
+        { label: 'Radius', value: '0.8m / 1.6m (charged)' },
+        { label: 'Max Starting Angle', value: '90 degrees' }
+      ]
+    },
+    2: {
+      name: "Sultan's Grace",
+      image: '', // Placeholder
+      description: 'Dash forward dealing Magical Damage to enemies you pass through.\n\n• Deals 0.5% increased damage to enemies for each % Health below 50%\n• Use a charge of Genie\'s Strength to summon the Genie to unleash a flurry of 5 punches that deal Magical Damage to enemies in front of Aladdin',
+      cooldown: '16 | 15.5 | 15 | 14.5 | 14s',
+      cost: '50 | 55 | 60 | 65 | 70',
+      attributes: [
+        { label: 'Dash Damage', value: '90 | 135 | 180 | 225 | 270' },
+        { label: 'Dash Scaling', value: '65% Intelligence + 65% Strength' },
+        { label: 'Missing HP Bonus Scaling', value: '0.13% Intelligence' },
+        { label: 'Punch Damage', value: '20 | 30 | 40 | 50 | 60' },
+        { label: 'Punch Scaling', value: '20% Intelligence + 35% Strength' }
+      ]
+    },
+    3: {
+      name: 'Agile Run',
+      image: '', // Placeholder
+      description: 'Dash forward. Dashing into a wall causes you to run along it before leaping to a location, dealing Magical Damage to enemies in the landing area.\n\n• Use a charge of Genie\'s Strength to call the Genie to slam down at the landing location. Enemies take Magical Damage and are knocked straight up\n\nThe angle Aladdin runs along the wall is determined by the angle Aladdin approaches the wall. Aladdin can toggle using a charge of Genie\'s Strength until a landing location is selected. Aladdin runs for 8.8m or until he reaches 5m in height. The wall run will always take 1.25s. Aladdin can wall run along all walls, structures, and player made deployables that he would normally collide with.',
+      cooldown: '16s',
+      cost: '50 | 55 | 60 | 65 | 70',
+      attributes: [
+        { label: 'Landing Damage', value: '60 | 105 | 150 | 195 | 240' },
+        { label: 'Landing Scaling', value: '70% Intelligence + 50% Strength' },
+        { label: 'Genie Damage', value: '20 | 30 | 40 | 50 | 60' },
+        { label: 'Genie Scaling', value: '15% Intelligence + 25% Strength' },
+        { label: 'Leap Range', value: '8.8m' },
+        { label: 'Leap Radius', value: '3.2m' }
+      ]
+    },
+    4: {
+      name: 'Into The Lamp',
+      image: '', // Placeholder
+      description: 'Throw the Lamp forward, dealing Magical Damage and stopping on first enemy god hit. If successful, Aladdin and the enemy god are pulled into the lamp to challenge each other.\n\n• They gain a 35% MaxHealth Shield. Aladdin\'s non-ultimate cooldowns are reset. The target\'s non-ultimate cooldowns are halved\n• The Lamp is left behind, allowing any god to enter the lamp and join the ongoing challenge\n\nFight lasts 16s; an escape appears at 8s. Everyone is expelled when the timer ends. The fight also ends early if a combatant dies (Aladdin or Target), or if only one team remains. Non-combatants deal and take 33% reduced damage.',
+      cooldown: '90s',
+      cost: '70 | 80 | 90 | 100 | 110',
+      attributes: [
+        { label: 'Damage', value: '150 | 250 | 350 | 450 | 550' },
+        { label: 'Damage Scaling', value: '65% Strength + 90% Intelligence' },
+        { label: 'Self CDR', value: '50 | 55 | 60 | 65 | 70%' },
+        { label: 'Enemy CDR', value: '50%' },
+        { label: 'Shield', value: '35% Max Health' },
+        { label: 'Protections', value: '30 | 35 | 40 | 45 | 50' },
+        { label: 'Fight Duration', value: '16s' },
+        { label: 'Escape Appears', value: '8s' }
+      ]
+    }
+  },
+  aspects: [],
   recommendedBuilds: []
 },
 ];
