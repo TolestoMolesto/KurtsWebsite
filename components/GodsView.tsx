@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { God, Aspect, GodStats, RecommendedBuild, Item } from '../types';
-import { X, Shield, Zap, Sword, Hexagon, Search, RotateCcw, Heart, Droplet, Activity, Move, Target, BicepsFlexed, BookOpen, Skull, Layers, Sparkles, Star, ChevronDown, ArrowDownUp, Filter, ThumbsUp, ThumbsDown, Edit2, Save, Plus, Trash2, Check, Lock, Youtube } from 'lucide-react';
+import { X, Shield, Zap, Sword, Hexagon, Search, RotateCcw, Heart, Droplet, Activity, Move, Target, BicepsFlexed, BookOpen, Skull, Layers, Sparkles, Star, ChevronDown, ArrowDownUp, Filter, ThumbsUp, ThumbsDown, Edit2, Save, Plus, Trash2, Check, Lock, Youtube, AlertTriangle } from 'lucide-react';
 import { db, auth } from '../services/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import * as FirebaseAuth from 'firebase/auth';
@@ -393,6 +393,15 @@ export const GodsView: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 pb-24">
+      
+      {/* Disclaimer */}
+      <div className="bg-yellow-950/30 border border-yellow-600/30 text-yellow-200/80 p-3 rounded-lg mb-6 flex items-start sm:items-center gap-3 text-xs sm:text-sm">
+            <AlertTriangle className="shrink-0 text-yellow-500" size={18} />
+            <p>
+                <span className="font-bold text-yellow-500 uppercase tracking-wider mr-1">Patch Disclaimer:</span> 
+                God data is manually adjusted every patch and may be incorrect. Please inform us if you spot any inaccuracies!
+            </p>
+      </div>
       
       {/* --- Filter Sidebar & Main Grid --- */}
       <div className="flex flex-col lg:flex-row gap-6 items-start">

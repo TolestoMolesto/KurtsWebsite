@@ -1,9 +1,10 @@
 
+
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Item } from '../types';
 import { useData } from '../contexts/DataContext';
-import { Search, Shield, Sword, Zap, ChevronDown, X, Lock, BicepsFlexed, BookOpen, Heart, Activity, Droplet, Target, Skull, RotateCcw, Crosshair, ArrowDownUp, Info } from 'lucide-react';
+import { Search, Shield, Sword, Zap, ChevronDown, X, Lock, BicepsFlexed, BookOpen, Heart, Activity, Droplet, Target, Skull, RotateCcw, Crosshair, ArrowDownUp, Info, AlertTriangle } from 'lucide-react';
 
 // Helper to get component items (buildsFrom)
 const getComponents = (item: Item, allItems: Item[]) => {
@@ -253,6 +254,16 @@ export const ItemsView: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 pb-24 relative">
+
+      {/* Disclaimer */}
+      <div className="bg-yellow-950/30 border border-yellow-600/30 text-yellow-200/80 p-3 rounded-lg mb-6 flex items-start sm:items-center gap-3 text-xs sm:text-sm">
+            <AlertTriangle className="shrink-0 text-yellow-500" size={18} />
+            <p>
+                <span className="font-bold text-yellow-500 uppercase tracking-wider mr-1">Patch Disclaimer:</span> 
+                Item stats are manually adjusted every patch and may be incorrect. Please inform us if you spot any inaccuracies!
+            </p>
+      </div>
+
       <div className="flex flex-col lg:flex-row gap-6 items-start">
         
         {/* Left Column: Filters (Desktop Sticky) */}

@@ -10,8 +10,11 @@ export const ProfileView: React.FC = () => {
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [trackerLink, setTrackerLink] = useState('');
   const [discordHandle, setDiscordHandle] = useState('');
+  
+  // Initial states for comparison
   const [initialTrackerLink, setInitialTrackerLink] = useState('');
   const [initialDiscordHandle, setInitialDiscordHandle] = useState('');
+
   const [isAdmin, setIsAdmin] = useState(false);
   const [joinDate, setJoinDate] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -166,6 +169,21 @@ export const ProfileView: React.FC = () => {
                     </div>
 
                     <div className="space-y-2">
+                        <label className="text-xs font-bold uppercase text-slate-500 ml-1">Discord Username</label>
+                        <div className="relative">
+                            <MessageCircle className="absolute left-4 top-1/2 -translate-y-1/2 text-[#5865F2]" size={18} />
+                            <input 
+                                type="text" 
+                                value={discordHandle}
+                                onChange={(e) => setDiscordHandle(e.target.value)}
+                                placeholder="Username"
+                                className="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-12 pr-4 text-slate-200 focus:outline-none focus:border-mythic-gold focus:ring-1 focus:ring-mythic-gold transition-all"
+                            />
+                        </div>
+                        <p className="text-[10px] text-slate-500 ml-1">Required for tournament participation.</p>
+                    </div>
+
+                    <div className="space-y-2">
                         <label className="text-xs font-bold uppercase text-slate-500 ml-1">Smite Tracker Link</label>
                         <div className="flex gap-2">
                             <div className="relative flex-1">
@@ -190,21 +208,6 @@ export const ProfileView: React.FC = () => {
                                 </a>
                             )}
                         </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        <label className="text-xs font-bold uppercase text-slate-500 ml-1">Discord Username</label>
-                        <div className="relative">
-                            <MessageCircle className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                            <input 
-                                type="text" 
-                                value={discordHandle}
-                                onChange={(e) => setDiscordHandle(e.target.value)}
-                                placeholder="Username"
-                                className="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-12 pr-4 text-slate-200 focus:outline-none focus:border-mythic-gold focus:ring-1 focus:ring-mythic-gold transition-all"
-                            />
-                        </div>
-                        <p className="text-[10px] text-slate-500 ml-1">Required for tournament participation and rewards.</p>
                     </div>
 
                     <div className="space-y-2">
