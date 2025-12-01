@@ -13340,5 +13340,791 @@ export const GODS: God[] = [
     }
   ],
   recommendedBuilds: []
+},
+{
+  id: 'ullr',
+  name: 'Ullr',
+  title: 'The Glorious One',
+  pantheon: 'Norse',
+  role: 'Hunter',
+  lanes: ['Carry', 'Mid', 'Jungle'],
+  damageType: DamageType.Physical,
+  image: 'https://placeholder.com/images/ullr-card.jpg',
+  videoGuideUrl: 'https://www.youtube.com/watch?v=PLACEHOLDER',
+  goodAgainst: [],
+  badAgainst: [],
+  levelingOrder: [],
+  statsByLevel: [
+    { strength: 0, intelligence: 0, attackSpeed: 1.33, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 18, magicalProtection: 26, maxHealth: 618, healthRegen: 2, maxMana: 296, manaRegen: 2, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 3, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 21, magicalProtection: 27, maxHealth: 710, healthRegen: 2, maxMana: 336, manaRegen: 2, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 5, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 24, magicalProtection: 29, maxHealth: 802, healthRegen: 2, maxMana: 376, manaRegen: 3, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 6, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 27, magicalProtection: 30, maxHealth: 894, healthRegen: 2, maxMana: 416, manaRegen: 3, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 8, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 30, magicalProtection: 32, maxHealth: 986, healthRegen: 3, maxMana: 456, manaRegen: 3, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 10, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 33, magicalProtection: 33, maxHealth: 1078, healthRegen: 3, maxMana: 496, manaRegen: 4, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 11, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 36, magicalProtection: 35, maxHealth: 1170, healthRegen: 3, maxMana: 536, manaRegen: 4, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 13, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 39, magicalProtection: 36, maxHealth: 1262, healthRegen: 3, maxMana: 576, manaRegen: 4, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 15, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 42, magicalProtection: 38, maxHealth: 1354, healthRegen: 3, maxMana: 616, manaRegen: 4, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 16, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 45, magicalProtection: 39, maxHealth: 1446, healthRegen: 4, maxMana: 656, manaRegen: 4, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 18, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 48, magicalProtection: 41, maxHealth: 1538, healthRegen: 4, maxMana: 696, manaRegen: 5, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 20, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 51, magicalProtection: 42, maxHealth: 1630, healthRegen: 4, maxMana: 736, manaRegen: 5, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 21, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 54, magicalProtection: 44, maxHealth: 1722, healthRegen: 4, maxMana: 776, manaRegen: 5, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 23, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 57, magicalProtection: 45, maxHealth: 1814, healthRegen: 4, maxMana: 816, manaRegen: 6, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 25, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 60, magicalProtection: 47, maxHealth: 1906, healthRegen: 5, maxMana: 856, manaRegen: 6, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 26, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 63, magicalProtection: 48, maxHealth: 1998, healthRegen: 5, maxMana: 896, manaRegen: 6, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 28, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 66, magicalProtection: 50, maxHealth: 2090, healthRegen: 5, maxMana: 936, manaRegen: 6, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 30, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 69, magicalProtection: 51, maxHealth: 2182, healthRegen: 5, maxMana: 976, manaRegen: 6, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 31, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 72, magicalProtection: 53, maxHealth: 2274, healthRegen: 6, maxMana: 1016, manaRegen: 7, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 33, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 75, magicalProtection: 54, maxHealth: 2366, healthRegen: 6, maxMana: 1056, manaRegen: 7, cooldownRate: 0, movementSpeed: 375 },
+  ],
+  basicAttack: {
+    name: 'Ullr Basic Attack',
+    image: 'https://placeholder.com/images/ullr-basic.webp',
+    description: "Ullr's Basic attacks change depending on his current stance.\n\nBow: Fire a projectile that deals Physical Damage to the first enemy hit.\nAxe: Deal Physical Damage to an enemy in front of you.\n\n• Bow projectile stops on first target hit, and does not pass through walls\n• If Axe cone area contains multiple enemies, the enemy closest to the center of the area will be hit",
+    cooldown: '-',
+    cost: '-',
+    attributes: [
+      { label: 'Damage Scaling', value: '100% Strength + 20% Intelligence + 100% Basic Attack Power' },
+      { label: 'Bow Range', value: '8.8m' },
+      { label: 'Bow Radius', value: '0.48m' },
+      { label: 'Axe Range', value: '1.92m' },
+      { label: 'Axe Cone Angle', value: '120 degrees' }
+    ]
+  },
+  passive: {
+    name: 'Weapon Master',
+    image: 'https://placeholder.com/images/ullr-passive.webp',
+    description: 'When you use an ability in either stance your Cooldowns in the opposite stance are reduced.',
+    cooldown: '-',
+    cost: '-',
+    attributes: [
+      { label: 'Cooldown Reduction', value: '1s' }
+    ]
+  },
+  abilities: {
+    1: {
+      name: 'Bladed Arrow / Thrown Axe',
+      image: 'https://placeholder.com/images/ullr-ability1.webp',
+      description: 'Bow: Fire an arrow that passes through enemies and deals Physical Damage to all targets hit.\n\nAxe: Throw an axe that Stuns and deals Physical Damage to the first enemy it hits.',
+      cooldown: '14s',
+      cost: '50 | 55 | 60 | 65 | 70',
+      attributes: [
+        { label: 'Bow Damage', value: '70 | 120 | 170 | 220 | 270' },
+        { label: 'Bow Damage Scaling', value: '75% Strength' },
+        { label: 'Axe Damage', value: '50 | 80 | 110 | 140 | 170' },
+        { label: 'Axe Damage Scaling', value: '75% Strength' },
+        { label: 'Stun Duration', value: '0.8 | 0.9 | 1 | 1.1 | 1.2s' },
+        { label: 'Range', value: '11.2m' },
+        { label: 'Radius', value: '0.48m' }
+      ]
+    },
+    2: {
+      name: 'Expose Weakness / Invigorate',
+      image: 'https://placeholder.com/images/ullr-ability2.webp',
+      description: 'Bow: Gain bonus Attack Speed.\n\nAxe: Gain bonus Movement Speed.\n\n• The buff persists after switching stances',
+      cooldown: '14s',
+      cost: '50',
+      attributes: [
+        { label: 'Attack Speed (Bow)', value: '20 | 25 | 30 | 35 | 40%' },
+        { label: 'Movement Speed (Axe)', value: '8 | 10 | 12 | 14 | 16%' },
+        { label: 'Buff Duration', value: '4s' }
+      ]
+    },
+    3: {
+      name: 'Hail of Arrows / Glory Bound',
+      image: 'https://placeholder.com/images/ullr-ability3.webp',
+      description: "Bow: Fire a volley, dealing Physical Damage.\n• The arrow remains in the ground for 3s\n• If you activate Wield Axes while the arrow is deployed, the area around it becomes snowy for 3s, Slowing enemies.\n\nAxe: Leap to deal Physical Damage.\n• The axes remain in the ground for 3s\n• If you activate Wield Bow while the axes are deployed, the axes tear open the ground, reducing Physical Protections of enemies hit.",
+      cooldown: '14s',
+      cost: '50 | 55 | 60 | 65 | 70',
+      attributes: [
+        { label: 'Damage', value: '50 | 80 | 110 | 140 | 170' },
+        { label: 'Damage Scaling', value: '65% Strength' },
+        { label: 'Physical Protections Reduced', value: '5 | 10 | 15 | 20 | 25' },
+        { label: 'Debuff Duration', value: '4s' },
+        { label: 'Range', value: '8.8m' },
+        { label: 'Radius', value: '2.4m' }
+      ]
+    },
+    4: {
+      name: 'Wield Axes / Wield Bow',
+      image: 'https://placeholder.com/images/ullr-ability4.webp',
+      description: 'Change stance, remove Disarms and gain benefits depending on which stance you are in.\n\nBow: Ranged Basic Attacks and additional Strength.\nAxe: Melee Basic Attacks and additional Lifesteal.\n\n• You also gain half of the benefit of the opposing stance',
+      cooldown: '1s',
+      cost: '0',
+      attributes: [
+        { label: 'Strength (Bow)', value: '7.5 | 10 | 12.5 | 15 | 17.5' },
+        { label: 'Lifesteal (Axe)', value: '5 | 8 | 11 | 14 | 17%' }
+      ]
+    }
+  },
+  aspects: [],
+  recommendedBuilds: []
+},
+{
+  id: 'vulcan',
+  name: 'Vulcan',
+  title: 'Smith of the Gods',
+  pantheon: 'Roman',
+  role: 'Mage',
+  lanes: ['Mid'],
+  damageType: DamageType.Magical,
+  image: 'https://placeholder.com/vulcan-card.jpg',
+  videoGuideUrl: '',
+  goodAgainst: [],
+  badAgainst: [],
+  levelingOrder: [],
+  statsByLevel: [
+    { strength: 0, intelligence: 0, attackSpeed: 1, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 18, magicalProtection: 27, maxHealth: 618, healthRegen: 2, maxMana: 296, manaRegen: 2, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 2, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 21, magicalProtection: 29, maxHealth: 710, healthRegen: 2, maxMana: 336, manaRegen: 2, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 4, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 24, magicalProtection: 30, maxHealth: 802, healthRegen: 2, maxMana: 376, manaRegen: 3, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 6, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 27, magicalProtection: 32, maxHealth: 894, healthRegen: 2, maxMana: 416, manaRegen: 3, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 7, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 30, magicalProtection: 33, maxHealth: 986, healthRegen: 3, maxMana: 456, manaRegen: 3, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 9, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 33, magicalProtection: 35, maxHealth: 1078, healthRegen: 3, maxMana: 496, manaRegen: 4, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 10, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 36, magicalProtection: 36, maxHealth: 1170, healthRegen: 3, maxMana: 536, manaRegen: 4, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 12, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 39, magicalProtection: 38, maxHealth: 1262, healthRegen: 3, maxMana: 576, manaRegen: 4, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 13, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 42, magicalProtection: 40, maxHealth: 1354, healthRegen: 3, maxMana: 616, manaRegen: 4, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 15, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 45, magicalProtection: 41, maxHealth: 1446, healthRegen: 4, maxMana: 656, manaRegen: 4, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 16, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 48, magicalProtection: 43, maxHealth: 1538, healthRegen: 4, maxMana: 696, manaRegen: 5, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 17, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 51, magicalProtection: 44, maxHealth: 1630, healthRegen: 4, maxMana: 736, manaRegen: 5, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 19, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 54, magicalProtection: 46, maxHealth: 1722, healthRegen: 4, maxMana: 776, manaRegen: 5, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 20, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 57, magicalProtection: 47, maxHealth: 1814, healthRegen: 4, maxMana: 816, manaRegen: 6, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 22, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 60, magicalProtection: 49, maxHealth: 1906, healthRegen: 5, maxMana: 856, manaRegen: 6, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 23, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 63, magicalProtection: 50, maxHealth: 1998, healthRegen: 5, maxMana: 896, manaRegen: 6, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 25, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 66, magicalProtection: 52, maxHealth: 2090, healthRegen: 5, maxMana: 936, manaRegen: 6, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 26, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 69, magicalProtection: 54, maxHealth: 2182, healthRegen: 5, maxMana: 976, manaRegen: 6, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 28, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 72, magicalProtection: 55, maxHealth: 2274, healthRegen: 6, maxMana: 1016, manaRegen: 7, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 29, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 75, magicalProtection: 57, maxHealth: 2366, healthRegen: 6, maxMana: 1056, manaRegen: 7, cooldownRate: 0, movementSpeed: 365 },
+  ],
+  basicAttack: {
+    name: 'Vulcan Basic Attack',
+    image: 'https://placeholder.com/vulcan-basic.webp',
+    description: 'Fire a projectile that deals Magical Damage to the first enemy hit.\n\n• Projectile stops on first target hit, and does not pass through walls.',
+    cooldown: '-',
+    cost: '-',
+    attributes: [
+      { label: 'Damage Scaling', value: '100% Strength or Inhand Power + 20% Intelligence' },
+      { label: 'Range', value: '8.8m' },
+      { label: 'Radius', value: '0.48m' }
+    ]
+  },
+  passive: {
+    name: 'Master Craftsman',
+    image: 'https://placeholder.com/vulcan-passive.webp',
+    description: 'Vulcan has access to a variety of Mods in the item shop that affect his abilities. There are 3 sets of mods available at different levels. You can only have one Mod from each set.\n\nHitting an enemy god with an ability grants you increased Movement Speed and Mana Regen for 5s.',
+    cooldown: '-',
+    cost: '-',
+    attributes: [
+      { label: 'Movement Speed', value: '15%' },
+      { label: 'Mana Regen', value: '3' },
+      { label: 'Buff Duration', value: '5s' }
+    ]
+  },
+  abilities: {
+    1: {
+      name: 'Backfire',
+      image: 'https://placeholder.com/vulcan-ability1.webp',
+      description: 'Fire a projectile that causes you to Dash back and deal Magical Damage to all enemies it hits, marking the first god that is hit.\n\n• Inferno Cannons will prioritize hitting the marked god and deal 15% more damage to them for 4s.',
+      cooldown: '9 | 8.5 | 8 | 7.5 | 7s',
+      cost: '40 | 45 | 50 | 55 | 60',
+      attributes: [
+        { label: 'Damage', value: '90 | 135 | 180 | 225 | 270' },
+        { label: 'Damage Scaling', value: '80% Intelligence' },
+        { label: 'Mark Bonus Damage', value: '15%' },
+        { label: 'Mark Duration', value: '4s' },
+        { label: 'Range', value: '8.8m' },
+        { label: 'Radius', value: '0.48m' }
+      ]
+    },
+    2: {
+      name: 'Inferno Cannon',
+      image: 'https://placeholder.com/vulcan-ability2.webp',
+      description: 'Create an Inferno Cannon that shoots projectiles every 1s at an enemy in front of it, dealing Magical Damage.\n\n• It lasts until destroyed or another is placed.\n• Inherits Vulcan\'s penetrations in addition to having 25% base Penetration.\n• Does not trigger item effects.',
+      cooldown: '12s',
+      cost: '50 | 55 | 60 | 65 | 70',
+      attributes: [
+        { label: 'Damage', value: '45 | 70 | 95 | 120 | 145' },
+        { label: 'Damage Scaling', value: '40% Intelligence' },
+        { label: 'Turret HP', value: '220 | 300 | 380 | 460 | 540' },
+        { label: 'Base Penetration', value: '25%' },
+        { label: 'Range', value: '9.6m' }
+      ]
+    },
+    3: {
+      name: 'Magma Bomb',
+      image: 'https://placeholder.com/vulcan-ability3.webp',
+      description: 'Lob a projectile that explodes on impact with the ground, dealing Magical Damage and Displacing enemies in the area.\n\n• Enemies are displaced up and away from the explosion.',
+      cooldown: '10s',
+      cost: '50 | 55 | 60 | 65 | 70',
+      attributes: [
+        { label: 'Damage', value: '80 | 130 | 180 | 230 | 280' },
+        { label: 'Damage Scaling', value: '90% Intelligence' },
+        { label: 'Range', value: '9.6m' },
+        { label: 'Radius', value: '2.4m' }
+      ]
+    },
+    4: {
+      name: 'Earthshaker',
+      image: 'https://placeholder.com/vulcan-ability4.webp',
+      description: 'Launch a projectile that explodes on impact with the ground, dealing Magical Damage to enemies in the area.\n\n• Deals more damage the further the projectile travels.\n• Deals 1.65x the total damage at max travel time.',
+      cooldown: '90 | 85 | 80 | 75 | 70s',
+      cost: '80 | 90 | 100 | 110 | 120',
+      attributes: [
+        { label: 'Damage', value: '285 | 375 | 465 | 555 | 645' },
+        { label: 'Damage Scaling', value: '110% Intelligence' },
+        { label: 'Max Distance Multiplier', value: '1.65x' },
+        { label: 'Range', value: '19.2m' },
+        { label: 'Radius', value: '4.8m' }
+      ]
+    }
+  },
+  aspects: [
+    {
+      id: 'fortification',
+      name: 'Aspect of Fortification',
+      image: 'https://placeholder.com/vulcan-aspect-fortification.webp',
+      description: 'Vulcan\'s Passive gains: Being near one of your turrets grants you and the turret increased Protections and Health Regeneration. Backfire and Magma Bomb have lower Damage Scaling.',
+      basicAttack: {
+        name: 'Vulcan Basic Attack',
+        image: 'https://placeholder.com/vulcan-basic.webp',
+        description: 'Fire a projectile that deals Magical Damage to the first enemy hit.\n\n• Projectile stops on first target hit, and does not pass through walls.',
+        cooldown: '-',
+        cost: '-',
+        attributes: [
+          { label: 'Damage Scaling', value: '100% Strength or Inhand Power + 20% Intelligence' },
+          { label: 'Range', value: '8.8m' },
+          { label: 'Radius', value: '0.48m' }
+        ]
+      },
+      passive: {
+        name: 'Master Craftsman',
+        image: 'https://placeholder.com/vulcan-passive.webp',
+        description: 'Vulcan has access to a variety of Mods in the item shop that affect his abilities. There are 3 sets of mods available at different levels. You can only have one Mod from each set.\n\nHitting an enemy god with an ability grants you increased Movement Speed and Mana Regen for 5s.\n\n• VULCAN AND TURRETS WITHIN 8.8M GAIN PROTECTIONS AND HEALTH REGEN.',
+        cooldown: '-',
+        cost: '-',
+        attributes: [
+          { label: 'Movement Speed', value: '15%' },
+          { label: 'Mana Regen', value: '3' },
+          { label: 'Buff Duration', value: '5s' },
+          { label: 'Turret Proximity Range', value: '8.8m' }
+        ]
+      },
+      abilities: {
+        1: {
+          name: 'Backfire',
+          image: 'https://placeholder.com/vulcan-ability1.webp',
+          description: 'Fire a projectile that causes you to Dash back and deal Magical Damage to all enemies it hits, marking the first god that is hit.\n\n• Inferno Cannons will prioritize hitting the marked god and deal 15% more damage to them for 4s.\n• LOWER DAMAGE SCALING',
+          cooldown: '9 | 8.5 | 8 | 7.5 | 7s',
+          cost: '40 | 45 | 50 | 55 | 60',
+          attributes: [
+            { label: 'Damage', value: '90 | 135 | 180 | 225 | 270' },
+            { label: 'Damage Scaling', value: 'Reduced Intelligence Scaling' },
+            { label: 'Mark Bonus Damage', value: '15%' },
+            { label: 'Mark Duration', value: '4s' },
+            { label: 'Range', value: '8.8m' },
+            { label: 'Radius', value: '0.48m' }
+          ]
+        },
+        2: {
+          name: 'Inferno Cannon',
+          image: 'https://placeholder.com/vulcan-ability2.webp',
+          description: 'Create an Inferno Cannon that shoots projectiles every 1s at an enemy in front of it, dealing Magical Damage.\n\n• It lasts until destroyed or another is placed.\n• Inherits Vulcan\'s penetrations in addition to having 25% base Penetration.\n• Does not trigger item effects.',
+          cooldown: '12s',
+          cost: '50 | 55 | 60 | 65 | 70',
+          attributes: [
+            { label: 'Damage', value: '45 | 70 | 95 | 120 | 145' },
+            { label: 'Damage Scaling', value: '40% Intelligence' },
+            { label: 'Turret HP', value: '220 | 300 | 380 | 460 | 540' },
+            { label: 'Base Penetration', value: '25%' },
+            { label: 'Range', value: '9.6m' }
+          ]
+        },
+        3: {
+          name: 'Magma Bomb',
+          image: 'https://placeholder.com/vulcan-ability3.webp',
+          description: 'Lob a projectile that explodes on impact with the ground, dealing Magical Damage and Displacing enemies in the area.\n\n• Enemies are displaced up and away from the explosion.\n• LOWER DAMAGE SCALING',
+          cooldown: '10s',
+          cost: '50 | 55 | 60 | 65 | 70',
+          attributes: [
+            { label: 'Damage', value: '80 | 130 | 180 | 230 | 280' },
+            { label: 'Damage Scaling', value: 'Reduced Intelligence Scaling' },
+            { label: 'Range', value: '9.6m' },
+            { label: 'Radius', value: '2.4m' }
+          ]
+        },
+        4: {
+          name: 'Earthshaker',
+          image: 'https://placeholder.com/vulcan-ability4.webp',
+          description: 'Launch a projectile that explodes on impact with the ground, dealing Magical Damage to enemies in the area.\n\n• Deals more damage the further the projectile travels.\n• Deals 1.65x the total damage at max travel time.',
+          cooldown: '90 | 85 | 80 | 75 | 70s',
+          cost: '80 | 90 | 100 | 110 | 120',
+          attributes: [
+            { label: 'Damage', value: '285 | 375 | 465 | 555 | 645' },
+            { label: 'Damage Scaling', value: '110% Intelligence' },
+            { label: 'Max Distance Multiplier', value: '1.65x' },
+            { label: 'Range', value: '19.2m' },
+            { label: 'Radius', value: '4.8m' }
+          ]
+        }
+      }
+    }
+  ],
+  recommendedBuilds: []
+},
+{
+  id: 'xbalanque',
+  name: 'Xbalanque',
+  title: 'Hidden Jaguar Sun',
+  pantheon: 'Maya',
+  role: 'Hunter',
+  lanes: ['Carry', 'Mid'],
+  damageType: DamageType.Physical,
+  image: 'https://placeholder.com/images/xbalanque-card.jpg',
+  videoGuideUrl: 'https://www.youtube.com/watch?v=PLACEHOLDER',
+  goodAgainst: [],
+  badAgainst: [],
+  levelingOrder: [],
+  statsByLevel: [
+    { strength: 0, intelligence: 0, attackSpeed: 1.51, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 18, magicalProtection: 26, maxHealth: 591, healthRegen: 2, maxMana: 296, manaRegen: 2, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 3, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 21, magicalProtection: 27, maxHealth: 683, healthRegen: 2, maxMana: 336, manaRegen: 2, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 5, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 24, magicalProtection: 29, maxHealth: 775, healthRegen: 2, maxMana: 376, manaRegen: 3, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 6, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 27, magicalProtection: 30, maxHealth: 867, healthRegen: 2, maxMana: 416, manaRegen: 3, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 8, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 30, magicalProtection: 32, maxHealth: 959, healthRegen: 3, maxMana: 456, manaRegen: 3, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 10, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 33, magicalProtection: 33, maxHealth: 1051, healthRegen: 3, maxMana: 496, manaRegen: 4, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 11, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 36, magicalProtection: 35, maxHealth: 1143, healthRegen: 3, maxMana: 536, manaRegen: 4, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 13, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 39, magicalProtection: 36, maxHealth: 1235, healthRegen: 3, maxMana: 576, manaRegen: 4, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 15, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 42, magicalProtection: 38, maxHealth: 1327, healthRegen: 3, maxMana: 616, manaRegen: 4, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 16, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 45, magicalProtection: 39, maxHealth: 1419, healthRegen: 4, maxMana: 656, manaRegen: 4, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 18, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 48, magicalProtection: 41, maxHealth: 1511, healthRegen: 4, maxMana: 696, manaRegen: 5, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 20, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 51, magicalProtection: 42, maxHealth: 1603, healthRegen: 4, maxMana: 736, manaRegen: 5, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 21, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 54, magicalProtection: 44, maxHealth: 1695, healthRegen: 4, maxMana: 776, manaRegen: 5, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 23, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 57, magicalProtection: 45, maxHealth: 1787, healthRegen: 4, maxMana: 816, manaRegen: 6, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 25, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 60, magicalProtection: 47, maxHealth: 1879, healthRegen: 5, maxMana: 856, manaRegen: 6, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 26, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 63, magicalProtection: 48, maxHealth: 1971, healthRegen: 5, maxMana: 896, manaRegen: 6, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 28, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 66, magicalProtection: 50, maxHealth: 2063, healthRegen: 5, maxMana: 936, manaRegen: 6, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 30, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 69, magicalProtection: 51, maxHealth: 2155, healthRegen: 5, maxMana: 976, manaRegen: 6, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 31, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 72, magicalProtection: 53, maxHealth: 2247, healthRegen: 6, maxMana: 1016, manaRegen: 7, cooldownRate: 0, movementSpeed: 365 },
+    { strength: 0, intelligence: 0, attackSpeed: 33, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 75, magicalProtection: 54, maxHealth: 2339, healthRegen: 6, maxMana: 1056, manaRegen: 7, cooldownRate: 0, movementSpeed: 365 },
+  ],
+  basicAttack: {
+    name: 'Xbalanque Basic Attack',
+    image: 'https://placeholder.com/images/xbalanque-basic.webp',
+    description: 'Fire a projectile that deals Physical Damage to the first enemy hit.\n\n• Projectile stops on first target hit, and does not pass through walls.',
+    cooldown: '-',
+    cost: '-',
+    attributes: [
+      { label: 'Damage Scaling', value: '100% Strength + 20% Intelligence + 100% Basic Attack Power' },
+      { label: 'Range', value: '8.8m' },
+      { label: 'Radius', value: '0.48m' }
+    ]
+  },
+  passive: {
+    name: 'Dead of Night',
+    image: 'https://placeholder.com/images/xbalanque-passive.webp',
+    description: 'Deal damage to enemy gods to gain stacks. Each stack provides Strength or Intelligence, whichever is higher. At 3 and 6 stacks you gain an additional buff of Strength and Intelligence.\n\n• Each stack requires more damage dealt to gain the next stack.',
+    cooldown: '-',
+    cost: '-',
+    attributes: [
+      { label: 'Strength', value: '3 Per Stack' },
+      { label: 'Intelligence', value: '5 Per Stack' },
+      { label: 'Strength (Empowered)', value: '7 Per Empowered Stack' },
+      { label: 'Intelligence (Empowered)', value: '10 Per Empowered Stack' },
+      { label: 'Damage to Gain First Stack', value: '1000' },
+      { label: 'Damage Increase Per Stack', value: '1000' }
+    ]
+  },
+  abilities: {
+    1: {
+      name: 'Branching Bola',
+      image: 'https://placeholder.com/images/xbalanque-ability1.webp',
+      description: 'Your next 3 Basic Attacks fire large projectiles that deal Physical Damage.\n\n• Projectiles pass through enemies and stop on the first enemy god hit.\n• Can only trigger ability based items and effects.',
+      cooldown: '15s',
+      cost: '60 | 65 | 70 | 75 | 80',
+      attributes: [
+        { label: 'Damage', value: '50 | 75 | 100 | 125 | 150' },
+        { label: 'Damage Scaling', value: '35% Strength + 55% Intelligence' }
+      ]
+    },
+    2: {
+      name: 'Poison Darts',
+      image: 'https://placeholder.com/images/xbalanque-ability2.webp',
+      description: 'Fire 15 dart projectiles in a cone, dealing Physical Damage and poisoning enemies hit.\n\n• Poisoned enemies repeatedly take Physical Damage and are Slowed.\n• Poison ticks every 0.5s.\n• Enemies can only be hit by 3 darts, with each after the first doing reduced damage.',
+      cooldown: '15s',
+      cost: '60 | 65 | 70 | 75 | 80',
+      attributes: [
+        { label: 'Damage', value: '20 | 30 | 40 | 50 | 60' },
+        { label: 'Damage Scaling', value: '25% Strength + 35% Intelligence' },
+        { label: 'Damage Per Tick', value: '10 | 15 | 20 | 25 | 30' },
+        { label: 'Damage Scaling Per Tick', value: '7.5% Strength + 15% Intelligence' },
+        { label: 'Subsequent Dart Damage', value: '30%' },
+        { label: 'Slow', value: '20 | 22.5 | 25 | 27.5 | 30%' },
+        { label: 'Slow Duration', value: '3s' },
+        { label: 'Range', value: '8.8m' },
+        { label: 'Cone Angle', value: '110 degrees' }
+      ]
+    },
+    3: {
+      name: 'Rising Jaguar',
+      image: 'https://placeholder.com/images/xbalanque-ability3.webp',
+      description: 'Dash in the direction you are currently traveling before rising in the air, becoming CC Immune.\n\n• While in the air, you fire darts at all nearby enemies, dealing Physical Damage.\n• Enemies affected by Poison Darts take additional damage.\n• Enemies around you when the Dash starts will still be hit.',
+      cooldown: '16s',
+      cost: '60 | 65 | 70 | 75 | 80',
+      attributes: [
+        { label: 'Damage', value: '65 | 115 | 165 | 215 | 265' },
+        { label: 'Damage Scaling', value: '50% Strength + 35% Intelligence' },
+        { label: 'Bonus Damage (Poisoned)', value: '30 | 35 | 40 | 45 | 50%' },
+        { label: 'Radius', value: '4m / 4.8m' }
+      ]
+    },
+    4: {
+      name: 'Darkest of Nights',
+      image: 'https://placeholder.com/images/xbalanque-ability4.webp',
+      description: 'Shroud enemy gods in darkness, creating an area they cannot see out of. During this time you have increased Basic Attack range, Basic Attack projectile speed, Attack Speed and Movement Speed.\n\n• If an enemy god leaves the area, they are affected by a decaying Slow.',
+      cooldown: '90s',
+      cost: '100',
+      attributes: [
+        { label: 'Attack Speed', value: '20 | 28 | 36 | 44 | 52%' },
+        { label: 'Movement Speed', value: '20 | 30 | 40 | 50 | 60%' },
+        { label: 'Increased Attack Range', value: '6.4m' },
+        { label: 'Increased Projectile Speed', value: '25%' },
+        { label: 'Buff Duration', value: '3s' },
+        { label: 'Debuff Duration', value: '3s' },
+        { label: 'Initial Slow Amount', value: '60%' },
+        { label: 'Slow Duration', value: '2s' },
+        { label: 'Radius', value: '7.5m' }
+      ]
+    }
+  },
+  aspects: [
+    {
+      id: 'night-stalker',
+      name: 'Aspect of the Night Stalker',
+      image: 'https://placeholder.com/images/xbalanque-aspect.webp',
+      description: 'Branching Bola is no longer a toggle but provides 3 fires of ability based projectiles. Poison Darts requires less hits to deal full damage. Darkest of Nights loses existing buffs but resets Poison Darts and provides increased ability damage.',
+      basicAttack: {
+        name: 'Xbalanque Basic Attack',
+        image: 'https://placeholder.com/images/xbalanque-basic.webp',
+        description: 'Fire a projectile that deals Physical Damage to the first enemy hit.\n\n• Projectile stops on first target hit, and does not pass through walls.',
+        cooldown: '-',
+        cost: '-',
+        attributes: [
+          { label: 'Damage Scaling', value: '100% Strength + 20% Intelligence + 100% Basic Attack Power' },
+          { label: 'Range', value: '8.8m' },
+          { label: 'Radius', value: '0.48m' }
+        ]
+      },
+      passive: {
+        name: 'Dead of Night',
+        image: 'https://placeholder.com/images/xbalanque-passive.webp',
+        description: 'Deal damage to enemy gods to gain stacks. Each stack provides Strength or Intelligence, whichever is higher. At 3 and 6 stacks you gain an additional buff of Strength and Intelligence.\n\n• Each stack requires more damage dealt to gain the next stack.',
+        cooldown: '-',
+        cost: '-',
+        attributes: [
+          { label: 'Strength', value: '3 Per Stack' },
+          { label: 'Intelligence', value: '5 Per Stack' },
+          { label: 'Strength (Empowered)', value: '7 Per Empowered Stack' },
+          { label: 'Intelligence (Empowered)', value: '10 Per Empowered Stack' },
+          { label: 'Damage to Gain First Stack', value: '1000' },
+          { label: 'Damage Increase Per Stack', value: '1000' }
+        ]
+      },
+      abilities: {
+        1: {
+          name: 'Branching Bola',
+          image: 'https://placeholder.com/images/xbalanque-ability1.webp',
+          description: 'Your next 3 Basic Attacks fire large projectiles that deal Physical Damage.\n\n• Projectiles pass through enemies and stop on the first enemy god hit.\n• Can only trigger ability based items and effects.\n• NO LONGER A TOGGLE - PROVIDES 3 CHARGES OF ABILITY-BASED PROJECTILES',
+          cooldown: '15s',
+          cost: '60 | 65 | 70 | 75 | 80',
+          attributes: [
+            { label: 'Damage', value: '50 | 75 | 100 | 125 | 150' },
+            { label: 'Damage Scaling', value: '35% Strength + 55% Intelligence' }
+          ]
+        },
+        2: {
+          name: 'Poison Darts',
+          image: 'https://placeholder.com/images/xbalanque-ability2.webp',
+          description: 'Fire 15 dart projectiles in a cone, dealing Physical Damage and poisoning enemies hit.\n\n• Poisoned enemies repeatedly take Physical Damage and are Slowed.\n• Poison ticks every 0.5s.\n• ENEMIES CAN ONLY BE HIT BY 3 DARTS (reduced from 7), with each after the first doing reduced damage.',
+          cooldown: '15s',
+          cost: '60 | 65 | 70 | 75 | 80',
+          attributes: [
+            { label: 'Damage', value: '20 | 30 | 40 | 50 | 60' },
+            { label: 'Damage Scaling', value: '25% Strength + 35% Intelligence' },
+            { label: 'Damage Per Tick', value: '10 | 15 | 20 | 25 | 30' },
+            { label: 'Damage Scaling Per Tick', value: '7.5% Strength + 15% Intelligence' },
+            { label: 'Subsequent Dart Damage', value: '30%' },
+            { label: 'Slow', value: '20 | 22.5 | 25 | 27.5 | 30%' },
+            { label: 'Slow Duration', value: '3s' },
+            { label: 'Range', value: '8.8m' },
+            { label: 'Cone Angle', value: '110 degrees' }
+          ]
+        },
+        3: {
+          name: 'Rising Jaguar',
+          image: 'https://placeholder.com/images/xbalanque-ability3.webp',
+          description: 'Dash in the direction you are currently traveling before rising in the air, becoming CC Immune.\n\n• While in the air, you fire darts at all nearby enemies, dealing Physical Damage.\n• Enemies affected by Poison Darts take additional damage.\n• Enemies around you when the Dash starts will still be hit.',
+          cooldown: '16s',
+          cost: '60 | 65 | 70 | 75 | 80',
+          attributes: [
+            { label: 'Damage', value: '65 | 115 | 165 | 215 | 265' },
+            { label: 'Damage Scaling', value: '50% Strength + 35% Intelligence' },
+            { label: 'Bonus Damage (Poisoned)', value: '30 | 35 | 40 | 45 | 50%' },
+            { label: 'Radius', value: '4m / 4.8m' }
+          ]
+        },
+        4: {
+          name: 'Darkest of Nights',
+          image: 'https://placeholder.com/images/xbalanque-ability4.webp',
+          description: 'Shroud enemy gods in darkness, creating an area they cannot see out of. Using this ability resets the Cooldown of Poison Darts and during this time your abilities deal increased damage.\n\n• If an enemy god leaves the area, they are affected by a decaying Slow.\n• LOSES ATTACK SPEED, MOVEMENT SPEED, RANGE, AND PROJECTILE SPEED BUFFS\n• RESETS POISON DARTS COOLDOWN\n• PROVIDES INCREASED ABILITY DAMAGE',
+          cooldown: '90s',
+          cost: '100',
+          attributes: [
+            { label: 'Debuff Duration', value: '3s' },
+            { label: 'Initial Slow Amount', value: '60%' },
+            { label: 'Slow Duration', value: '2s' },
+            { label: 'Radius', value: '7.5m' },
+            { label: 'Ability Damage Increase', value: 'Increased during duration' }
+          ]
+        }
+      }
+    }
+  ],
+  recommendedBuilds: []
+},
+{
+  id: 'yemoja',
+  name: 'Yemoja',
+  title: 'Goddess of Rivers',
+  pantheon: 'Yoruba',
+  role: 'Guardian',
+  lanes: ['Support', 'Solo', 'Mid'],
+  damageType: DamageType.Magical,
+  image: 'https://placeholder.com/images/yemoja-card.jpg',
+  videoGuideUrl: 'https://www.youtube.com/watch?v=PLACEHOLDER',
+  goodAgainst: [],
+  badAgainst: [],
+  levelingOrder: [],
+  statsByLevel: [
+    { strength: 0, intelligence: 0, attackSpeed: 1.33, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 21, magicalProtection: 30, maxHealth: 672, healthRegen: 2, maxMana: 296, manaRegen: 2, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 3, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 24, magicalProtection: 31, maxHealth: 774, healthRegen: 2, maxMana: 336, manaRegen: 2, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 4, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 27, magicalProtection: 33, maxHealth: 876, healthRegen: 2, maxMana: 376, manaRegen: 3, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 6, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 30, magicalProtection: 34, maxHealth: 978, healthRegen: 2, maxMana: 416, manaRegen: 3, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 7, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 33, magicalProtection: 36, maxHealth: 1080, healthRegen: 3, maxMana: 456, manaRegen: 3, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 9, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 36, magicalProtection: 37, maxHealth: 1182, healthRegen: 3, maxMana: 496, manaRegen: 4, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 10, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 39, magicalProtection: 39, maxHealth: 1284, healthRegen: 3, maxMana: 536, manaRegen: 4, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 12, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 42, magicalProtection: 40, maxHealth: 1386, healthRegen: 3, maxMana: 576, manaRegen: 4, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 13, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 45, magicalProtection: 42, maxHealth: 1488, healthRegen: 3, maxMana: 616, manaRegen: 4, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 15, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 48, magicalProtection: 43, maxHealth: 1590, healthRegen: 4, maxMana: 656, manaRegen: 4, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 16, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 52, magicalProtection: 45, maxHealth: 1692, healthRegen: 4, maxMana: 696, manaRegen: 5, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 17, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 55, magicalProtection: 46, maxHealth: 1794, healthRegen: 4, maxMana: 736, manaRegen: 5, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 19, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 58, magicalProtection: 48, maxHealth: 1896, healthRegen: 4, maxMana: 776, manaRegen: 5, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 20, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 61, magicalProtection: 49, maxHealth: 1998, healthRegen: 4, maxMana: 816, manaRegen: 6, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 22, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 64, magicalProtection: 51, maxHealth: 2100, healthRegen: 5, maxMana: 856, manaRegen: 6, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 23, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 67, magicalProtection: 52, maxHealth: 2202, healthRegen: 5, maxMana: 896, manaRegen: 6, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 25, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 70, magicalProtection: 54, maxHealth: 2304, healthRegen: 5, maxMana: 936, manaRegen: 6, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 26, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 73, magicalProtection: 55, maxHealth: 2406, healthRegen: 5, maxMana: 976, manaRegen: 6, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 28, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 77, magicalProtection: 57, maxHealth: 2508, healthRegen: 6, maxMana: 1016, manaRegen: 7, cooldownRate: 0, movementSpeed: 375 },
+    { strength: 0, intelligence: 0, attackSpeed: 29, lifesteal: 0, critChance: 0, critDamage: 1.65, penetration: 0, physicalProtection: 80, magicalProtection: 58, maxHealth: 2610, healthRegen: 6, maxMana: 1056, manaRegen: 7, cooldownRate: 0, movementSpeed: 375 },
+  ],
+  basicAttack: {
+    name: 'Yemoja Basic Attack',
+    image: 'https://placeholder.com/images/yemoja-basic.webp',
+    description: 'Fire a projectile that deals Magical Damage to the first enemy hit.\n\n• Projectile stops on first target hit, and does not pass through walls.\n• Yemoja basic attacks can hit allies with an increased radius, applying Omi Healing.',
+    cooldown: '-',
+    cost: '-',
+    attributes: [
+      { label: 'Damage Scaling', value: '100% Strength + 20% Intelligence + 100% Basic Attack Power' },
+      { label: 'Range', value: '8.8m' },
+      { label: 'Radius', value: '0.48m' },
+      { label: 'Ally Radius', value: '0.8m' }
+    ]
+  },
+  passive: {
+    name: 'Omi',
+    image: 'https://placeholder.com/images/yemoja-passive.webp',
+    description: "Yemoja uses Omi to cast spells instead of Mana.\n\n• Starting with 7, earning up to 10\n• Yemoja's water based attacks and abilities can hit allies, providing them a Heal every 0.5s for 6s.\n• Additional Omi is gained at levels 5, 10 and 15.\n• Cooldown Reduction increases Omi regeneration.",
+    cooldown: '-',
+    cost: '-',
+    attributes: [
+      { label: 'Starting Omi', value: '7' },
+      { label: 'Max Omi', value: '10' },
+      { label: 'Omi Healing', value: '1 + 0.2 per Level' },
+      { label: 'Heal Tick Rate', value: 'Every 0.5s' },
+      { label: 'Heal Duration', value: '6s' },
+      { label: 'Additional Omi Levels', value: '5, 10, 15' }
+    ]
+  },
+  abilities: {
+    1: {
+      name: 'Bouncing Bubble / Moonstrike',
+      image: 'https://placeholder.com/images/yemoja-ability1.webp',
+      description: 'Bouncing Bubble: Toss a bubble that bounces twice, dealing Magical Damage and Slowing enemies before exploding into smaller bubbles. Small bubbles deal reduced damage. Enemies hit by both bounces take 50% damage on the second hit.\n\nMoonstrike: The Moon strikes multiple times at a location dealing Magical Damage before a final strike dealing Magical Damage and Stunning enemies hit. Allies in the final strike gain a buff providing increased Attack Speed and Basic Attack Damage. Enemy structures hit by the final strike are stunned for 2s.\n\n• This ability alternates between Bouncing Bubble and Moonstrike with each use.',
+      cooldown: '0s',
+      cost: '2 Omi',
+      attributes: [
+        { label: 'Bubble Damage', value: '65 | 105 | 145 | 185 | 225' },
+        { label: 'Bubble Damage Scaling', value: '30% Intelligence' },
+        { label: 'Small Bubble Damage', value: '32.5 | 52.5 | 72.5 | 92.5 | 112.5' },
+        { label: 'Small Bubble Scaling', value: '15% Intelligence' },
+        { label: 'Bubble Slow', value: '30%' },
+        { label: 'Bubble Slow Duration', value: '1.4s' },
+        { label: 'Moonstrike Outer Damage', value: '30 | 60 | 90 | 120 | 150' },
+        { label: 'Moonstrike Outer Scaling', value: '20% Intelligence' },
+        { label: 'Moonstrike Final Damage', value: '65 | 105 | 145 | 185 | 225' },
+        { label: 'Moonstrike Final Scaling', value: '40% Intelligence' },
+        { label: 'Moonstrike Stun Duration', value: '1s' },
+        { label: 'Ally Attack Speed Buff', value: '30%' },
+        { label: 'Ally Basic Attack Damage', value: '20 | 25 | 30 | 35 | 40' },
+        { label: 'Buff Duration', value: '4s' },
+        { label: 'Bubble Range', value: '5.6m' },
+        { label: 'Moonstrike Range', value: '10.4m' }
+      ]
+    },
+    2: {
+      name: 'Mending Waters',
+      image: 'https://placeholder.com/images/yemoja-ability2.webp',
+      description: 'Fire a water wave, dealing Magical Damage to enemies. This wave stops and bounces between allied gods, Healing them and providing them a Health Shield.\n\n• This ability also does bonus damage to enemy Health Shields.\n• Projectile stops on walls or first allied god hit.\n• Allies hit will also gain Omi Healing.',
+      cooldown: '0s',
+      cost: '3 Omi',
+      attributes: [
+        { label: 'Damage', value: '65 | 95 | 125 | 155 | 180' },
+        { label: 'Damage Scaling', value: '50% Intelligence' },
+        { label: 'Heal', value: '15 | 25 | 35 | 45 | 55' },
+        { label: 'Shield Health', value: '40 | 65 | 90 | 115 | 140' },
+        { label: 'Shield Scaling', value: '4% Max Health' },
+        { label: 'Bonus Damage to Shields', value: '2x | 2x | 2x | 2x | 3x' },
+        { label: 'Range', value: '9.6m' },
+        { label: 'Radius', value: '1.1m' }
+      ]
+    },
+    3: {
+      name: 'Riptide',
+      image: 'https://placeholder.com/images/yemoja-ability3.webp',
+      description: 'Create a water ring that Knock Backs anyone entering it.\n\n• Allies travel further and gain Movement Speed and Protections for 3s.\n• Enemies are Slowed for 2s.\n• Placing the ring at the maximum distance reverses its direction.\n• Allies that use the ring also gain Omi Healing.',
+      cooldown: '0s',
+      cost: '3 Omi',
+      attributes: [
+        { label: 'Movement Speed', value: '10 | 12.5 | 15 | 17.5 | 20%' },
+        { label: 'Protections', value: '20 | 25 | 30 | 35 | 40' },
+        { label: 'Slow', value: '10%' },
+        { label: 'Range', value: '9.6m' },
+        { label: 'Radius', value: '2.24m' }
+      ]
+    },
+    4: {
+      name: "River's Rebuke",
+      image: 'https://placeholder.com/images/yemoja-ability4.webp',
+      description: "Conjure two large walls of water that block enemy movement and projectiles. After a delay they crash down dealing Magical Damage, Trembling and Slowing enemies hit.\n\n• Allies impacted by the crashing waves gain Omi Healing and Moonstrike's buff.\n• You gain a buff of increased Omi over time on using this ability.\n• You gain half of your missing Omi immediately but the duration of the regeneration buff is decreased based on the amount restored.",
+      cooldown: '120s',
+      cost: '0 Omi',
+      attributes: [
+        { label: 'Damage', value: '250 | 320 | 390 | 460 | 530' },
+        { label: 'Damage Scaling', value: '70% Intelligence' },
+        { label: 'Slow', value: '60% (decaying over 2s)' },
+        { label: 'Range', value: '15m' },
+        { label: 'Radius', value: '4.5m' }
+      ]
+    }
+  },
+  aspects: [
+    {
+      id: 'torrent',
+      name: 'Aspect of the Torrent',
+      image: 'https://placeholder.com/images/yemoja-aspect.webp',
+      description: "Yemoja's abilities have higher Intelligence Scaling. Mending Waters no longer affects allies but stops and bounces on enemy gods, dealing damage, shield damage, and grants Intelligence per hit. Moonstrike no longer stuns.",
+      basicAttack: {
+        name: 'Yemoja Basic Attack',
+        image: 'https://placeholder.com/images/yemoja-basic.webp',
+        description: 'Fire a projectile that deals Magical Damage to the first enemy hit.\n\n• Projectile stops on first target hit, and does not pass through walls.\n• Yemoja basic attacks can hit allies with an increased radius, applying Omi Healing.',
+        cooldown: '-',
+        cost: '-',
+        attributes: [
+          { label: 'Damage Scaling', value: '100% Strength + 20% Intelligence + 100% Basic Attack Power' },
+          { label: 'Range', value: '8.8m' },
+          { label: 'Radius', value: '0.48m' },
+          { label: 'Ally Radius', value: '0.8m' }
+        ]
+      },
+      passive: {
+        name: 'Omi',
+        image: 'https://placeholder.com/images/yemoja-passive.webp',
+        description: "Yemoja uses Omi to cast spells instead of Mana.\n\n• Starting with 7, earning up to 10\n• Yemoja's water based attacks and abilities can hit allies, providing them a Heal every 0.5s for 6s.\n• Additional Omi is gained at levels 5, 10 and 15.\n• Cooldown Reduction increases Omi regeneration.",
+        cooldown: '-',
+        cost: '-',
+        attributes: [
+          { label: 'Starting Omi', value: '7' },
+          { label: 'Max Omi', value: '10' },
+          { label: 'Omi Healing', value: '1 + 0.2 per Level' },
+          { label: 'Heal Tick Rate', value: 'Every 0.5s' },
+          { label: 'Heal Duration', value: '6s' },
+          { label: 'Additional Omi Levels', value: '5, 10, 15' }
+        ]
+      },
+      abilities: {
+        1: {
+          name: 'Bouncing Bubble / Moonstrike',
+          image: 'https://placeholder.com/images/yemoja-ability1.webp',
+          description: 'Bouncing Bubble: Toss a bubble that bounces twice, dealing Magical Damage and Slowing enemies before exploding into smaller bubbles.\n\nMoonstrike: The Moon strikes multiple times at a location dealing Magical Damage before a final strike dealing increased Magical Damage.\n\n• MOONSTRIKE NO LONGER STUNS ENEMY GODS\n• HIGHER INTELLIGENCE SCALING ON ALL ABILITIES\n• Allies in the final strike gain a buff providing increased Attack Speed and Basic Attack Damage.\n• This ability alternates between Bouncing Bubble and Moonstrike with each use.',
+          cooldown: '0s',
+          cost: '2 Omi',
+          attributes: [
+            { label: 'Bubble Damage', value: '65 | 105 | 145 | 185 | 225' },
+            { label: 'Bubble Damage Scaling', value: '30% Intelligence (INCREASED)' },
+            { label: 'Small Bubble Damage', value: '32.5 | 52.5 | 72.5 | 92.5 | 112.5' },
+            { label: 'Bubble Slow', value: '30%' },
+            { label: 'Moonstrike Outer Damage', value: '30 | 60 | 90 | 120 | 150' },
+            { label: 'Moonstrike Outer Scaling', value: '20% Intelligence' },
+            { label: 'Moonstrike Final Damage', value: '65 | 105 | 145 | 185 | 225' },
+            { label: 'Moonstrike Final Scaling', value: '85% Intelligence (INCREASED from 40%)' },
+            { label: 'Ally Attack Speed Buff', value: '30%' },
+            { label: 'Ally Basic Attack Damage', value: '20 | 25 | 30 | 35 | 40' },
+            { label: 'Buff Duration', value: '4s' }
+          ]
+        },
+        2: {
+          name: 'Mending Waters',
+          image: 'https://placeholder.com/images/yemoja-ability2.webp',
+          description: 'Fire a water wave, dealing Magical Damage to enemies. This wave stops and BOUNCES ON ENEMY GODS, dealing damage, shield damage, and grants Intelligence per hit.\n\n• NO LONGER AFFECTS ALLIES\n• Each time an enemy god is hit, Yemoja gains a stacking Intelligence buff for a short duration.\n• The first hit does full damage while subsequent hits deal 65%.\n• This ability also does bonus damage to enemy Health Shields.',
+          cooldown: '0s',
+          cost: '3 Omi',
+          attributes: [
+            { label: 'Damage', value: '65 | 95 | 125 | 155 | 180' },
+            { label: 'Damage Scaling', value: '50% Intelligence (INCREASED)' },
+            { label: 'Subsequent Hit Damage', value: '65%' },
+            { label: 'Intelligence Per Hit', value: 'Stacking buff' },
+            { label: 'Bonus Damage to Shields', value: '2x | 2x | 2x | 2x | 3x' },
+            { label: 'Range', value: '9.6m' },
+            { label: 'Radius', value: '1.1m' }
+          ]
+        },
+        3: {
+          name: 'Riptide',
+          image: 'https://placeholder.com/images/yemoja-ability3.webp',
+          description: 'Create a water ring that Knock Backs anyone entering it.\n\n• Allies travel further and gain Movement Speed and Protections for 3s.\n• Enemies are Slowed for 2s.\n• Placing the ring at the maximum distance reverses its direction.\n• Allies that use the ring also gain Omi Healing.',
+          cooldown: '0s',
+          cost: '3 Omi',
+          attributes: [
+            { label: 'Movement Speed', value: '10 | 12.5 | 15 | 17.5 | 20%' },
+            { label: 'Protections', value: '20 | 25 | 30 | 35 | 40' },
+            { label: 'Slow', value: '10%' },
+            { label: 'Range', value: '9.6m' },
+            { label: 'Radius', value: '2.24m' }
+          ]
+        },
+        4: {
+          name: "River's Rebuke",
+          image: 'https://placeholder.com/images/yemoja-ability4.webp',
+          description: "Conjure two large walls of water that block enemy movement and projectiles. After a delay they crash down dealing Magical Damage, Trembling and Slowing enemies hit.\n\n• Allies impacted by the crashing waves gain Omi Healing and Moonstrike's buff.\n• You gain a buff of increased Omi over time on using this ability.",
+          cooldown: '120s',
+          cost: '0 Omi',
+          attributes: [
+            { label: 'Damage', value: '250 | 320 | 390 | 460 | 530' },
+            { label: 'Damage Scaling', value: '70% Intelligence' },
+            { label: 'Slow', value: '60% (decaying over 2s)' },
+            { label: 'Range', value: '15m' },
+            { label: 'Radius', value: '4.5m' }
+          ]
+        }
+      }
+    }
+  ],
+  recommendedBuilds: []
 }
 ];

@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { useData } from '../contexts/DataContext';
 import { God, Item, RecommendedBuild } from '../types';
-import { Search, Shield, Sword, Zap, RotateCcw, Dices, Copy, Check, Plus, Hexagon, Trash2, Save, Sparkles, X, ArrowLeft, Grid } from 'lucide-react';
+import { Search, Shield, Sword, Zap, RotateCcw, Dices, Copy, Check, Plus, Hexagon, Trash2, Save, Sparkles, X, ArrowLeft, Grid, AlertTriangle } from 'lucide-react';
 
 // --- Helper Components (Local to Builder) ---
 
@@ -310,7 +310,28 @@ export const BuilderView: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 pb-24">
-       
+      
+       {/* Work In Progress & Feature Disclaimer */}
+       <div className="mb-8 bg-red-950/30 border-2 border-red-600/50 rounded-xl p-4 shadow-[0_0_15px_rgba(220,38,38,0.2)] relative overflow-hidden animate-pulse">
+           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent opacity-50" />
+           <div className="flex flex-col gap-2">
+               <div className="flex items-start gap-3">
+                   <AlertTriangle className="text-red-500 shrink-0" size={20} />
+                   <p className="text-sm text-red-200 font-medium">
+                       <span className="font-bold uppercase text-red-400 tracking-wider mr-1">Work In Progress:</span>
+                       The Builder is currently unfinished. Ability and Item information will be adjusted based on live stats, and God stats are being updated. Please bear with us!
+                   </p>
+               </div>
+               <div className="flex items-start gap-3">
+                   <Dices className="text-mythic-gold shrink-0" size={20} />
+                   <p className="text-sm text-slate-200 font-medium">
+                       <span className="font-bold uppercase text-mythic-gold tracking-wider mr-1">New Feature:</span>
+                       Added Randomizers for Items, Gods, or <span className="italic text-red-400 font-bold">Both if you're feeling dangerous!</span>
+                   </p>
+               </div>
+           </div>
+       </div>
+
        <div className="flex flex-col lg:flex-row gap-8">
            
            {/* LEFT: God Selection & Info */}

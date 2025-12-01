@@ -1,8 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { TournamentPlayer, TournamentRole } from '../types';
-import { Trophy, Plus, Trash2, Crown, Medal, Swords, ScrollText, Gem, Flame, Target, Skull, UserPlus, X, Calendar, MapPin, MonitorPlay, Timer, History, ArrowRight, Users, User, ChevronRight, Lock, Loader2, ClipboardList, CheckCircle2, AlertTriangle, Settings, Unlock, ExternalLink, MessageCircle, Save } from 'lucide-react';
+import { Trophy, Plus, Trash2, Crown, Medal, Swords, ScrollText, Gem, Flame, Target, Skull, UserPlus, X, Calendar, MapPin, MonitorPlay, Timer, History, ArrowRight, Users, User, ChevronRight, Lock, Loader2, ClipboardList, CheckCircle2, AlertTriangle, Settings, Unlock, ExternalLink, MessageCircle, Save, Shield, AlertCircle } from 'lucide-react';
 import { db, auth } from '../services/firebase';
 import { collection, onSnapshot, addDoc, updateDoc, doc, query, orderBy, limit, setDoc, getDoc, writeBatch, increment, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import * as FirebaseAuth from 'firebase/auth';
@@ -10,27 +10,21 @@ import * as FirebaseAuth from 'firebase/auth';
 const ROLES: TournamentRole[] = ['Solo', 'Jungle', 'Mid', 'Carry', 'Support'];
 const WIN_BONUS = 5;
 
-// Points Configuration
-const POINTS = {
-  Solo: { kill: 3, death: -1, assist: 1 },
-  Jungle: { kill: 4, death: -2, assist: 2 },
-  Mid: { kill: 4, death: -2, assist: 1 },
-  Carry: { kill: 4, death: -2, assist: 1 },
-  Support: { kill: 5, death: -1, assist: 3 }
-};
-
 export const TournamentView: React.FC = () => {
   const [players, setPlayers] = useState<TournamentPlayer[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [currentUser, setCurrentUser] = useState<FirebaseAuth.User | null>(null);
-  const [activeTab, setActiveTab] = useState<'register' | 'leaderboard' | 'matches' | 'admin'>('register');
-  
+  const [activeTab, setActiveTab] = useState<'my_entry' | 'leaderboard' | 'matches' | 'admin'>('leaderboard');
+  const [isLoadingData, setIsLoadingData] = useState(true);
+
   // Form States
   const [regForm, setRegForm] = useState({ 
     ign: '', 
     discord: '', 
     tracker: '', 
-    role: 'Solo' as TournamentRole 
+    role: 'Solo' as TournamentRole,
+    offRole1: 'Jungle' as TournamentRole,
+    offRole2: 'Mid' as TournamentRole
   });
   const [isRegLoading, setIsRegLoading] = useState(false);
   
@@ -55,8 +49,8 @@ export const TournamentView: React.FC = () => {
             const userDoc = await getDoc(doc(db, 'users', user.uid));
             setIsAdmin(userDoc.exists() && userDoc.data().isAdmin === true);
             
-            // Auto-fill registration if profile exists
-            if (userDoc.exists()) {
+            // Pre-fill from profile if not yet loaded from players
+            if (userDoc.exists() && !players.some(p => p.id === user.uid)) {
                 const data = userDoc.data();
                 setRegForm(prev => ({
                     ...prev,
@@ -72,8 +66,8 @@ export const TournamentView: React.FC = () => {
 
     const unsubPlayers = onSnapshot(collection(db, 'tournament_players'), (snapshot) => {
         const p = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as TournamentPlayer));
-        // Sort by score desc
         setPlayers(p.sort((a, b) => b.score - a.score));
+        setIsLoadingData(false);
     });
 
     const matchesQuery = query(collection(db, 'tournament_matches'), orderBy('date', 'desc'), limit(20));
@@ -88,30 +82,77 @@ export const TournamentView: React.FC = () => {
     };
   }, []);
 
+  // Sync Form with Player Data if Registered
+  useEffect(() => {
+      if (currentUser) {
+          const existingPlayer = players.find(p => p.id === currentUser.uid);
+          if (existingPlayer) {
+              setRegForm({
+                  ign: existingPlayer.name,
+                  discord: (existingPlayer as any).discord || '',
+                  tracker: existingPlayer.trackerLink || '',
+                  role: existingPlayer.primaryRole,
+                  offRole1: existingPlayer.offRoles?.[0] || 'Jungle',
+                  offRole2: existingPlayer.offRoles?.[1] || 'Mid'
+              });
+          }
+      }
+  }, [currentUser, players]);
+
+  // Derived State
+  const isRegistered = useMemo(() => {
+      return currentUser && players.some(p => p.id === currentUser.uid);
+  }, [currentUser, players]);
+
   // -- Actions --
 
   const handleRegister = async (e: React.FormEvent) => {
       e.preventDefault();
       if (!currentUser) return alert("You must be logged in.");
+      
+      // Validate Roles
+      if (regForm.role === regForm.offRole1 || regForm.role === regForm.offRole2 || regForm.offRole1 === regForm.offRole2) {
+          alert("Please select 3 distinct roles (Primary and 2 Backups).");
+          return;
+      }
+
       setIsRegLoading(true);
 
       try {
           const playerRef = doc(db, 'tournament_players', currentUser.uid);
+          // Use setDoc with merge to update or create
           await setDoc(playerRef, {
               name: regForm.ign,
               discord: regForm.discord,
               trackerLink: regForm.tracker,
               primaryRole: regForm.role,
-              score: 0,
-              kills: 0,
-              deaths: 0,
-              assists: 0,
-              matchesPlayed: 0,
-              wins: 0,
-              offRoles: [],
+              offRoles: [regForm.offRole1, regForm.offRole2],
+              // Only set initial stats if creating new
+              ...(isRegistered ? {} : {
+                  score: 0,
+                  kills: 0,
+                  deaths: 0,
+                  assists: 0,
+                  matchesPlayed: 0,
+                  wins: 0
+              }),
               updatedAt: serverTimestamp()
           }, { merge: true });
-          alert("Registration Successful! You are checked in.");
+
+          // Also update User Profile for convenience
+          const userRef = doc(db, 'users', currentUser.uid);
+          await setDoc(userRef, {
+              displayName: regForm.ign,
+              discordHandle: regForm.discord,
+              trackerLink: regForm.tracker
+          }, { merge: true });
+
+          if (!isRegistered) {
+              alert("Welcome to the Tournament! You are now checked in.");
+              setActiveTab('leaderboard');
+          } else {
+              alert("Registration details updated.");
+          }
       } catch (err) {
           console.error(err);
           alert("Error registering.");
@@ -183,6 +224,145 @@ export const TournamentView: React.FC = () => {
       }
   };
 
+  if (isLoadingData) {
+      return (
+          <div className="flex h-[50vh] items-center justify-center">
+              <Loader2 className="animate-spin text-mythic-gold" size={48} />
+          </div>
+      );
+  }
+
+  // --- GATED VIEW (Sign Up First) ---
+  if (!isRegistered && !isAdmin) {
+      return (
+          <div className="container mx-auto px-4 py-8 flex items-center justify-center min-h-[80vh]">
+              <div className="max-w-3xl w-full bg-slate-900/80 backdrop-blur-md border border-slate-700 rounded-2xl shadow-2xl overflow-hidden relative">
+                  
+                  {/* Banner */}
+                  <div className="h-32 bg-gradient-to-r from-slate-900 to-slate-800 border-b border-slate-700 flex flex-col items-center justify-center relative">
+                      <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
+                      <Trophy size={48} className="text-mythic-gold mb-2 drop-shadow-lg" />
+                      <h1 className="text-3xl font-serif font-bold text-white tracking-wider uppercase">Weekly Cup Registration</h1>
+                      <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Open Bracket • Auto Draft</p>
+                  </div>
+
+                  <div className="p-8 md:p-12">
+                      {!currentUser ? (
+                          <div className="text-center py-12">
+                              <Shield size={64} className="mx-auto text-slate-700 mb-4" />
+                              <h3 className="text-xl font-bold text-slate-300 mb-2">Champion, Identify Yourself</h3>
+                              <p className="text-slate-500 mb-6">You must be logged in to register for the tournament.</p>
+                              {/* The login modal is global, user needs to use header. We can guide them. */}
+                              <div className="p-4 bg-slate-950/50 rounded border border-slate-800 text-sm text-slate-400">
+                                  Please click "Sign In" in the top right corner to proceed.
+                              </div>
+                          </div>
+                      ) : (
+                          <form onSubmit={handleRegister} className="space-y-8">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                  <div className="space-y-5">
+                                      <div className="space-y-2">
+                                          <label className="text-xs font-bold uppercase text-slate-500 flex items-center gap-2">
+                                              <User size={14} /> In-Game Name
+                                          </label>
+                                          <input 
+                                              className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-slate-200 focus:border-mythic-gold outline-none transition-colors"
+                                              placeholder="Smite2Player"
+                                              value={regForm.ign}
+                                              onChange={e => setRegForm({...regForm, ign: e.target.value})}
+                                              required
+                                          />
+                                      </div>
+                                      <div className="space-y-2">
+                                          <label className="text-xs font-bold uppercase text-slate-500 flex items-center gap-2">
+                                              <MessageCircle size={14} /> Discord
+                                          </label>
+                                          <input 
+                                              className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-slate-200 focus:border-mythic-gold outline-none transition-colors"
+                                              placeholder="username#1234"
+                                              value={regForm.discord}
+                                              onChange={e => setRegForm({...regForm, discord: e.target.value})}
+                                              required
+                                          />
+                                      </div>
+                                      <div className="space-y-2">
+                                          <label className="text-xs font-bold uppercase text-slate-500 flex items-center gap-2">
+                                              <ExternalLink size={14} /> Tracker Link
+                                          </label>
+                                          <input 
+                                              className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-slate-200 focus:border-mythic-gold outline-none transition-colors"
+                                              placeholder="https://tracker.gg/smite2/profile/..."
+                                              value={regForm.tracker}
+                                              onChange={e => setRegForm({...regForm, tracker: e.target.value})}
+                                              required
+                                          />
+                                      </div>
+                                  </div>
+
+                                  <div className="space-y-5">
+                                      <div className="space-y-2">
+                                          <label className="text-xs font-bold uppercase text-mythic-gold flex items-center gap-2">
+                                              <Crown size={14} /> Primary Role
+                                          </label>
+                                          <select 
+                                              className="w-full bg-slate-950 border border-mythic-gold/50 rounded-lg p-3 text-slate-200 focus:border-mythic-gold outline-none"
+                                              value={regForm.role}
+                                              onChange={e => setRegForm({...regForm, role: e.target.value as TournamentRole})}
+                                          >
+                                              {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                                          </select>
+                                      </div>
+                                      
+                                      <div className="space-y-2">
+                                          <label className="text-xs font-bold uppercase text-slate-500 flex items-center gap-2">
+                                              <Swords size={14} /> Backup Role 1
+                                          </label>
+                                          <select 
+                                              className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-slate-400 focus:text-slate-200 focus:border-slate-500 outline-none"
+                                              value={regForm.offRole1}
+                                              onChange={e => setRegForm({...regForm, offRole1: e.target.value as TournamentRole})}
+                                          >
+                                              {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                                          </select>
+                                      </div>
+
+                                      <div className="space-y-2">
+                                          <label className="text-xs font-bold uppercase text-slate-500 flex items-center gap-2">
+                                              <Swords size={14} /> Backup Role 2
+                                          </label>
+                                          <select 
+                                              className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-slate-400 focus:text-slate-200 focus:border-slate-500 outline-none"
+                                              value={regForm.offRole2}
+                                              onChange={e => setRegForm({...regForm, offRole2: e.target.value as TournamentRole})}
+                                          >
+                                              {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                                          </select>
+                                      </div>
+                                  </div>
+                              </div>
+                              
+                              <div className="pt-4 border-t border-slate-800 flex flex-col items-center gap-4">
+                                  <div className="flex items-start gap-2 text-xs text-slate-500 bg-slate-950 p-3 rounded border border-slate-800 w-full">
+                                      <AlertCircle size={16} className="shrink-0 text-slate-400" />
+                                      <p>By registering, you agree to the tournament rules. Your Discord and Tracker links will be visible to admins. Please ensure you are available at match times.</p>
+                                  </div>
+                                  <button 
+                                      type="submit" 
+                                      disabled={isRegLoading}
+                                      className="w-full md:w-2/3 py-4 bg-gradient-to-r from-mythic-gold to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-slate-900 font-black uppercase tracking-widest rounded-xl shadow-lg shadow-yellow-900/20 hover:shadow-yellow-500/40 transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2"
+                                  >
+                                      {isRegLoading ? <Loader2 className="animate-spin"/> : <><CheckCircle2 size={20} /> Confirm Registration</>}
+                                  </button>
+                              </div>
+                          </form>
+                      )}
+                  </div>
+              </div>
+          </div>
+      );
+  }
+
+  // --- DASHBOARD VIEW (Registered) ---
   return (
     <div className="container mx-auto px-4 py-8 min-h-screen">
       <div className="flex flex-col lg:flex-row gap-8">
@@ -197,13 +377,6 @@ export const TournamentView: React.FC = () => {
             
             <nav className="space-y-1">
                 <button 
-                    onClick={() => setActiveTab('register')}
-                    className={`w-full flex items-center justify-between p-3 rounded-lg transition-all ${activeTab === 'register' ? 'bg-mythic-gold text-slate-900 font-bold' : 'bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}
-                >
-                    <span className="flex items-center gap-3"><ClipboardList size={18}/> Check-In</span>
-                    {activeTab === 'register' && <ChevronRight size={16} />}
-                </button>
-                <button 
                     onClick={() => setActiveTab('leaderboard')}
                     className={`w-full flex items-center justify-between p-3 rounded-lg transition-all ${activeTab === 'leaderboard' ? 'bg-mythic-gold text-slate-900 font-bold' : 'bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}
                 >
@@ -216,6 +389,13 @@ export const TournamentView: React.FC = () => {
                 >
                     <span className="flex items-center gap-3"><History size={18}/> Match History</span>
                     {activeTab === 'matches' && <ChevronRight size={16} />}
+                </button>
+                <button 
+                    onClick={() => setActiveTab('my_entry')}
+                    className={`w-full flex items-center justify-between p-3 rounded-lg transition-all ${activeTab === 'my_entry' ? 'bg-mythic-gold text-slate-900 font-bold' : 'bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}
+                >
+                    <span className="flex items-center gap-3"><ClipboardList size={18}/> My Entry</span>
+                    {activeTab === 'my_entry' && <ChevronRight size={16} />}
                 </button>
                 {isAdmin && (
                     <button 
@@ -246,13 +426,18 @@ export const TournamentView: React.FC = () => {
         {/* MAIN CONTENT AREA */}
         <div className="flex-1 min-h-[600px]">
             
-            {/* REGISTER TAB */}
-            {activeTab === 'register' && (
+            {/* MY ENTRY TAB (Allows editing) */}
+            {activeTab === 'my_entry' && (
                 <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4">
                     <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
-                        <div className="p-6 border-b border-slate-800 bg-slate-950/50">
-                            <h2 className="text-2xl font-serif font-bold text-slate-100 mb-1">Player Check-In</h2>
-                            <p className="text-slate-400 text-sm">Register your details to participate in the auto-draft.</p>
+                        <div className="p-6 border-b border-slate-800 bg-slate-950/50 flex justify-between items-center">
+                            <div>
+                                <h2 className="text-2xl font-serif font-bold text-slate-100 mb-1">My Registration</h2>
+                                <p className="text-slate-400 text-sm">Update your details or change your roles.</p>
+                            </div>
+                            <div className="bg-green-500/10 text-green-400 border border-green-500/30 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-2">
+                                <CheckCircle2 size={14} /> Registered
+                            </div>
                         </div>
                         <div className="p-8">
                             <form onSubmit={handleRegister} className="space-y-6">
@@ -261,7 +446,6 @@ export const TournamentView: React.FC = () => {
                                         <label className="text-xs font-bold uppercase text-slate-500">In-Game Name</label>
                                         <input 
                                             className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-slate-200 focus:border-mythic-gold outline-none"
-                                            placeholder="Smite2Player"
                                             value={regForm.ign}
                                             onChange={e => setRegForm({...regForm, ign: e.target.value})}
                                             required
@@ -271,45 +455,59 @@ export const TournamentView: React.FC = () => {
                                         <label className="text-xs font-bold uppercase text-slate-500">Discord Username</label>
                                         <input 
                                             className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-slate-200 focus:border-mythic-gold outline-none"
-                                            placeholder="username#1234"
                                             value={regForm.discord}
                                             onChange={e => setRegForm({...regForm, discord: e.target.value})}
                                         />
                                     </div>
                                 </div>
-                                
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold uppercase text-slate-500">Tracker.gg Link</label>
                                     <input 
                                         className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-slate-200 focus:border-mythic-gold outline-none"
-                                        placeholder="https://tracker.gg/smite2/profile/..."
                                         value={regForm.tracker}
                                         onChange={e => setRegForm({...regForm, tracker: e.target.value})}
                                     />
                                 </div>
 
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold uppercase text-slate-500">Primary Role</label>
-                                    <div className="grid grid-cols-5 gap-2">
-                                        {ROLES.map(role => (
-                                            <button
-                                                key={role}
-                                                type="button"
-                                                onClick={() => setRegForm({...regForm, role})}
-                                                className={`p-2 rounded border text-[10px] font-bold uppercase transition-all ${regForm.role === role ? 'bg-mythic-gold text-slate-900 border-mythic-gold' : 'bg-slate-950 border-slate-700 text-slate-400 hover:border-slate-500'}`}
-                                            >
-                                                {role}
-                                            </button>
-                                        ))}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold uppercase text-mythic-gold">Primary Role</label>
+                                        <select 
+                                            className="w-full bg-slate-950 border border-mythic-gold/50 rounded-lg p-3 text-slate-200"
+                                            value={regForm.role}
+                                            onChange={e => setRegForm({...regForm, role: e.target.value as TournamentRole})}
+                                        >
+                                            {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold uppercase text-slate-500">Backup Role 1</label>
+                                        <select 
+                                            className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-slate-400"
+                                            value={regForm.offRole1}
+                                            onChange={e => setRegForm({...regForm, offRole1: e.target.value as TournamentRole})}
+                                        >
+                                            {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold uppercase text-slate-500">Backup Role 2</label>
+                                        <select 
+                                            className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-slate-400"
+                                            value={regForm.offRole2}
+                                            onChange={e => setRegForm({...regForm, offRole2: e.target.value as TournamentRole})}
+                                        >
+                                            {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                                        </select>
                                     </div>
                                 </div>
 
                                 <button 
                                     type="submit" 
-                                    disabled={isRegLoading || !currentUser}
-                                    className="w-full py-4 bg-gradient-to-r from-mythic-gold to-yellow-600 text-slate-900 font-black uppercase tracking-widest rounded-lg hover:shadow-[0_0_20px_rgba(250,204,21,0.4)] transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-4"
+                                    disabled={isRegLoading}
+                                    className="w-full py-4 bg-slate-800 hover:bg-slate-700 text-white font-bold uppercase tracking-widest rounded-lg transition-all"
                                 >
-                                    {isRegLoading ? <Loader2 className="animate-spin mx-auto"/> : (currentUser ? "Confirm Check-In" : "Log In to Check-In")}
+                                    {isRegLoading ? <Loader2 className="animate-spin mx-auto"/> : "Update Registration"}
                                 </button>
                             </form>
                         </div>
@@ -343,7 +541,14 @@ export const TournamentView: React.FC = () => {
                                             {idx === 0 && <Crown size={14} className="text-yellow-500" />}
                                             {player.name}
                                         </td>
-                                        <td className="px-6 py-4 text-xs uppercase">{player.primaryRole}</td>
+                                        <td className="px-6 py-4 text-xs uppercase">
+                                            <span className="text-white font-bold">{player.primaryRole}</span>
+                                            {player.offRoles && player.offRoles.length > 0 && (
+                                                <span className="text-slate-600 ml-2 text-[10px]">
+                                                    ({player.offRoles.join(', ')})
+                                                </span>
+                                            )}
+                                        </td>
                                         <td className="px-6 py-4 text-center font-bold text-mythic-gold">{player.score}</td>
                                         <td className="px-6 py-4 text-center">
                                             <span className="text-green-400">{player.wins || 0}</span> / <span className="text-red-400">{(player.matchesPlayed || 0) - (player.wins || 0)}</span>
