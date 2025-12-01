@@ -1,11 +1,9 @@
-
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { God, Aspect, GodStats, RecommendedBuild, Item } from '../types';
 import { X, Shield, Zap, Sword, Hexagon, Search, RotateCcw, Heart, Droplet, Activity, Move, Target, BicepsFlexed, BookOpen, Skull, Layers, Sparkles, Star, ChevronDown, ArrowDownUp, Filter, ThumbsUp, ThumbsDown, Edit2, Save, Plus, Trash2, Check, Lock, Youtube, AlertTriangle } from 'lucide-react';
 import { db, auth } from '../services/firebase';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
 import * as FirebaseAuth from 'firebase/auth';
 import { useData } from '../contexts/DataContext';
 import { GodsGridSkeleton } from './Skeletons';
@@ -127,6 +125,7 @@ export const GodsView: React.FC = () => {
   const [itemPickerSlot, setItemPickerSlot] = useState<{type: string, index?: number} | null>(null);
   const [pickerSearch, setPickerSearch] = useState('');
   const [activeSubAbility, setActiveSubAbility] = useState<Record<number, number>>({});
+  const [firestoreGodData, setFirestoreGodData] = useState<Partial<God> | null>(null);
 
   // --- Effects ---
   
@@ -151,8 +150,49 @@ export const GodsView: React.FC = () => {
     setActiveSubAbility({});
     }, [activeAspectId]);
 
+    useEffect(() => {
+  if (!selectedGodId) {
+    setFirestoreGodData(null);
+    return;
+  }
+
+  // Subscribe to realtime updates for this god
+  const unsubscribe = onSnapshot(
+    doc(db, 'gods', selectedGodId),
+    (snapshot) => {
+      if (snapshot.exists()) {
+        setFirestoreGodData(snapshot.data() as Partial<God>);
+      } else {
+        setFirestoreGodData(null);
+      }
+    },
+    (error) => {
+      console.error("Failed to subscribe to god data:", error);
+      setFirestoreGodData(null);
+    }
+  );
+
+  return () => unsubscribe();
+}, [selectedGodId]);
+
+
   // Display God is just the selected god now, as data comes live from Firestore
-  const displayGod = selectedGod;
+  const displayGod = useMemo(() => {
+  if (!selectedGod) return null;
+  if (!firestoreGodData) return selectedGod;
+  
+  // Merge Firestore data on top of static data
+  return {
+    ...selectedGod,
+    levelingOrder: firestoreGodData.levelingOrder ?? selectedGod.levelingOrder,
+    aspectLevelingOrders: firestoreGodData.aspectLevelingOrders ?? {},
+    recommendedBuilds: firestoreGodData.recommendedBuilds ?? selectedGod.recommendedBuilds ?? [],
+    goodAgainst: firestoreGodData.goodAgainst ?? selectedGod.goodAgainst ?? [],
+    badAgainst: firestoreGodData.badAgainst ?? selectedGod.badAgainst ?? [],
+    aspectMatchups: firestoreGodData.aspectMatchups ?? {},
+    videoGuideUrl: firestoreGodData.videoGuideUrl ?? selectedGod.videoGuideUrl,
+  } as God;
+}, [selectedGod, firestoreGodData]);
 
   const activeKit = useMemo(() => {
       if (!displayGod) return null;
