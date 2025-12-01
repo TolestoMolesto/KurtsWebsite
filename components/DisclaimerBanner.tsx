@@ -104,7 +104,7 @@ export const GlobalPatchBanner: React.FC = () => {
     <div className="container mx-auto px-4 pt-4">
       <DisclaimerBanner
         id="patch-disclaimer-v1"
-        message="Data is manually updated each patch and may contain inaccuracies. Please report any issues via Discord!"
+        message="DATA MAY BE INCORRECT WORKING WITH HI-REZ TO OBTAIN CORRECT AMOUNTS Till Then Data is manually updated each patch and may contain inaccuracies (Will Be Updated To API Once Permission Has Been Obtained) Please report any issues via Discord!"
         type="warning"
         expiresInDays={3}
       />

@@ -99,7 +99,7 @@ type SortOption = 'NameAsc' | 'NameDesc';
 export const GodsView: React.FC = () => {
   const { gods: GODS, items: ITEMS } = useData();
   const [selectedGodId, setSelectedGodId] = useState<string | null>(null);
-  const selectedGod = useMemo(() => GODS.find(g => g.id === selectedGodId) || null, [GODS, selectedGodId]);
+  const selectedGod = useMemo(() => (GODS || []).find(g => g.id === selectedGodId) || null, [GODS, selectedGodId]);
   
   // activeAspectId: null = Base God, string = Aspect ID
   const [activeAspectId, setActiveAspectId] = useState<string | null>(null);
@@ -372,7 +372,7 @@ export const GodsView: React.FC = () => {
   // Helper for opening a matchup entity which might be a specific aspect
   const openMatchupEntity = (id: string) => {
       const [godId, aspectId] = id.split(':');
-      const god = GODS.find(g => g.id === godId);
+      const god = (GODS || []).find(g => g.id === godId);
       if (god) {
           setSelectedGodId(god.id);
           setActiveAspectId(aspectId || null);
@@ -384,7 +384,7 @@ export const GodsView: React.FC = () => {
   // Helper to resolve display info for a matchup ID (which can be 'godId' or 'godId:aspectId')
   const resolveMatchupEntity = (id: string) => {
       const [godId, aspectId] = id.split(':');
-      const god = GODS.find(g => g.id === godId);
+      const god = (GODS || []).find(g => g.id === godId);
       if (!god) return null;
       
       if (aspectId) {
@@ -418,12 +418,12 @@ export const GodsView: React.FC = () => {
   const roles = ['All', 'Solo', 'Jungle', 'Mid', 'Carry', 'Support'];
   
   const pantheons = useMemo(() => {
-      const p = Array.from(new Set(GODS.map(g => g.pantheon))).sort();
+      const p = Array.from(new Set((GODS || []).map(g => g.pantheon))).sort();
       return ['All', ...p];
   }, [GODS]);
 
   const filteredGods = useMemo(() => {
-    return GODS.filter(god => {
+    return (GODS || []).filter(god => {
         const matchesSearch = god.name.toLowerCase().includes(search.toLowerCase());
         const matchesRole = roleFilter === 'All' || god.lanes.includes(roleFilter);
         const matchesDamage = damageFilter === 'All' || god.damageType === damageFilter;
@@ -839,18 +839,18 @@ export const GodsView: React.FC = () => {
                                         <div className="flex gap-1 flex-wrap justify-center sm:justify-start">
                                             {/* Starter */}
                                             <div className="w-8 h-8 rounded bg-slate-700 border border-slate-600 overflow-hidden relative" title="Starter">
-                                                {ITEMS.find(i => i.id === rec.starterId)?.image && <img src={ITEMS.find(i => i.id === rec.starterId)?.image} className="w-full h-full object-cover"/>}
+                                                {(ITEMS || []).find(i => i.id === rec.starterId)?.image && <img src={(ITEMS || []).find(i => i.id === rec.starterId)?.image} className="w-full h-full object-cover"/>}
                                                 <div className="absolute bottom-0 right-0 w-2 h-2 bg-purple-500 rounded-tl-sm"></div>
                                             </div>
                                             {/* Items */}
                                             {rec.itemIds.map((id, i) => (
                                                 <div key={i} className="w-8 h-8 rounded bg-slate-700 border border-slate-600 overflow-hidden">
-                                                    {id && <img src={ITEMS.find(itm => itm.id === id)?.image} className="w-full h-full object-cover"/>}
+                                                    {id && <img src={(ITEMS || []).find(itm => itm.id === id)?.image} className="w-full h-full object-cover"/>}
                                                 </div>
                                             ))}
                                             {/* Relic */}
                                             <div className="w-8 h-8 rounded-full bg-slate-700 border border-slate-600 overflow-hidden relative" title="Relic">
-                                                {ITEMS.find(i => i.id === rec.relicId)?.image && <img src={ITEMS.find(i => i.id === rec.relicId)?.image} className="w-full h-full object-cover"/>}
+                                                {(ITEMS || []).find(i => i.id === rec.relicId)?.image && <img src={(ITEMS || []).find(i => i.id === rec.relicId)?.image} className="w-full h-full object-cover"/>}
                                                 <div className="absolute bottom-0 right-0 w-2 h-2 bg-cyan-500 rounded-full"></div>
                                             </div>
                                         </div>
@@ -859,7 +859,7 @@ export const GodsView: React.FC = () => {
                             ) : null}
                             
                             {/* Empty State */}
-                            {displayGod.recommendedBuilds.filter(build => {
+                            {(displayGod.recommendedBuilds || []).filter(build => {
                                 if (!build.aspectId) return true;
                                 if (build.aspectId === 'base' && activeAspectId === null) return true;
                                 return build.aspectId === activeAspectId;
@@ -1280,7 +1280,7 @@ export const GodsView: React.FC = () => {
                       <div className="border-t border-slate-700 pt-4">
                           <h4 className="text-slate-300 text-xs font-bold uppercase mb-3">Add to Intel</h4>
                           <div className="space-y-2">
-                              {GODS.sort((a,b) => a.name.localeCompare(b.name)).map(g => (
+                              {(GODS || []).sort((a,b) => a.name.localeCompare(b.name)).map(g => (
                                   <div key={g.id} className="bg-slate-800 p-2 rounded border border-slate-700 flex items-center gap-3 hover:border-slate-600 transition-colors">
                                       {/* Base God */}
                                       <div className="flex flex-col items-center gap-1 min-w-[60px] border-r border-slate-700 pr-3">
@@ -1396,7 +1396,7 @@ export const GodsView: React.FC = () => {
                               <div onClick={() => setItemPickerSlot({type: 'Starter'})} className="flex flex-col items-center gap-1 cursor-pointer">
                                   <span className="text-[10px] font-bold text-purple-400">Starter</span>
                                   <div className={`w-14 h-14 bg-slate-800 rounded border-2 overflow-hidden ${itemPickerSlot?.type==='Starter' ? 'border-mythic-gold' : 'border-slate-600'}`}>
-                                      {buildForm.starterId ? <img src={ITEMS.find(i=>i.id===buildForm.starterId)?.image} className="w-full h-full" /> : <div className="flex items-center justify-center h-full text-slate-600"><Plus/></div>}
+                                      {buildForm.starterId ? <img src={(ITEMS || []).find(i=>i.id===buildForm.starterId)?.image} className="w-full h-full" /> : <div className="flex items-center justify-center h-full text-slate-600"><Plus/></div>}
                                   </div>
                               </div>
                               
@@ -1404,7 +1404,7 @@ export const GodsView: React.FC = () => {
                               <div onClick={() => setItemPickerSlot({type: 'Relic'})} className="flex flex-col items-center gap-1 cursor-pointer">
                                   <span className="text-[10px] font-bold text-cyan-400">Relic</span>
                                   <div className={`w-14 h-14 bg-slate-800 rounded-full border-2 overflow-hidden ${itemPickerSlot?.type==='Relic' ? 'border-mythic-gold' : 'border-slate-600'}`}>
-                                      {buildForm.relicId ? <img src={ITEMS.find(i=>i.id===buildForm.relicId)?.image} className="w-full h-full" /> : <div className="flex items-center justify-center h-full text-slate-600"><Plus/></div>}
+                                      {buildForm.relicId ? <img src={(ITEMS || []).find(i=>i.id===buildForm.relicId)?.image} className="w-full h-full" /> : <div className="flex items-center justify-center h-full text-slate-600"><Plus/></div>}
                                   </div>
                               </div>
 
@@ -1414,7 +1414,7 @@ export const GodsView: React.FC = () => {
                                       <div key={idx} onClick={() => setItemPickerSlot({type: 'Item', index: idx})} className="flex flex-col items-center gap-1 cursor-pointer">
                                           <span className="text-[10px] font-bold text-slate-500">Item {idx+1}</span>
                                           <div className={`w-12 h-12 bg-slate-800 rounded border-2 overflow-hidden ${itemPickerSlot?.type==='Item' && itemPickerSlot.index===idx ? 'border-mythic-gold' : 'border-slate-600'}`}>
-                                              {id ? <img src={ITEMS.find(i=>i.id===id)?.image} className="w-full h-full" /> : <div className="flex items-center justify-center h-full text-slate-600"><Plus size={16}/></div>}
+                                              {id ? <img src={(ITEMS || []).find(i=>i.id===id)?.image} className="w-full h-full" /> : <div className="flex items-center justify-center h-full text-slate-600"><Plus size={16}/></div>}
                                           </div>
                                       </div>
                                   ))}
@@ -1451,7 +1451,7 @@ export const GodsView: React.FC = () => {
                                       >
                                           <span className="text-[10px] text-red-400 font-bold">CLEAR</span>
                                       </div>
-                                      {ITEMS.filter(i => {
+                                      {(ITEMS || []).filter(i => {
                                           const typeMatch = i.type === itemPickerSlot.type || (itemPickerSlot.type === 'Item' && (i.type === 'Item' || i.type === 'God Specific'));
                                           const searchMatch = i.name.toLowerCase().includes(pickerSearch.toLowerCase());
                                           // God Specific check

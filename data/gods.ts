@@ -39,7 +39,7 @@ export const GODS: God[] = [
   {
   id: 'achilles',
   name: 'Achilles',
-  title: 'Hero of the Trojan War',
+  title: 'Hero of the Trojan War!',
   pantheon: 'Greek',
   role: 'Warrior',
   lanes: ['Solo', 'Jungle'],

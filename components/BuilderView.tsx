@@ -240,8 +240,8 @@ export const BuilderView: React.FC = () => {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const godId = params.get('g');
-    if (godId && GODS.length > 0) {
-      const god = GODS.find(g => g.id === godId);
+    if (godId && (GODS || []).length > 0) {
+      const god = (GODS || []).find(g => g.id === godId);
       if (god) {
         setSelectedGod(god);
         const aspectId = params.get('a');
@@ -255,11 +255,11 @@ export const BuilderView: React.FC = () => {
     }
   }, [GODS]);
 
-  const getItem = (id: string | null) => id ? ITEMS.find(i => i.id === id) : null;
+  const getItem = (id: string | null) => id ? (ITEMS || []).find(i => i.id === id) : null;
   const pickRandom = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
   const randomizeGod = () => {
-    if (GODS.length === 0) return;
+    if (!GODS || GODS.length === 0) return;
     const god = pickRandom(GODS);
     setSelectedGod(god);
     // 50% chance to pick an aspect if the god has aspects
@@ -271,9 +271,9 @@ export const BuilderView: React.FC = () => {
   };
 
   const randomizeItems = () => {
-    const starters = ITEMS.filter(i => i.type === 'Starter' && i.buildsFrom && i.buildsFrom.length > 0);
-    const t3Items = ITEMS.filter(i => i.type === 'Item' && i.tier === 3);
-    const relics = ITEMS.filter(i => i.type === 'Relic');
+    const starters = (ITEMS || []).filter(i => i.type === 'Starter' && i.buildsFrom && i.buildsFrom.length > 0);
+    const t3Items = (ITEMS || []).filter(i => i.type === 'Item' && i.tier === 3);
+    const relics = (ITEMS || []).filter(i => i.type === 'Relic');
     
     if (starters.length === 0 || t3Items.length === 0) return;
     
@@ -352,7 +352,7 @@ export const BuilderView: React.FC = () => {
   };
 
   // Filter items for picker
-  const filteredItems = ITEMS.filter(item => {
+  const filteredItems = (ITEMS || []).filter(item => {
     if (!itemPickerSlot) return false;
 
     // Type matching
@@ -392,7 +392,7 @@ export const BuilderView: React.FC = () => {
     return typeMatch && searchMatch && godMatch && categoryMatch && tierMatch && statsMatch;
   }).sort((a, b) => a.name.localeCompare(b.name));
 
-  const filteredGods = GODS
+  const filteredGods = (GODS || [])
     .filter(god => god.name.toLowerCase().includes(godSearch.toLowerCase()) && (roleFilter === 'All' || god.lanes.includes(roleFilter)))
     .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -696,7 +696,7 @@ export const BuilderView: React.FC = () => {
       {previewItem && createPortal(
         <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setPreviewItem(null)}>
           <div className="bg-slate-900 w-full max-w-md max-h-[85vh] sm:rounded-2xl rounded-t-2xl border border-slate-700 shadow-2xl flex flex-col relative overflow-hidden" onClick={e => e.stopPropagation()}>
-            <BuilderItemInspector item={previewItem} allItems={ITEMS} onClose={() => setPreviewItem(null)} onSelect={itemPickerSlot ? () => handleSelectItem(previewItem) : undefined} mode="preview" />
+            <BuilderItemInspector item={previewItem} allItems={(ITEMS || [])} onClose={() => setPreviewItem(null)} onSelect={itemPickerSlot ? () => handleSelectItem(previewItem) : undefined} mode="preview" />
           </div>
         </div>,
         document.body
@@ -708,7 +708,7 @@ export const BuilderView: React.FC = () => {
           <div className="bg-slate-900 w-full max-w-md max-h-[85vh] sm:rounded-2xl rounded-t-2xl border border-slate-700 shadow-2xl flex flex-col relative overflow-hidden" onClick={e => e.stopPropagation()}>
             <BuilderItemInspector
               item={viewingBuildItem.item}
-              allItems={ITEMS}
+              allItems={(ITEMS || [])}
               onClose={() => setViewingBuildItem(null)}
               onChange={() => { setItemPickerSlot(viewingBuildItem.slot); setViewingBuildItem(null); }}
               onRemove={() => handleClearSlot(viewingBuildItem.slot)}
