@@ -1,4 +1,4 @@
-
+// App.tsx - Updated with improvements
 import React, { useState } from 'react';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
@@ -12,8 +12,14 @@ import { ProfileView } from './components/ProfileView';
 import { SnowEffect } from './components/SnowEffect';
 import { DataProvider } from './contexts/DataContext';
 
+// NEW IMPORTS
+import { MobileNav } from './components/MobileNav';
+import { GlobalPatchBanner } from './components/DisclaimerBanner';
+
+type ViewType = 'home' | 'gods' | 'items' | 'tierlist' | 'builder' | 'tournament' | 'profile';
+
 function App() {
-  const [currentView, setCurrentView] = useState<'home' | 'gods' | 'items' | 'tierlist' | 'builder' | 'tournament' | 'profile'>('home');
+  const [currentView, setCurrentView] = useState<ViewType>('home');
 
   const renderView = () => {
     switch(currentView) {
@@ -36,11 +42,17 @@ function App() {
         
         <Header currentView={currentView} setCurrentView={setCurrentView} />
         
-        <main className="flex-1 animate-in fade-in slide-in-from-bottom-2 duration-500 relative z-10">
+        {/* NEW: Global Disclaimer Banner */}
+        <GlobalPatchBanner />
+        
+        <main className="flex-1 animate-in fade-in slide-in-from-bottom-2 duration-500 relative z-10 pb-20 md:pb-0">
           {renderView()}
         </main>
 
         <Footer />
+
+        {/* NEW: Mobile Bottom Navigation */}
+        <MobileNav currentView={currentView} setCurrentView={setCurrentView} />
       </div>
     </DataProvider>
   );

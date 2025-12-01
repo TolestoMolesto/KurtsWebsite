@@ -1,93 +1,96 @@
 
-import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
-import { collection, onSnapshot, doc, writeBatch } from 'firebase/firestore';
-import { db } from '../services/firebase';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { God, Item, NamedTierList } from '../types';
-import { GODS as STATIC_GODS } from '../data/gods';
-import { ITEMS as STATIC_ITEMS } from '../data/items';
-import { STREAMER_TIER_LISTS as STATIC_TIER_LISTS } from '../data/tierlists';
+// Import your data sources using relative path
+import { fetchGods, fetchItems, fetchTierLists } from '../services/dataService';
 
 interface DataContextType {
   gods: God[];
   items: Item[];
   tierLists: NamedTierList[];
-  loading: boolean;
+  isLoading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
 }
 
-const DataContext = createContext<DataContextType>({
-  gods: [],
-  items: [],
-  tierLists: [],
-  loading: true,
-});
+const DataContext = createContext<DataContextType | undefined>(undefined);
 
-export const useData = () => useContext(DataContext);
+export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [gods, setGods] = useState<God[]>([]);
+  const [items, setItems] = useState<Item[]>([]);
+  const [tierLists, setTierLists] = useState<NamedTierList[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Store Firestore overrides separately
-  const [godOverrides, setGodOverrides] = useState<Record<string, Partial<God>>>({});
-  const [firestoreTierLists, setFirestoreTierLists] = useState<NamedTierList[]>([]);
-  const [loading, setLoading] = useState(true);
+  const fetchAllData = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // Fetch all data in parallel
+      const [godsData, itemsData, tierListsData] = await Promise.all([
+        fetchGods(),
+        fetchItems(),
+        fetchTierLists()
+      ]);
+      
+      setGods(godsData);
+      setItems(itemsData);
+      setTierLists(tierListsData);
+    } catch (err) {
+      console.error('Failed to fetch data:', err);
+      setError('Failed to load data. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // 1. Listen to God Overrides (Builds, Matchups, Leveling)
-    const unsubGods = onSnapshot(collection(db, 'gods'), (snap) => {
-      const overrides: Record<string, Partial<God>> = {};
-      snap.docs.forEach(doc => {
-        overrides[doc.id] = doc.data() as Partial<God>;
-      });
-      setGodOverrides(overrides);
-    });
-
-    // 2. Listen to Dynamic Tier Lists (if any)
-    const unsubTierLists = onSnapshot(collection(db, 'tierlists'), (snap) => {
-      const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as NamedTierList));
-      setFirestoreTierLists(data);
-    });
-
-    setLoading(false);
-
-    return () => {
-      unsubGods();
-      unsubTierLists();
-    };
+    fetchAllData();
   }, []);
 
-  // 3. Merge Static Data with Firestore Overrides
-  const gods = useMemo(() => {
-    return STATIC_GODS.map(staticGod => {
-      const override = godOverrides[staticGod.id];
-      if (!override) return staticGod;
-
-      // Merge specific fields that are editable
-      return {
-        ...staticGod,
-        recommendedBuilds: override.recommendedBuilds || staticGod.recommendedBuilds,
-        levelingOrder: override.levelingOrder || staticGod.levelingOrder,
-        goodAgainst: override.goodAgainst || staticGod.goodAgainst,
-        badAgainst: override.badAgainst || staticGod.badAgainst,
-        aspectLevelingOrders: override.aspectLevelingOrders || staticGod.aspectLevelingOrders,
-        aspectMatchups: override.aspectMatchups || staticGod.aspectMatchups,
-        // We do NOT override name, image, base stats, etc. to keep integrity
-      };
-    });
-  }, [godOverrides]);
-
-  // 4. Merge Tier Lists
-  const tierLists = useMemo(() => {
-      // Avoid duplicates if IDs clash, favor Firestore
-      const staticIds = new Set(STATIC_TIER_LISTS.map(l => l.id));
-      const dynamicLists = firestoreTierLists.filter(l => !staticIds.has(l.id));
-      
-      return [...STATIC_TIER_LISTS, ...dynamicLists];
-  }, [firestoreTierLists]);
-
-  // Items are currently Static only as requested
-  const items = STATIC_ITEMS;
+  const value: DataContextType = {
+    gods,
+    items,
+    tierLists,
+    isLoading,
+    error,
+    refetch: fetchAllData
+  };
 
   return (
-    <DataContext.Provider value={{ gods, items, tierLists, loading }}>
+    <DataContext.Provider value={value}>
       {children}
     </DataContext.Provider>
   );
 };
+
+export const useData = (): DataContextType => {
+  const context = useContext(DataContext);
+  if (!context) {
+    throw new Error('useData must be used within a DataProvider');
+  }
+  return context;
+};
+
+// Optional: Error boundary wrapper
+export const DataErrorFallback: React.FC<{ error: string; onRetry: () => void }> = ({ 
+  error, 
+  onRetry 
+}) => (
+  <div className="flex flex-col items-center justify-center min-h-[400px] p-8 text-center">
+    <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mb-4">
+      <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+    </div>
+    <h3 className="text-xl font-bold text-white mb-2">Something went wrong</h3>
+    <p className="text-slate-400 mb-6 max-w-md">{error}</p>
+    <button
+      onClick={onRetry}
+      className="px-6 py-2.5 bg-mythic-gold text-slate-950 font-bold rounded-lg hover:bg-yellow-400 transition-colors"
+    >
+      Try Again
+    </button>
+  </div>
+);

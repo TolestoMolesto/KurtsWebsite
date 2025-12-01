@@ -1,85 +1,160 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Smite Source 2</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
         theme: {
           extend: {
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-              serif: ['Cinzel', 'serif'],
-            },
             colors: {
-              // Override Slate with Zinc (Neutral Dark Gaming Grey)
-              slate: {
-                50: '#fafafa',
-                100: '#f4f4f5',
-                200: '#e4e4e7',
-                300: '#d4d4d8',
-                400: '#a1a1aa',
-                500: '#71717a',
-                600: '#52525b',
-                700: '#3f3f46',
-                800: '#27272a',
-                900: '#18181b',
-                950: '#09090b',
-              },
-              mythic: {
-                900: '#09090b',
-                800: '#18181b',
-                700: '#27272a',
-                gold: '#FACC15', // Bright Electric Yellow (Weak3n Style)
-                accent: '#EAB308', // Darker Yellow/Gold
-              }
+              'mythic-gold': '#FACC15', // yellow-400
+              'mythic-accent': '#EAB308', // yellow-500
+              'mythic-700': '#A16207', // yellow-700
+              'mythic-900': '#713F12', // yellow-900
+            },
+            fontFamily: {
+              serif: ['Cinzel', 'serif'],
+              sans: ['Inter', 'sans-serif'],
             }
           }
         }
       }
     </script>
+
+    <!-- Import Map -->
+    <script type="importmap">
+    {
+      "imports": {
+        "react/": "https://aistudiocdn.com/react@^19.2.0/",
+        "react": "https://aistudiocdn.com/react@^19.2.0",
+        "react-dom": "https://aistudiocdn.com/react-dom@^19.2.0",
+        "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+        "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+        "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
+        "firebase/": "https://aistudiocdn.com/firebase@^12.6.0/"
+      }
+    }
+    </script>
+
     <style>
-      body {
-        background-color: #09090b; /* Zinc 950 */
-        color: #e4e4e7; /* Zinc 200 */
-        overflow-x: hidden;
+      /* Safe area for mobile bottom nav (notched phones) */
+      .safe-area-bottom {
+        padding-bottom: env(safe-area-inset-bottom, 0px);
       }
-      /* Custom Scrollbar */
-      ::-webkit-scrollbar {
-        width: 8px;
+
+      /* Skeleton shimmer animation */
+      @keyframes shimmer {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
       }
-      ::-webkit-scrollbar-track {
-        background: #18181b; 
+      
+      .animate-shimmer {
+        animation: shimmer 1.5s ease-in-out infinite;
+        background: linear-gradient(90deg, #27272a 25%, #3f3f46 50%, #27272a 75%);
+        background-size: 200% 100%;
       }
-      ::-webkit-scrollbar-thumb {
-        background: #3f3f46; 
-        border-radius: 4px;
+
+      /* Slow bounce for holiday decorations */
+      @keyframes bounce-slow {
+        0%, 100% { transform: translateY(0) rotate(-15deg); }
+        50% { transform: translateY(-5px) rotate(-15deg); }
       }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #FACC15; 
+      
+      .animate-bounce-slow {
+        animation: bounce-slow 2s ease-in-out infinite;
+      }
+
+      /* Pulse slow for ambient effects */
+      @keyframes pulse-slow {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+      }
+      
+      .animate-pulse-slow {
+        animation: pulse-slow 3s ease-in-out infinite;
+      }
+
+      /* Animate-in utilities (if not using Tailwind plugin) */
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      
+      @keyframes slideInFromBottom {
+        from { transform: translateY(8px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+      
+      @keyframes slideInFromTop {
+        from { transform: translateY(-8px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+      
+      .animate-in {
+        animation-duration: 300ms;
+        animation-fill-mode: both;
+      }
+      
+      .fade-in {
+        animation-name: fadeIn;
+      }
+      
+      .slide-in-from-bottom-2 {
+        animation-name: slideInFromBottom;
+      }
+      
+      .slide-in-from-top-2 {
+        animation-name: slideInFromTop;
+      }
+      
+      .duration-500 {
+        animation-duration: 500ms;
+      }
+      
+      .duration-300 {
+        animation-duration: 300ms;
+      }
+      
+      .duration-200 {
+        animation-duration: 200ms;
+      }
+
+      /* Hide scrollbar but keep functionality */
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+
+      /* Focus visible for accessibility */
+      button:focus-visible,
+      a:focus-visible,
+      input:focus-visible {
+        outline: 2px solid #FACC15;
+        outline-offset: 2px;
+      }
+
+      /* Custom Hexagon Clip Path */
+      .clip-hexagon {
+        clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
       }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
-    "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
-    "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",
-    "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js",
-    "firebase/": "https://aistudiocdn.com/firebase@^12.6.0/",
-    "react-dom": "https://aistudiocdn.com/react-dom@^19.2.0"
-  }
-}
-</script>
 </head>
-  <body>
+<body class="bg-slate-950 text-slate-200 antialiased overflow-x-hidden">
     <div id="root"></div>
-  </body>
+    <script type="module" src="./index.tsx"></script>
+</body>
 </html>

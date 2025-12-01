@@ -8,6 +8,8 @@ import { db, auth } from '../services/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import * as FirebaseAuth from 'firebase/auth';
 import { useData } from '../contexts/DataContext';
+import { GodsGridSkeleton } from './Skeletons';
+import { NoGodsFound, NoSearchResults } from './EmptyStates';
 
 // --- Components ---
 
