@@ -99,6 +99,11 @@
         from { transform: translateY(-8px); opacity: 0; }
         to { transform: translateY(0); opacity: 1; }
       }
+
+      @keyframes shimmer {
+       0% { transform: translateX(-100%) skewX(-12deg); }
+       100% { transform: translateX(200%) skewX(-12deg); }
+      }
       
       .animate-in {
         animation-duration: 300ms;

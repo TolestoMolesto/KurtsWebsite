@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { TierListState, TierRank, NamedTierList, Item } from '../types';
 import { RotateCcw, User, ArrowLeft, Trophy, Twitch, Youtube, Shield, Sword, Hexagon, Box, Search, Save, Trash2, Edit2, Filter, BicepsFlexed, BookOpen, Zap, Target, Crosshair, Heart, Activity, Droplet } from 'lucide-react';
@@ -24,6 +23,57 @@ const STAT_FILTERS = [
     { id: 'Magical Protection', label: 'Mag', icon: <Shield size={12} className="text-purple-400" />, keys: ['Mag'] },
 ];
 
+// --- ENHANCED TIER SYSTEM ---
+const TIER_CONFIG: Record<TierRank, { 
+  label: string; 
+  description: string; 
+  gradient: string; 
+  glow: string; 
+  textGlow: string;
+  borderGlow: string;
+}> = {
+  [TierRank.S]: { 
+    label: 'S', 
+    description: 'Meta Defining', 
+    gradient: 'bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-600',
+    glow: 'shadow-[0_0_30px_rgba(251,191,36,0.6)]',
+    textGlow: 'drop-shadow-[0_0_12px_rgba(251,191,36,0.9)]',
+    borderGlow: 'ring-2 ring-amber-400/50',
+  },
+  [TierRank.A]: { 
+    label: 'A', 
+    description: 'Strong Pick', 
+    gradient: 'bg-gradient-to-br from-red-500 via-rose-600 to-red-700',
+    glow: 'shadow-[0_0_25px_rgba(239,68,68,0.5)]',
+    textGlow: 'drop-shadow-[0_0_10px_rgba(239,68,68,0.8)]',
+    borderGlow: 'ring-2 ring-red-500/40',
+  },
+  [TierRank.B]: { 
+    label: 'B', 
+    description: 'Solid Choice', 
+    gradient: 'bg-gradient-to-br from-violet-500 via-purple-600 to-indigo-700',
+    glow: 'shadow-[0_0_20px_rgba(139,92,246,0.4)]',
+    textGlow: 'drop-shadow-[0_0_8px_rgba(139,92,246,0.7)]',
+    borderGlow: 'ring-2 ring-violet-500/30',
+  },
+  [TierRank.C]: { 
+    label: 'C', 
+    description: 'Situational', 
+    gradient: 'bg-gradient-to-br from-cyan-500 via-teal-600 to-emerald-700',
+    glow: 'shadow-[0_0_15px_rgba(20,184,166,0.35)]',
+    textGlow: 'drop-shadow-[0_0_6px_rgba(20,184,166,0.6)]',
+    borderGlow: 'ring-2 ring-teal-500/25',
+  },
+  [TierRank.D]: { 
+    label: 'D', 
+    description: 'Needs Buffs', 
+    gradient: 'bg-gradient-to-br from-slate-500 via-gray-600 to-zinc-700',
+    glow: 'shadow-[0_0_10px_rgba(100,116,139,0.3)]',
+    textGlow: 'drop-shadow-[0_0_4px_rgba(100,116,139,0.5)]',
+    borderGlow: 'ring-1 ring-slate-500/20',
+  },
+};
+
 const AspectSymbolSVG: React.FC<{ className?: string }> = ({ className }) => (
     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
         <path d="M12 3L16 8H8L12 3Z" fill="currentColor" />
@@ -42,7 +92,7 @@ export const TierListView: React.FC = () => {
   // --- EDITOR STATE ---
   const [listTitle, setListTitle] = useState('');
   const [listDesc, setListDesc] = useState('');
-  const [editingListId, setEditingListId] = useState<string | null>(null); // If set, we are updating an existing list
+  const [editingListId, setEditingListId] = useState<string | null>(null);
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
 
   // --- GOD FILTER STATE ---
@@ -81,9 +131,8 @@ export const TierListView: React.FC = () => {
     return () => unsub();
   }, []);
 
-  // Initialize Pool when Tab Changes
   useEffect(() => {
-      if (editingListId) return; // Don't reset if we loaded a list
+      if (editingListId) return;
 
       if (activeTab === 'gods') {
           const pool = GODS.flatMap(god => {
@@ -96,9 +145,6 @@ export const TierListView: React.FC = () => {
           setTiers(prev => ({ ...prev, [TierRank.S]: [], [TierRank.A]: [], [TierRank.B]: [], [TierRank.C]: [], [TierRank.D]: [], pool }));
           setListTitle(''); setListDesc('');
       } else if (activeTab === 'items') {
-          // Filter out God Specific items by default for general tier lists? Or allow them? 
-          // Prompt said "god specific items... dont appear in builder unless that god is selected" - this usually applies to BuilderView. 
-          // For TierList, let's include them but they might clutter. Let's include everything for now.
           const pool = ITEMS.map(i => i.id);
           setTiers(prev => ({ ...prev, [TierRank.S]: [], [TierRank.A]: [], [TierRank.B]: [], [TierRank.C]: [], [TierRank.D]: [], pool }));
           setListTitle(''); setListDesc('');
@@ -106,7 +152,6 @@ export const TierListView: React.FC = () => {
   }, [activeTab, GODS, ITEMS]);
 
   // --- FILTER LOGIC ---
-
   const getFilteredPool = () => {
       if (activeTab === 'gods') {
           return tiers.pool.filter(entry => {
@@ -120,18 +165,14 @@ export const TierListView: React.FC = () => {
               const matchesPantheon = godPantheon === 'All' || god.pantheon === godPantheon;
 
               return matchesSearch && matchesRole && matchesDamage && matchesPantheon;
-          }).sort((a,b) => a.localeCompare(b)); // Simple string sort for stability
+          }).sort((a,b) => a.localeCompare(b));
       } else {
-          // Items
           return tiers.pool.filter(id => {
               const item = ITEMS.find(i => i.id === id);
               if (!item) return false;
 
-              // 1. Search
               const matchesSearch = item.name.toLowerCase().includes(itemSearch.toLowerCase());
-              // 2. Category
               const matchesCategory = itemCategory === 'All' || item.category === itemCategory;
-              // 3. Type
               let matchesType = true;
               if (itemType !== 'All') {
                   if (itemType.startsWith('Tier')) {
@@ -141,7 +182,6 @@ export const TierListView: React.FC = () => {
                       matchesType = item.type === itemType;
                   }
               }
-              // 4. Stats
               let matchesStats = true;
               if (itemStats.length > 0) {
                   matchesStats = itemStats.every(statId => {
@@ -163,7 +203,6 @@ export const TierListView: React.FC = () => {
   };
 
   // --- ACTIONS ---
-
   const handleEntryClick = (id: string) => {
       setSelectedEntryId(prev => prev === id ? null : id);
   };
@@ -172,14 +211,10 @@ export const TierListView: React.FC = () => {
       if (!selectedEntryId) return;
 
       const newTiers = { ...tiers };
-      
-      // Remove from current location
       Object.keys(newTiers).forEach(key => {
           // @ts-ignore
           newTiers[key] = newTiers[key].filter(id => id !== selectedEntryId);
       });
-
-      // Add to new location
       // @ts-ignore
       newTiers[rank].push(selectedEntryId);
       
@@ -192,7 +227,7 @@ export const TierListView: React.FC = () => {
       setListDesc(list.description);
       setTiers(list.data);
       setEditingListId(list.id);
-      setActiveTab(list.type || 'gods'); // Default to gods if type missing
+      setActiveTab(list.type || 'gods');
   };
 
   const saveList = async () => {
@@ -206,7 +241,7 @@ export const TierListView: React.FC = () => {
           type: activeTab === 'gods' ? 'gods' : 'items',
           data: tiers,
           streamerInfo: {
-              platform: 'twitch', // Default placeholder
+              platform: 'twitch',
               url: '',
               isLive: false
           }
@@ -214,10 +249,8 @@ export const TierListView: React.FC = () => {
 
       try {
           if (editingListId && STREAMER_TIER_LISTS.find(l => l.id === editingListId)) {
-              // Update existing
               await setDoc(doc(db, 'tierlists', editingListId), listData, { merge: true });
           } else {
-              // Create new
               await addDoc(collection(db, 'tierlists'), listData);
           }
           alert('Tier List Saved!');
@@ -239,8 +272,7 @@ export const TierListView: React.FC = () => {
           setEditingListId(null);
           setListTitle('');
           setListDesc('');
-          // Reset pool
-          setActiveTab(activeTab); // Trigger effect
+          setActiveTab(activeTab);
       } catch (err) {
           console.error(err);
       }
@@ -250,7 +282,6 @@ export const TierListView: React.FC = () => {
       setEditingListId(null);
       setListTitle('');
       setListDesc('');
-      // Trigger reset via tab toggle trick or explicit logic
       if (activeTab === 'gods') {
         const pool = GODS.flatMap(god => {
             const entries = [`${god.id}:base`];
@@ -267,7 +298,6 @@ export const TierListView: React.FC = () => {
   };
 
   // --- RENDERERS ---
-
   const renderGodEntry = (id: string, inPool = false) => {
       const [godId, aspectId] = id.split(':');
       const god = GODS.find(g => g.id === godId);
@@ -275,9 +305,7 @@ export const TierListView: React.FC = () => {
       
       const aspect = god.aspects.find(a => a.id === aspectId);
       const isAspect = !!aspect;
-      // ALWAYS use the Base God image for consistency
       const displayImage = god.image;
-      
       const isSelected = selectedEntryId === id;
 
       return (
@@ -292,7 +320,6 @@ export const TierListView: React.FC = () => {
               <div className="w-full h-full rounded overflow-hidden border border-slate-700 bg-slate-900 relative">
                   <img src={displayImage} className="w-full h-full object-cover" />
                   
-                  {/* Aspect Overlay: Top Right */}
                   {isAspect && (
                       <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-slate-900 border-l border-b border-slate-600 z-10 overflow-hidden">
                           {aspect?.image ? (
@@ -303,7 +330,6 @@ export const TierListView: React.FC = () => {
                       </div>
                   )}
                   
-                  {/* Label: Always use God Name */}
                   <div className="absolute bottom-0 w-full bg-black/70 text-[8px] text-center text-white truncate px-0.5">
                       {god.name}
                   </div>
@@ -336,16 +362,7 @@ export const TierListView: React.FC = () => {
       );
   };
 
-  const tierColors: Record<TierRank, string> = {
-    [TierRank.S]: 'bg-red-600 border-red-500',
-    [TierRank.A]: 'bg-orange-500 border-orange-400',
-    [TierRank.B]: 'bg-yellow-500 border-yellow-400',
-    [TierRank.C]: 'bg-green-500 border-green-400',
-    [TierRank.D]: 'bg-blue-500 border-blue-400',
-  };
-
   // --- VIEWS ---
-
   if (activeTab === 'streamer') {
       return (
           <div className="container mx-auto px-4 py-8 pb-24">
@@ -426,22 +443,59 @@ export const TierListView: React.FC = () => {
 
           <div className="flex-1 flex flex-col md:flex-row">
               
-              {/* LEFT: TIERS (Scrolls with page) */}
-              <div className="flex-1 space-y-2 bg-slate-950/50 border-x border-slate-800 p-4">
-                  {(Object.keys(tierColors) as TierRank[]).map(rank => (
-                      <div 
-                        key={rank}
-                        onClick={() => selectedEntryId && moveToTier(rank)}
-                        className={`flex min-h-[120px] bg-slate-900 border border-slate-700 rounded-lg overflow-hidden transition-colors ${selectedEntryId ? 'hover:ring-2 hover:ring-mythic-gold/50 cursor-pointer' : ''}`}
-                      >
-                          <div className={`w-16 md:w-24 flex items-center justify-center shrink-0 ${tierColors[rank]}`}>
-                              <span className="text-2xl md:text-4xl font-black text-white drop-shadow-md">{rank}</span>
+              {/* LEFT: TIERS - ENHANCED */}
+              <div className="flex-1 space-y-3 bg-slate-950/50 border-x border-slate-800 p-4">
+                  {(Object.keys(TIER_CONFIG) as TierRank[]).map(rank => {
+                      const config = TIER_CONFIG[rank];
+                      return (
+                          <div 
+                            key={rank}
+                            onClick={() => selectedEntryId && moveToTier(rank)}
+                            className={`
+                              flex min-h-[120px] bg-slate-900/80 backdrop-blur-sm 
+                              border border-slate-700/50 rounded-xl overflow-hidden 
+                              transition-all duration-300
+                              ${selectedEntryId ? 'hover:ring-2 hover:ring-mythic-gold/50 cursor-pointer' : ''}
+                              ${config.borderGlow}
+                            `}
+                          >
+                              {/* TIER BADGE - Enhanced */}
+                              <div className={`
+                                w-24 md:w-32 flex flex-col items-center justify-center shrink-0 
+                                ${config.gradient} ${config.glow}
+                                relative overflow-hidden
+                              `}>
+                                  {/* Animated shine effect */}
+                                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 animate-[shimmer_3s_infinite]" 
+                                       style={{ animation: 'shimmer 3s infinite' }} />
+                                  
+                                  {/* Rank Letter */}
+                                  <span className={`
+                                    text-4xl md:text-5xl font-black text-white 
+                                    ${config.textGlow} relative z-10
+                                    tracking-tight
+                                  `}>
+                                    {config.label}
+                                  </span>
+                                  
+                                  {/* Description */}
+                                  <span className="text-[10px] md:text-xs font-semibold text-white/90 uppercase tracking-widest mt-1 relative z-10 text-center px-1">
+                                    {config.description}
+                                  </span>
+                              </div>
+                              
+                              {/* ITEMS CONTAINER */}
+                              <div className="flex-1 p-3 flex flex-wrap gap-2 content-start bg-gradient-to-r from-slate-900/50 to-transparent">
+                                  {tiers[rank].map(id => activeTab === 'gods' ? renderGodEntry(id) : renderItemEntry(id))}
+                                  {tiers[rank].length === 0 && (
+                                    <div className="w-full h-full flex items-center justify-center text-slate-600 text-sm italic">
+                                      Click items to add to {rank} tier
+                                    </div>
+                                  )}
+                              </div>
                           </div>
-                          <div className="flex-1 p-2 flex flex-wrap gap-2 content-start">
-                              {tiers[rank].map(id => activeTab === 'gods' ? renderGodEntry(id) : renderItemEntry(id))}
-                          </div>
-                      </div>
-                  ))}
+                      );
+                  })}
               </div>
 
               {/* RIGHT: POOL & FILTERS (Sticky) */}
@@ -481,7 +535,6 @@ export const TierListView: React.FC = () => {
                                   <select value={itemType} onChange={(e) => setItemType(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded text-xs text-slate-300 p-1">
                                       {['All', 'Tier 3', 'Tier 2', 'Tier 1', 'Starter', 'Relic'].map(t => <option key={t} value={t}>{t}</option>)}
                                   </select>
-                                  {/* Stat Filters Expandable */}
                                   <div className="grid grid-cols-4 gap-1">
                                       {STAT_FILTERS.map(stat => (
                                           <button
