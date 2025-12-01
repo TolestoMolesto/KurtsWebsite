@@ -137,14 +137,30 @@ export const GODS: God[] = [
       description: 'Dodge in your current direction and ready your spear to strike enemies for Physical Damage. Hitting an enemy god with the strike allows you to recast the ability once before it goes on cooldown.\n\n• When Armored, striking an enemy god with your spear Slows them, stacking up to 2 times\n• When forgoing your Armor, the speed of your dodge is doubled\n\nYou can use Abilities and Basic Attacks between dashes. After readying your spear, you have 4 seconds to strike before the ability ends.',
       cooldown: '14 | 13.5 | 13 | 12.5 | 12s',
       cost: '22 | 24 | 26 | 28 | 30',
-      attributes: [
-        { label: 'Damage', value: '65 | 105 | 145 | 185 | 225' },
-        { label: 'Damage Scaling', value: '45% Strength' },
-        { label: 'Slow (Armored)', value: '7.5% Per Stack' },
-        { label: 'Slow Duration', value: '3s' },
-        { label: 'Dodge Range', value: '3.2m' },
-        { label: 'Spear Strike Range', value: '5.6m' },
-        { label: 'Spear Strike Radius', value: '0.96m' }
+      attributes: [], // Shared stats moved to subAbilities
+      subAbilities: [
+        {
+          name: 'Combat Dodge',
+          description: 'Dodge in your current direction and ready your spear. When forgoing your Armor, the speed of your dodge is doubled.',
+          image: 'https://image2url.com/images/1764570869616-67bb4644-30dc-4969-a7b6-7f33e97de190.webp',
+          attributes: [
+            { label: 'Dodge Range', value: '3.2m' },
+            { label: 'Recast Window', value: '4s' }
+          ]
+        },
+        {
+          name: 'Spear Strike',
+          description: 'Strike enemies for Physical Damage. Hitting an enemy god allows you to recast the ability once before it goes on cooldown. When Armored, striking an enemy god Slows them, stacking up to 2 times.',
+          image: 'https://image2url.com/images/1764601066518-8f3d5991-b4a2-4e6c-aa3b-b52528d7bcfc.webp',
+          attributes: [
+            { label: 'Damage', value: '65 | 105 | 145 | 185 | 225' },
+            { label: 'Damage Scaling', value: '45% Strength' },
+            { label: 'Slow (Armored)', value: '7.5% Per Stack' },
+            { label: 'Slow Duration', value: '3s' },
+            { label: 'Spear Strike Range', value: '5.6m' },
+            { label: 'Spear Strike Radius', value: '0.96m' }
+          ]
+        }
       ]
     },
     4: {
@@ -234,14 +250,30 @@ export const GODS: God[] = [
           description: 'Dodge in your current direction and ready your spear to strike enemies for Physical Damage. Hitting a God or Jungle Monster with the strike allows you to recast the ability once before it goes on cooldown.\n\n• When Armored, striking an enemy god with your spear Slows them, stacking up to 2 times\n• When forgoing your Armor, the speed of your dodge is doubled, AND SPEAR STRIKE HAS INCREASED SCALING\n• CAN NOW RECAST AFTER STRIKING A JUNGLE MONSTER OR BOSS\n\nYou can use Abilities and Basic Attacks between dashes. After readying your spear, you have 4 seconds to strike before the ability ends.',
           cooldown: '14 | 13.5 | 13 | 12.5 | 12s',
           cost: '22 | 24 | 26 | 28 | 30',
-          attributes: [
-            { label: 'Damage', value: '65 | 105 | 145 | 185 | 225' },
-            { label: 'Damage Scaling', value: '45% Strength or 60% Strength If Foregoing Armor' },
-            { label: 'Slow (Armored)', value: '7.5% Per Stack' },
-            { label: 'Slow Duration', value: '3s' },
-            { label: 'Dodge Range', value: '3.2m' },
-            { label: 'Spear Strike Range', value: '5.6m' },
-            { label: 'Spear Strike Radius', value: '0.96m' }
+          attributes: [],
+          subAbilities: [
+            {
+              name: 'Combat Dodge',
+              description: 'Dodge in your current direction and ready your spear. When forgoing your Armor, the speed of your dodge is doubled.',
+              image: 'https://image2url.com/images/1764570869616-67bb4644-30dc-4969-a7b6-7f33e97de190.webp',
+              attributes: [
+                { label: 'Dodge Range', value: '3.2m' },
+                { label: 'Recast Window', value: '4s' }
+              ]
+            },
+            {
+              name: 'Spear Strike',
+              description: 'Strike enemies for Physical Damage. Hitting an enemy god OR JUNGLE MONSTER/BOSS allows you to recast. When Armored, Slows enemies. When forgoing Armor, gains INCREASED SCALING.',
+              image: 'https://image2url.com/images/1764601066518-8f3d5991-b4a2-4e6c-aa3b-b52528d7bcfc.webp',
+              attributes: [
+                { label: 'Damage', value: '65 | 105 | 145 | 185 | 225' },
+                { label: 'Damage Scaling', value: '45% Strength or 60% Strength If Foregoing Armor' },
+                { label: 'Slow (Armored)', value: '7.5% Per Stack' },
+                { label: 'Slow Duration', value: '3s' },
+                { label: 'Spear Strike Range', value: '5.6m' },
+                { label: 'Spear Strike Radius', value: '0.96m' }
+              ]
+            }
           ]
         },
         4: {

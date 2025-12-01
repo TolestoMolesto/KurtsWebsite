@@ -126,6 +126,7 @@ export const GodsView: React.FC = () => {
   });
   const [itemPickerSlot, setItemPickerSlot] = useState<{type: string, index?: number} | null>(null);
   const [pickerSearch, setPickerSearch] = useState('');
+  const [activeSubAbility, setActiveSubAbility] = useState<Record<number, number>>({});
 
   // --- Effects ---
   
@@ -144,6 +145,11 @@ export const GodsView: React.FC = () => {
     });
     return () => unsubscribeAuth();
   }, []);
+
+    // Reset sub-ability selection when aspect changes
+    useEffect(() => {
+    setActiveSubAbility({});
+    }, [activeAspectId]);
 
   // Display God is just the selected god now, as data comes live from Firestore
   const displayGod = selectedGod;
@@ -320,7 +326,8 @@ export const GodsView: React.FC = () => {
     setActiveAspectId(null); // Reset to base
     setGodLevel(1);
     setIsEditMode(false);
-  };
+    setActiveSubAbility({}); // Reset sub-ability selections
+    };
 
   // Helper for opening a matchup entity which might be a specific aspect
   const openMatchupEntity = (id: string) => {
@@ -1022,13 +1029,22 @@ export const GodsView: React.FC = () => {
                     {[1, 2, 3, 4].map((num) => {
                         // @ts-ignore
                         const ability = activeKit.abilities[num];
+                        const hasSubAbilities = ability.subAbilities && ability.subAbilities.length > 0;
+                        const selectedSubIndex = activeSubAbility[num] ?? 0;
+                        const currentSubAbility = hasSubAbilities ? ability.subAbilities[selectedSubIndex] : null;
+                        
+                        // Determine what to display - ALL DISPLAY VARIABLES GO HERE
+                        const displayDesc = currentSubAbility ? currentSubAbility.description : ability.description;
+                        const displayAttrs = currentSubAbility ? currentSubAbility.attributes : ability.attributes;
+                        const displayImage = currentSubAbility?.image || ability.image; // <-- RIGHT HERE
+
                         return (
                         <div key={num} className="bg-slate-800 rounded-xl border border-slate-700/50 overflow-hidden hover:border-slate-600 transition-colors">
                             {/* Ability Header */}
                             <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-slate-800 to-slate-800/50 border-b border-slate-700/50">
                                 <div className="w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center shrink-0 border border-slate-700 relative overflow-hidden shadow-inner">
-                                    {ability.image ? (
-                                        <img src={ability.image} alt={ability.name} className="w-full h-full object-cover" />
+                                    {displayImage ? (  // <-- USE IT HERE
+                                        <img src={displayImage} alt={currentSubAbility?.name || ability.name} className="w-full h-full object-cover transition-all duration-300" />
                                     ) : (
                                         <>
                                             {num === 4 ? <Skull size={24} className="text-red-500" /> : <Zap size={24} className="text-mythic-gold" />}
@@ -1043,27 +1059,58 @@ export const GodsView: React.FC = () => {
                                     <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Ability {num}</p>
                                 </div>
                             </div>
+
+                            {/* Sub-Ability Toggle (if applicable) */}
+                            {hasSubAbilities && (
+                                <div className="px-4 pt-3 pb-2 border-b border-slate-700/30 bg-slate-900/50">
+                                    <div className="flex gap-2 flex-wrap">
+                                        {ability.subAbilities.map((sub: any, idx: number) => (
+                                            <button
+                                                key={idx}
+                                                onClick={() => setActiveSubAbility(prev => ({ ...prev, [num]: idx }))}
+                                                className={`
+                                                    flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all
+                                                    ${selectedSubIndex === idx 
+                                                        ? 'bg-mythic-gold text-slate-900 shadow-lg shadow-mythic-gold/20' 
+                                                        : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200 border border-slate-600'
+                                                    }
+                                                `}
+                                            >
+                                                {sub.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                             
                             {/* Ability Body */}
                             <div className="p-4 space-y-4">
+                                {/* Currently Viewing Indicator */}
+                                {hasSubAbilities && currentSubAbility && (
+                                    <div className="flex items-center gap-2 text-xs text-mythic-gold font-semibold uppercase tracking-wider">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-mythic-gold animate-pulse" />
+                                        Viewing: {currentSubAbility.name}
+                                    </div>
+                                )}
+
                                 {/* Detailed Stats Grid */}
-                                {ability.attributes && ability.attributes.length > 0 && (
+                                {displayAttrs && displayAttrs.length > 0 && (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 bg-slate-900/30 p-3 rounded-lg">
-                                    {ability.attributes.map((attr: any, i: number) => (
+                                    {displayAttrs.map((attr: any, i: number) => (
                                         <div key={i} className="flex flex-col text-xs">
                                             <span className="text-slate-500 font-bold uppercase mb-0.5">{attr.label}</span>
-                                            <span className={`font-mono ${attr.label.includes('Damage') ? 'text-blue-300' : 'text-slate-300'}`}>{attr.value}</span>
+                                            <span className={`font-mono ${attr.label.includes('Damage') ? 'text-red-400' : 'text-slate-300'}`}>{attr.value}</span>
                                         </div>
                                     ))}
                                     </div>
                                 )}
 
                                 {/* Description */}
-                                <p className="text-slate-300 text-sm leading-relaxed border-l-2 border-slate-700 pl-3">
-                                    {ability.description}
+                                <p className="text-slate-300 text-sm leading-relaxed border-l-2 border-slate-700 pl-3 whitespace-pre-wrap">
+                                    {displayDesc}
                                 </p>
 
-                                {/* Cooldown & Cost Footer */}
+                                {/* Cooldown & Cost Footer (always from main ability) */}
                                 <div className="flex items-center gap-6 pt-2 mt-2 border-t border-slate-700/50 text-xs font-mono text-slate-400">
                                     <div className="flex items-center gap-2">
                                         <RotateCcw size={12} />

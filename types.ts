@@ -10,13 +10,24 @@ export interface AbilityStat {
   value: string;
 }
 
+// Add this new interface BEFORE the Ability interface
+
+export interface SubAbility {
+  name: string;
+  description: string;
+  image?: string;
+  attributes?: AbilityStat[];
+}
+
+// Update the existing Ability interface to include subAbilities
 export interface Ability {
   name: string;
   description: string;
   cooldown: string;
   cost: string;
-  image?: string; 
-  attributes?: AbilityStat[]; // For things like Damage, Scaling, Range, Radius
+  image?: string;
+  attributes?: AbilityStat[];
+  subAbilities?: SubAbility[]; // NEW - for stance/phase abilities like Combat Dodge / Spear Strike
 }
 
 export interface AbilityKit {
