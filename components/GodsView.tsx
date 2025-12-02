@@ -8,6 +8,7 @@ import * as FirebaseAuth from 'firebase/auth';
 import { useData } from '../contexts/DataContext';
 import { GodsGridSkeleton } from './Skeletons';
 import { NoGodsFound, NoSearchResults } from './EmptyStates';
+import { GodStatsPanel } from './GodStatsPanel';
 
 // --- Components ---
 
@@ -71,21 +72,6 @@ const AspectHexagon: React.FC<{
     </div>
   );
 };
-
-const StatRow: React.FC<{ icon: React.ReactNode; label: string; value: string | number; }> = ({ icon, label, value }) => (
-  <div className="flex justify-between items-center py-1.5 border-b border-slate-800 last:border-0">
-    <div className="flex items-center gap-2 text-slate-400">
-      <div className="text-mythic-gold">{icon}</div>
-      <span className="text-xs font-semibold uppercase">{label}</span>
-    </div>
-    <div className="flex flex-col items-end">
-        <span className="text-slate-200 font-mono text-sm">
-            {typeof value === 'number' ? Math.round(value * 10) / 10 : value}
-            {label === 'Attack Speed' && typeof value === 'number' ? '%' : ''}
-        </span>
-    </div>
-  </div>
-);
 
 // Helper to extract YouTube ID
 const getYoutubeId = (url: string) => {
@@ -424,6 +410,7 @@ export const GodsView: React.FC = () => {
 
   const filteredGods = useMemo(() => {
     return (GODS || []).filter(god => {
+        if (!god) return false;
         const matchesSearch = god.name.toLowerCase().includes(search.toLowerCase());
         const matchesRole = roleFilter === 'All' || god.lanes.includes(roleFilter);
         const matchesDamage = damageFilter === 'All' || god.damageType === damageFilter;
@@ -434,11 +421,6 @@ export const GodsView: React.FC = () => {
           return b.name.localeCompare(a.name);
       });
   }, [GODS, search, roleFilter, damageFilter, pantheonFilter, sortMethod]);
-
-  const getCurrentStats = (god: God, level: number): GodStats => {
-    const index = Math.max(0, Math.min(19, level - 1));
-    return god.statsByLevel[index];
-  };
 
   return (
     <div className="container mx-auto px-4 py-8 pb-24">
@@ -709,33 +691,7 @@ export const GodsView: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="space-y-1">
-                      {(() => {
-                        const stats = getCurrentStats(selectedGod, godLevel);
-                        return (
-                          <>
-                            <StatRow icon={<BicepsFlexed size={14}/>} label="Strength" value={stats.strength} />
-                            <StatRow icon={<BookOpen size={14}/>} label="Intelligence" value={stats.intelligence} />
-                            <StatRow icon={<Zap size={14}/>} label="Attack Speed" value={stats.attackSpeed} />
-                            <StatRow icon={<Heart size={14}/>} label="Lifesteal" value={`${stats.lifesteal}%`} />
-                            <StatRow icon={<Target size={14}/>} label="Crit Chance" value={`${stats.critChance}%`} />
-                            <StatRow icon={<Skull size={14}/>} label="Crit Damage" value={`${(stats.critDamage * 100).toFixed(0)}%`} />
-                            <StatRow icon={<Layers size={14}/>} label="Penetration" value={`${stats.penetration}%`} />
-                            <div className="h-4"></div>
-                            <StatRow icon={<Shield size={14}/>} label="Phys Protection" value={stats.physicalProtection} />
-                            <StatRow icon={<Shield size={14} className="text-purple-400"/>} label="Mag Protection" value={stats.magicalProtection} />
-                            <div className="h-4"></div>
-                            <StatRow icon={<Heart size={14} className="text-red-500"/>} label="Max Health" value={stats.maxHealth} />
-                            <StatRow icon={<Activity size={14} className="text-green-500"/>} label="Health Regen" value={stats.healthRegen} />
-                            <StatRow icon={<Droplet size={14} className="text-blue-500"/>} label="Max Mana" value={stats.maxMana} />
-                            <StatRow icon={<Activity size={14} className="text-blue-300"/>} label="Mana Regen" value={stats.manaRegen} />
-                            <div className="h-4"></div>
-                            <StatRow icon={<Move size={14}/>} label="Movement Speed" value={stats.movementSpeed} />
-                            <StatRow icon={<RotateCcw size={14}/>} label="Cooldown Rate" value={`${stats.cooldownRate}%`} />
-                          </>
-                        );
-                      })()}
-                    </div>
+                    <GodStatsPanel god={selectedGod} level={godLevel} items={[]} />
                  </div>
               </div>
 
@@ -1228,264 +1184,4 @@ export const GodsView: React.FC = () => {
                           <div className="flex flex-wrap gap-2 min-h-[40px]">
                               {currentMatchups.goodAgainst?.map(id => {
                                   const entity = resolveMatchupEntity(id);
-                                  if (!entity) return null;
-                                  return (
-                                      <div key={id} className="relative group cursor-pointer" onClick={() => toggleMatchup('good', id)} title={entity.name}>
-                                          <img src={entity.image} className="w-12 h-12 rounded border-2 border-green-500/50 object-cover" />
-                                          {entity.isAspect && (
-                                              <div className="absolute top-0 right-0 w-4 h-4 bg-slate-900 border-l border-b border-slate-700 z-10 overflow-hidden shadow-sm">
-                                                  {entity.aspectImage ? (
-                                                      <img src={entity.aspectImage} className="w-full h-full object-cover" />
-                                                  ) : (
-                                                      <AspectSymbolSVG className="w-full h-full text-mythic-gold p-0.5" />
-                                                  )}
-                                              </div>
-                                          )}
-                                          <div className="absolute inset-0 bg-black/60 hidden group-hover:flex items-center justify-center text-red-500 rounded"><X size={16}/></div>
-                                      </div>
-                                  )
-                              })}
-                              {(!currentMatchups.goodAgainst || currentMatchups.goodAgainst.length === 0) && <span className="text-xs text-slate-600 italic py-2">No entries yet. Select below to add.</span>}
-                          </div>
-                      </div>
-                      
-                      {/* Bad Against Section */}
-                      <div className="bg-slate-950/50 p-4 rounded-xl border border-red-900/30">
-                          <h4 className="text-red-400 text-xs font-bold uppercase mb-3 flex items-center gap-2"><ThumbsDown size={14}/> Vulnerable To</h4>
-                          <div className="flex flex-wrap gap-2 min-h-[40px]">
-                              {currentMatchups.badAgainst?.map(id => {
-                                  const entity = resolveMatchupEntity(id);
-                                  if (!entity) return null;
-                                  return (
-                                      <div key={id} className="relative group cursor-pointer" onClick={() => toggleMatchup('bad', id)} title={entity.name}>
-                                          <img src={entity.image} className="w-12 h-12 rounded border-2 border-red-500/50 object-cover" />
-                                          {entity.isAspect && (
-                                              <div className="absolute top-0 right-0 w-4 h-4 bg-slate-900 border-l border-b border-slate-700 z-10 overflow-hidden shadow-sm">
-                                                  {entity.aspectImage ? (
-                                                      <img src={entity.aspectImage} className="w-full h-full object-cover" />
-                                                  ) : (
-                                                      <AspectSymbolSVG className="w-full h-full text-mythic-gold p-0.5" />
-                                                  )}
-                                              </div>
-                                          )}
-                                          <div className="absolute inset-0 bg-black/60 hidden group-hover:flex items-center justify-center text-red-500 rounded"><X size={16}/></div>
-                                      </div>
-                                  )
-                              })}
-                              {(!currentMatchups.badAgainst || currentMatchups.badAgainst.length === 0) && <span className="text-xs text-slate-600 italic py-2">No entries yet. Select below to add.</span>}
-                          </div>
-                      </div>
-
-                      {/* Unified Picker */}
-                      <div className="border-t border-slate-700 pt-4">
-                          <h4 className="text-slate-300 text-xs font-bold uppercase mb-3">Add to Intel</h4>
-                          <div className="space-y-2">
-                              {(GODS || []).sort((a,b) => a.name.localeCompare(b.name)).map(g => (
-                                  <div key={g.id} className="bg-slate-800 p-2 rounded border border-slate-700 flex items-center gap-3 hover:border-slate-600 transition-colors">
-                                      {/* Base God */}
-                                      <div className="flex flex-col items-center gap-1 min-w-[60px] border-r border-slate-700 pr-3">
-                                          <div className="relative w-10 h-10 group">
-                                               <img src={g.image} className="w-full h-full rounded object-cover" title={g.name} />
-                                               <div className="absolute inset-0 bg-black/80 hidden group-hover:flex flex-col items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity rounded">
-                                                  <button onClick={() => toggleMatchup('good', g.id)} className="p-0.5 bg-green-900 rounded text-green-300 hover:bg-green-700"><ThumbsUp size={10}/></button>
-                                                  <button onClick={() => toggleMatchup('bad', g.id)} className="p-0.5 bg-red-900 rounded text-red-300 hover:bg-red-700"><ThumbsDown size={10}/></button>
-                                               </div>
-                                          </div>
-                                          <span className="text-[9px] font-bold text-slate-400 uppercase truncate max-w-[60px]">{g.name}</span>
-                                      </div>
-
-                                      {/* Aspects */}
-                                      <div className="flex-1 flex flex-wrap gap-2">
-                                          {g.aspects.length > 0 ? g.aspects.map(a => (
-                                              <div key={a.id} className="flex flex-col items-center gap-1">
-                                                  <div className="relative w-10 h-10 group cursor-pointer" title={`${g.name} - ${a.name}`}>
-                                                      <div className="w-full h-full relative overflow-hidden rounded">
-                                                          {/* Main Image: Base God */}
-                                                          <img src={g.image} className="w-full h-full object-cover opacity-90" />
-                                                          
-                                                          {/* Aspect Overlay: Top Right */}
-                                                          <div className="absolute top-0 right-0 w-4 h-4 bg-slate-900 border-l border-b border-slate-700 z-10 overflow-hidden">
-                                                               {a.image ? (
-                                                                   <img src={a.image} className="w-full h-full object-cover" />
-                                                               ) : (
-                                                                   <AspectSymbolSVG className="w-full h-full text-mythic-gold p-0.5"/>
-                                                               )}
-                                                          </div>
-                                                      </div>
-                                                      <div className="absolute inset-0 bg-black/80 hidden group-hover:flex flex-col items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity rounded border border-mythic-gold/50">
-                                                          <button onClick={() => toggleMatchup('good', `${g.id}:${a.id}`)} className="p-0.5 bg-green-900 rounded text-green-300 hover:bg-green-700"><ThumbsUp size={10}/></button>
-                                                          <button onClick={() => toggleMatchup('bad', `${g.id}:${a.id}`)} className="p-0.5 bg-red-900 rounded text-red-300 hover:bg-red-700"><ThumbsDown size={10}/></button>
-                                                      </div>
-                                                  </div>
-                                                  <span className="text-[8px] text-slate-500 uppercase truncate max-w-[50px]">{a.name.split(' ').pop()}</span>
-                                              </div>
-                                          )) : <span className="text-[10px] text-slate-600 italic pl-2 self-center">No Aspects</span>}
-                                      </div>
-                                  </div>
-                              ))}
-                          </div>
-                      </div>
-                  </div>
-              </div>
-          </div>,
-          document.body
-      )}
-
-      {/* 2. Build Editor Modal */}
-      {isBuildModalOpen && createPortal(
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-              <div className="bg-slate-900 w-full max-w-4xl h-[90vh] rounded-2xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col">
-                  {/* Header */}
-                  <div className="p-4 border-b border-slate-700 bg-slate-800 flex justify-between items-center shrink-0">
-                      <h3 className="font-bold text-slate-100 text-lg">Edit Recommended Build</h3>
-                      <div className="flex gap-2">
-                          <button onClick={saveBuild} className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded font-bold text-xs flex items-center gap-2">
-                              <Save size={14} /> Save Build
-                          </button>
-                          <button onClick={() => setIsBuildModalOpen(false)} className="p-2 bg-slate-700 hover:bg-slate-600 rounded text-white">
-                              <X size={20} />
-                          </button>
-                      </div>
-                  </div>
-
-                  {/* Body */}
-                  <div className="flex flex-1 overflow-hidden">
-                      {/* Left: Form */}
-                      <div className="w-1/3 border-r border-slate-700 p-6 flex flex-col gap-4 bg-slate-950/50">
-                          <div>
-                              <label className="text-xs uppercase font-bold text-slate-500 block mb-1">Build Name</label>
-                              <input 
-                                  value={buildForm.name} 
-                                  onChange={e => setBuildForm({...buildForm, name: e.target.value})}
-                                  className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm"
-                                  placeholder="e.g. Crit Burst"
-                              />
-                          </div>
-                          <div>
-                              <label className="text-xs uppercase font-bold text-slate-500 block mb-1">Author</label>
-                              <input 
-                                  value={buildForm.author} 
-                                  onChange={e => setBuildForm({...buildForm, author: e.target.value})}
-                                  className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm"
-                                  placeholder="e.g. Weak3n"
-                              />
-                          </div>
-                          <div>
-                              <label className="text-xs uppercase font-bold text-slate-500 block mb-1">Role</label>
-                              <select 
-                                  value={buildForm.role}
-                                  onChange={e => setBuildForm({...buildForm, role: e.target.value})}
-                                  className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm"
-                              >
-                                  {roles.filter(r => r !== 'All').map(r => <option key={r} value={r}>{r}</option>)}
-                              </select>
-                          </div>
-                          <div className="mt-auto pt-4 border-t border-slate-700">
-                              <p className="text-[10px] text-slate-500">
-                                  Select slots on the right to populate items.
-                              </p>
-                          </div>
-                      </div>
-
-                      {/* Right: Item Slots & Picker */}
-                      <div className="flex-1 flex flex-col bg-slate-900 relative">
-                          
-                          {/* Active Slots Display */}
-                          <div className="p-6 grid grid-cols-4 gap-4 justify-center">
-                              {/* Starter */}
-                              <div onClick={() => setItemPickerSlot({type: 'Starter'})} className="flex flex-col items-center gap-1 cursor-pointer">
-                                  <span className="text-[10px] font-bold text-purple-400">Starter</span>
-                                  <div className={`w-14 h-14 bg-slate-800 rounded border-2 overflow-hidden ${itemPickerSlot?.type==='Starter' ? 'border-mythic-gold' : 'border-slate-600'}`}>
-                                      {buildForm.starterId ? <img src={(ITEMS || []).find(i=>i.id===buildForm.starterId)?.image} className="w-full h-full" /> : <div className="flex items-center justify-center h-full text-slate-600"><Plus/></div>}
-                                  </div>
-                              </div>
-                              
-                              {/* Relic */}
-                              <div onClick={() => setItemPickerSlot({type: 'Relic'})} className="flex flex-col items-center gap-1 cursor-pointer">
-                                  <span className="text-[10px] font-bold text-cyan-400">Relic</span>
-                                  <div className={`w-14 h-14 bg-slate-800 rounded-full border-2 overflow-hidden ${itemPickerSlot?.type==='Relic' ? 'border-mythic-gold' : 'border-slate-600'}`}>
-                                      {buildForm.relicId ? <img src={(ITEMS || []).find(i=>i.id===buildForm.relicId)?.image} className="w-full h-full" /> : <div className="flex items-center justify-center h-full text-slate-600"><Plus/></div>}
-                                  </div>
-                              </div>
-
-                              {/* Items 1-6 */}
-                              <div className="col-span-4 grid grid-cols-6 gap-2 mt-4">
-                                  {buildForm.itemIds.map((id, idx) => (
-                                      <div key={idx} onClick={() => setItemPickerSlot({type: 'Item', index: idx})} className="flex flex-col items-center gap-1 cursor-pointer">
-                                          <span className="text-[10px] font-bold text-slate-500">Item {idx+1}</span>
-                                          <div className={`w-12 h-12 bg-slate-800 rounded border-2 overflow-hidden ${itemPickerSlot?.type==='Item' && itemPickerSlot.index===idx ? 'border-mythic-gold' : 'border-slate-600'}`}>
-                                              {id ? <img src={(ITEMS || []).find(i=>i.id===id)?.image} className="w-full h-full" /> : <div className="flex items-center justify-center h-full text-slate-600"><Plus size={16}/></div>}
-                                          </div>
-                                      </div>
-                                  ))}
-                              </div>
-                          </div>
-
-                          {/* Item Picker Area */}
-                          {itemPickerSlot && (
-                              <div className="flex-1 border-t border-slate-700 flex flex-col">
-                                  <div className="p-2 bg-slate-950 border-b border-slate-800 flex gap-2">
-                                      <Search size={16} className="text-slate-500" />
-                                      <input 
-                                          autoFocus
-                                          placeholder={`Search ${itemPickerSlot.type}s...`}
-                                          className="bg-transparent outline-none text-white text-sm w-full"
-                                          value={pickerSearch}
-                                          onChange={e => setPickerSearch(e.target.value)}
-                                      />
-                                      <button onClick={() => setItemPickerSlot(null)} className="text-xs text-slate-400">Close</button>
-                                  </div>
-                                  <div className="flex-1 overflow-y-auto p-2 grid grid-cols-6 gap-2 content-start custom-scrollbar">
-                                      <div 
-                                          onClick={() => {
-                                              if (itemPickerSlot.type === 'Starter') setBuildForm({...buildForm, starterId: ''});
-                                              else if (itemPickerSlot.type === 'Relic') setBuildForm({...buildForm, relicId: ''});
-                                              else {
-                                                  const newItems = [...buildForm.itemIds];
-                                                  newItems[itemPickerSlot.index!] = null;
-                                                  setBuildForm({...buildForm, itemIds: newItems});
-                                              }
-                                              setItemPickerSlot(null);
-                                          }}
-                                          className="bg-red-900/20 border border-red-500/50 rounded flex items-center justify-center cursor-pointer hover:bg-red-900/40 min-h-[50px]"
-                                      >
-                                          <span className="text-[10px] text-red-400 font-bold">CLEAR</span>
-                                      </div>
-                                      {(ITEMS || []).filter(i => {
-                                          const typeMatch = i.type === itemPickerSlot.type || (itemPickerSlot.type === 'Item' && (i.type === 'Item' || i.type === 'God Specific'));
-                                          const searchMatch = i.name.toLowerCase().includes(pickerSearch.toLowerCase());
-                                          // God Specific check
-                                          const godMatch = i.type !== 'God Specific' || (selectedGod && i.god === selectedGod.name);
-                                          return typeMatch && searchMatch && godMatch;
-                                      }).map(item => (
-                                          <div 
-                                              key={item.id} 
-                                              onClick={() => {
-                                                  if (itemPickerSlot.type === 'Starter') setBuildForm({...buildForm, starterId: item.id});
-                                                  else if (itemPickerSlot.type === 'Relic') setBuildForm({...buildForm, relicId: item.id});
-                                                  else {
-                                                      const newItems = [...buildForm.itemIds];
-                                                      newItems[itemPickerSlot.index!] = item.id;
-                                                      setBuildForm({...buildForm, itemIds: newItems});
-                                                  }
-                                              }}
-                                              className="bg-slate-800 rounded border border-slate-700 hover:border-mythic-gold cursor-pointer p-1 group"
-                                              title={item.name}
-                                          >
-                                              <img src={item.image} className="w-full h-10 object-cover mb-1 rounded-sm" />
-                                              <div className="text-[9px] text-center truncate text-slate-400 group-hover:text-white">{item.name}</div>
-                                          </div>
-                                      ))}
-                                  </div>
-                              </div>
-                          )}
-                      </div>
-                  </div>
-              </div>
-          </div>,
-          document.body
-      )}
-
-    </div>
-  );
-};
+                               

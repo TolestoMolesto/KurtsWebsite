@@ -1,257 +1,146 @@
-// ============================================================
-// GodStatsPanel.tsx - Full Stats Display Component (UPDATED)
-// ============================================================
-
-import React from 'react';
+import React, { useMemo } from 'react';
 import { 
   BicepsFlexed, BookOpen, Swords, Zap, Target, Crosshair, 
   Heart, Shield, Activity, Droplet, RotateCcw, Footprints,
-  Skull, Star, Layers, ShieldOff
+  Skull, Layers, ShieldOff
 } from 'lucide-react';
-import { GodStats, God } from '../types';
-import { calculateAttackSpeed, getAttackSpeedPercentAtLevel } from './damageCalculations';
+import { God, Item } from '../types';
+import { calculateTotalStats, calculateAttackSpeed, getAttackSpeedPercentAtLevel } from './damageCalculations';
 
 interface GodStatsPanelProps {
   god: God;
   level: number;
-  stats: GodStats;
-  showBaseValues?: boolean;
+  items?: (Item | null)[];
 }
 
 const StatRow: React.FC<{
   icon: React.ReactNode;
   label: string;
   value: string | number;
-  baseValue?: string | number;
+  baseValue?: number;
   color?: string;
-}> = ({ icon, label, value, baseValue, color = 'text-white' }) => (
-  <div className="flex items-center justify-between py-1.5 border-b border-slate-800/50 last:border-0">
-    <div className="flex items-center gap-2 text-slate-400">
-      <span className="text-slate-500">{icon}</span>
-      <span className="text-sm">{label}</span>
-    </div>
-    <div className={`font-mono text-sm ${color}`}>
-      {value}
-      {baseValue !== undefined && (
-        <span className="text-slate-500 ml-1">({baseValue})</span>
-      )}
-    </div>
-  </div>
-);
-
-const SectionHeader: React.FC<{ title: string; color: string }> = ({ title, color }) => (
-  <div className={`text-xs font-bold uppercase tracking-widest ${color} mt-4 mb-2 first:mt-0`}>
-    {title}
-  </div>
-);
-
-export const GodStatsPanel: React.FC<GodStatsPanelProps> = ({ 
-  god, 
-  level, 
-  stats,
-  showBaseValues = true 
-}) => {
-  const baseStats = god.statsByLevel[0];
+}> = ({ icon, label, value, baseValue, color = 'text-white' }) => {
+  const numericValue = typeof value === 'string' ? parseFloat(value) : value;
+  const diff = baseValue !== undefined ? numericValue - baseValue : 0;
   
-  // Calculate actual attack speed
-  const asPercentFromLevel = getAttackSpeedPercentAtLevel(stats.attackSpeedPercent, level);
-  const actualAttackSpeed = calculateAttackSpeed(stats.baseAttackSpeed, asPercentFromLevel, 0);
-  const baseActualAS = calculateAttackSpeed(baseStats.baseAttackSpeed, 0, 0);
+  // Only show diff if it's significant and baseValue is provided (meaning we are comparing against base/items)
+  const showDiff = baseValue !== undefined && Math.abs(diff) >= 0.1;
 
   return (
-    <div className="bg-slate-900/50 rounded-xl border border-slate-800 p-4">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-700">
-        <span className="text-xs uppercase font-bold text-slate-500">God Stats</span>
-        <span className="text-mythic-gold font-mono font-bold text-lg">Lv. {level}</span>
+    <div className="flex items-center justify-between py-0.5">
+      <div className="flex items-center gap-1.5 text-slate-400">
+        <span className="text-slate-500">{icon}</span>
+        <span className="text-[10px]">{label}</span>
       </div>
-
-      {/* === OFFENSIVE === */}
-      <SectionHeader title="Offensive" color="text-red-400" />
-      
-      <StatRow 
-        icon={<BicepsFlexed size={14} />}
-        label="Strength"
-        value={Math.round(stats.strength)}
-        baseValue={showBaseValues ? Math.round(baseStats.strength) : undefined}
-        color="text-orange-400"
-      />
-      <StatRow 
-        icon={<BookOpen size={14} />}
-        label="Intelligence"
-        value={Math.round(stats.intelligence)}
-        baseValue={showBaseValues ? Math.round(baseStats.intelligence) : undefined}
-        color="text-purple-400"
-      />
-      <StatRow 
-        icon={<Swords size={14} />}
-        label="Basic Attack Power"
-        value={Math.round(stats.inhandPower || 0)}
-        baseValue={showBaseValues ? Math.round(baseStats.inhandPower || 0) : undefined}
-        color="text-red-400"
-      />
-
-      {/* === ATTACK SPEED === */}
-      <SectionHeader title="Attack Speed" color="text-yellow-400" />
-      
-      <StatRow 
-        icon={<Zap size={14} />}
-        label="Base Attack Speed"
-        value={stats.baseAttackSpeed.toFixed(2)}
-        baseValue={showBaseValues ? baseStats.baseAttackSpeed.toFixed(2) : undefined}
-        color="text-yellow-400"
-      />
-      <StatRow 
-        icon={<Zap size={14} />}
-        label="Attack Speed %"
-        value={`+${stats.attackSpeedPercent.toFixed(1)}%`}
-        baseValue={showBaseValues ? `+${baseStats.attackSpeedPercent.toFixed(1)}%` : undefined}
-        color="text-yellow-400"
-      />
-      <StatRow 
-        icon={<Zap size={14} className="text-yellow-300" />}
-        label="Actual Attack Speed"
-        value={actualAttackSpeed.toFixed(2)}
-        baseValue={showBaseValues ? baseActualAS.toFixed(2) : undefined}
-        color="text-yellow-300"
-      />
-
-      {/* === CRITICAL === */}
-      <SectionHeader title="Critical" color="text-amber-400" />
-      
-      <StatRow 
-        icon={<Target size={14} />}
-        label="Crit Chance"
-        value={`${stats.critChance}%`}
-        baseValue={showBaseValues ? `${baseStats.critChance}%` : undefined}
-        color="text-amber-400"
-      />
-      <StatRow 
-        icon={<Skull size={14} />}
-        label="Crit Damage"
-        value={`${(stats.critDamage * 100).toFixed(0)}%`}
-        baseValue={showBaseValues ? `${(baseStats.critDamage * 100).toFixed(0)}%` : undefined}
-        color="text-amber-400"
-      />
-
-      {/* === PENETRATION === */}
-      <SectionHeader title="Penetration" color="text-rose-400" />
-      
-      <StatRow 
-        icon={<Crosshair size={14} />}
-        label="Flat Penetration"
-        value={Math.round(stats.flatPenetration || 0)}
-        baseValue={showBaseValues ? Math.round(baseStats.flatPenetration || 0) : undefined}
-        color="text-rose-400"
-      />
-      <StatRow 
-        icon={<Layers size={14} />}
-        label="% Penetration"
-        value={`${stats.percentPenetration || 0}%`}
-        baseValue={showBaseValues ? `${baseStats.percentPenetration || 0}%` : undefined}
-        color="text-rose-400"
-      />
-
-      {/* === SUSTAIN === */}
-      <SectionHeader title="Sustain" color="text-pink-400" />
-      
-      <StatRow 
-        icon={<Heart size={14} className="text-pink-400" />}
-        label="Lifesteal"
-        value={`${stats.lifesteal}%`}
-        baseValue={showBaseValues ? `${baseStats.lifesteal}%` : undefined}
-        color="text-pink-400"
-      />
-
-      {/* === DEFENSIVE === */}
-      <SectionHeader title="Defensive" color="text-cyan-400" />
-      
-      <StatRow 
-        icon={<Shield size={14} />}
-        label="Physical Protection"
-        value={Math.round(stats.physicalProtection)}
-        baseValue={showBaseValues ? Math.round(baseStats.physicalProtection) : undefined}
-        color="text-cyan-400"
-      />
-      <StatRow 
-        icon={<Shield size={14} className="text-purple-400" />}
-        label="Magical Protection"
-        value={Math.round(stats.magicalProtection)}
-        baseValue={showBaseValues ? Math.round(baseStats.magicalProtection) : undefined}
-        color="text-purple-400"
-      />
-      <StatRow 
-        icon={<ShieldOff size={14} />}
-        label="Damage Mitigation"
-        value={`${stats.damageMitigation || 0}%`}
-        baseValue={showBaseValues ? `${baseStats.damageMitigation || 0}%` : undefined}
-        color="text-cyan-300"
-      />
-
-      {/* === HEALTH === */}
-      <SectionHeader title="Health" color="text-green-400" />
-      
-      <StatRow 
-        icon={<Heart size={14} className="text-green-500" />}
-        label="Max Health"
-        value={Math.round(stats.maxHealth)}
-        baseValue={showBaseValues ? Math.round(baseStats.maxHealth) : undefined}
-        color="text-green-400"
-      />
-      <StatRow 
-        icon={<Activity size={14} className="text-green-500" />}
-        label="Health Per Time"
-        value={stats.healthRegen.toFixed(2)}
-        baseValue={showBaseValues ? baseStats.healthRegen.toFixed(2) : undefined}
-        color="text-green-400"
-      />
-
-      {/* === MANA === */}
-      <SectionHeader title="Mana" color="text-blue-400" />
-      
-      <StatRow 
-        icon={<Droplet size={14} className="text-blue-500" />}
-        label="Max Mana"
-        value={Math.round(stats.maxMana)}
-        baseValue={showBaseValues ? Math.round(baseStats.maxMana) : undefined}
-        color="text-blue-400"
-      />
-      <StatRow 
-        icon={<Activity size={14} className="text-blue-300" />}
-        label="Mana Per Time"
-        value={stats.manaRegen.toFixed(2)}
-        baseValue={showBaseValues ? baseStats.manaRegen.toFixed(2) : undefined}
-        color="text-blue-400"
-      />
-
-      {/* === UTILITY === */}
-      <SectionHeader title="Utility" color="text-slate-400" />
-      
-      <StatRow 
-        icon={<Footprints size={14} />}
-        label="Movement Speed"
-        value={Math.round(stats.movementSpeed)}
-        baseValue={showBaseValues ? Math.round(baseStats.movementSpeed) : undefined}
-      />
-      <StatRow 
-        icon={<RotateCcw size={14} />}
-        label="Cooldown Rate"
-        value={`${stats.cooldownRate}%`}
-        baseValue={showBaseValues ? `${baseStats.cooldownRate}%` : undefined}
-      />
-
-      {/* === PROGRESSION === */}
-      <SectionHeader title="Progression" color="text-mythic-gold" />
-      
-      <StatRow 
-        icon={<Star size={14} className="text-mythic-gold" />}
-        label="XP Requirement"
-        value={Math.round(stats.xpRequirement)}
-        baseValue={showBaseValues ? Math.round(baseStats.xpRequirement) : undefined}
-        color="text-mythic-gold"
-      />
+      <div className={`font-mono text-[10px] ${color} flex items-center gap-1`}>
+        {value}
+        {showDiff && (
+          <span className={diff > 0 ? 'text-green-400' : 'text-red-400'}>
+            ({diff > 0 ? '+' : ''}{typeof value === 'string' ? diff.toFixed(1) : Math.round(diff)})
+          </span>
+        )}
+      </div>
     </div>
   );
 };
 
-export default GodStatsPanel;
+export const GodStatsPanel: React.FC<GodStatsPanelProps> = ({ 
+  god, 
+  level, 
+  items = []
+}) => {
+  // Calculate stats with items applied (or just base if items is empty)
+  const totalStats = useMemo(() => 
+    calculateTotalStats(god, level, items, god.damageType),
+    [god, level, items]
+  );
+  
+  // Base stats at current level (no items) for comparison
+  const baseStats = useMemo(() => 
+    god.statsByLevel[Math.max(0, Math.min(19, level - 1))],
+    [god, level]
+  );
+
+  const asPercentFromLevel = getAttackSpeedPercentAtLevel(totalStats.attackSpeedPercent, level);
+  const actualAS = calculateAttackSpeed(totalStats.baseAttackSpeed, asPercentFromLevel, 0);
+  
+  const baseAsPercent = getAttackSpeedPercentAtLevel(baseStats.attackSpeedPercent, level);
+  const baseActualAS = calculateAttackSpeed(baseStats.baseAttackSpeed, baseAsPercent, 0);
+
+  const hasItems = items.some(item => item !== null);
+
+  return (
+    <div className="space-y-2 text-xs">
+      {/* Offensive */}
+      <div className="bg-slate-800/30 rounded p-2">
+        <div className="text-[9px] font-bold text-red-400 uppercase mb-1">Offensive</div>
+        <StatRow icon={<BicepsFlexed size={10} />} label="STR" value={Math.round(totalStats.strength)} baseValue={hasItems ? Math.round(baseStats.strength) : undefined} color="text-orange-400" />
+        <StatRow icon={<BookOpen size={10} />} label="INT" value={Math.round(totalStats.intelligence)} baseValue={hasItems ? Math.round(baseStats.intelligence) : undefined} color="text-purple-400" />
+        <StatRow icon={<Sword size={10} />} label="Basic Power" value={Math.round(totalStats.inhandPower || 0)} baseValue={hasItems ? Math.round(baseStats.inhandPower || 0) : undefined} color="text-red-400" />
+      </div>
+
+      {/* Attack Speed & Crit */}
+      <div className="bg-slate-800/30 rounded p-2">
+        <div className="text-[9px] font-bold text-yellow-400 uppercase mb-1">Speed & Crit</div>
+        <StatRow icon={<Zap size={10} />} label="Attack Speed" value={actualAS.toFixed(2)} baseValue={hasItems ? baseActualAS : undefined} color="text-yellow-300" />
+        <StatRow icon={<Target size={10} />} label="Crit Chance" value={`${totalStats.critChance}%`} baseValue={hasItems ? baseStats.critChance : undefined} color="text-amber-400" />
+        <StatRow icon={<Skull size={10} />} label="Crit Damage" value={`${(totalStats.critDamage * 100).toFixed(0)}%`} baseValue={hasItems ? baseStats.critDamage * 100 : undefined} color="text-amber-400" />
+      </div>
+
+      {/* Penetration */}
+      <div className="bg-slate-800/30 rounded p-2">
+        <div className="text-[9px] font-bold text-rose-400 uppercase mb-1">Penetration</div>
+        <StatRow icon={<Crosshair size={10} />} label="Flat Pen" value={Math.round(totalStats.flatPenetration || 0)} baseValue={hasItems ? Math.round(baseStats.flatPenetration || 0) : undefined} color="text-rose-400" />
+        <StatRow icon={<Layers size={10} />} label="% Pen" value={`${totalStats.percentPenetration || 0}%`} baseValue={hasItems ? baseStats.percentPenetration || 0 : undefined} color="text-rose-400" />
+        <StatRow icon={<Heart size={10} />} label="Lifesteal" value={`${totalStats.lifesteal}%`} baseValue={hasItems ? baseStats.lifesteal : undefined} color="text-pink-400" />
+      </div>
+
+      {/* Defensive */}
+      <div className="bg-slate-800/30 rounded p-2">
+        <div className="text-[9px] font-bold text-cyan-400 uppercase mb-1">Defensive</div>
+        <StatRow icon={<Shield size={10} />} label="Phys Prot" value={Math.round(totalStats.physicalProtection)} baseValue={hasItems ? Math.round(baseStats.physicalProtection) : undefined} color="text-cyan-400" />
+        <StatRow icon={<Shield size={10} className="text-purple-400" />} label="Mag Prot" value={Math.round(totalStats.magicalProtection)} baseValue={hasItems ? Math.round(baseStats.magicalProtection) : undefined} color="text-purple-400" />
+        <StatRow icon={<ShieldOff size={10} />} label="Mitigation" value={`${totalStats.damageMitigation || 0}%`} baseValue={hasItems ? baseStats.damageMitigation || 0 : undefined} color="text-cyan-300" />
+      </div>
+
+      {/* Health & Mana */}
+      <div className="bg-slate-800/30 rounded p-2">
+        <div className="text-[9px] font-bold text-green-400 uppercase mb-1">Health & Mana</div>
+        <StatRow icon={<Heart size={10} className="text-green-500" />} label="Max HP" value={Math.round(totalStats.maxHealth)} baseValue={hasItems ? Math.round(baseStats.maxHealth) : undefined} color="text-green-400" />
+        <StatRow icon={<Activity size={10} className="text-green-500" />} label="HP Regen" value={totalStats.healthRegen.toFixed(1)} baseValue={hasItems ? baseStats.healthRegen : undefined} color="text-green-400" />
+        <StatRow icon={<Droplet size={10} className="text-blue-500" />} label="Max Mana" value={Math.round(totalStats.maxMana)} baseValue={hasItems ? Math.round(baseStats.maxMana) : undefined} color="text-blue-400" />
+        <StatRow icon={<Activity size={10} className="text-blue-300" />} label="MP Regen" value={totalStats.manaRegen.toFixed(1)} baseValue={hasItems ? baseStats.manaRegen : undefined} color="text-blue-400" />
+      </div>
+
+      {/* Utility */}
+      <div className="bg-slate-800/30 rounded p-2">
+        <div className="text-[9px] font-bold text-slate-400 uppercase mb-1">Utility</div>
+        <StatRow icon={<Footprints size={10} />} label="Move Speed" value={Math.round(totalStats.movementSpeed)} baseValue={hasItems ? Math.round(baseStats.movementSpeed) : undefined} />
+        <StatRow icon={<RotateCcw size={10} />} label="CDR" value={`${Math.min(40, totalStats.cooldownRate)}%`} baseValue={hasItems ? baseStats.cooldownRate : undefined} />
+      </div>
+    </div>
+  );
+};
+
+// Component for sword icon since it wasn't exported from lucide-react in imports above
+function Sword(props: any) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5" />
+      <line x1="13" x2="19" y1="19" y2="13" />
+      <line x1="16" x2="20" y1="16" y2="20" />
+      <line x1="19" x2="21" y1="21" y2="19" />
+    </svg>
+  )
+}
