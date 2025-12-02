@@ -1,30 +1,55 @@
-import { God, GodStats, Item, Ability, DamageType } from '../types';
+import { God, GodStats, Item, Ability, DamageType, DEFAULT_GOD_STATS } from '../types';
 
 // ============================================================
 // STAT PARSING UTILITIES
 // ============================================================
 
 const statKeyMap: Record<string, keyof GodStats> = {
+  // Strength / Intelligence
   'strength': 'strength',
   'str': 'strength',
   'intelligence': 'intelligence',
   'int': 'intelligence',
-  'attack speed': 'attackSpeed',
-  'atk speed': 'attackSpeed',
-  'lifesteal': 'lifesteal',
-  'life steal': 'lifesteal',
+  
+  // Inhand Power
+  'inhand power': 'inhandPower',
+  'basic attack power': 'inhandPower',
+  'attack power': 'inhandPower',
+  
+  // Attack Speed
+  'base attack speed': 'baseAttackSpeed',
+  'attack speed': 'attackSpeedPercent',  // Items give AS% bonus
+  'atk speed': 'attackSpeedPercent',
+  
+  // Critical
   'crit chance': 'critChance',
   'critical chance': 'critChance',
   'crit damage': 'critDamage',
   'critical damage': 'critDamage',
-  'penetration': 'penetration',
-  'pen': 'penetration',
+  
+  // Penetration (Split)
+  'flat penetration': 'flatPenetration',
+  'flat pen': 'flatPenetration',
+  'percent penetration': 'percentPenetration',
+  '% penetration': 'percentPenetration',
+  'penetration': 'percentPenetration',  // Default to % pen
+  'pen': 'percentPenetration',
+  
+  // Sustain
+  'lifesteal': 'lifesteal',
+  'life steal': 'lifesteal',
+  
+  // Defenses
   'physical protection': 'physicalProtection',
   'phys. prot': 'physicalProtection',
   'phys prot': 'physicalProtection',
   'magical protection': 'magicalProtection',
   'mag. prot': 'magicalProtection',
   'mag prot': 'magicalProtection',
+  'damage mitigation': 'damageMitigation',
+  'mitigation': 'damageMitigation',
+  
+  // Health & Mana
   'max health': 'maxHealth',
   'health': 'maxHealth',
   'health regen': 'healthRegen',
@@ -33,6 +58,8 @@ const statKeyMap: Record<string, keyof GodStats> = {
   'mana': 'maxMana',
   'mana regen': 'manaRegen',
   'mp5': 'manaRegen',
+  
+  // Utility
   'cooldown': 'cooldownRate',
   'cooldown rate': 'cooldownRate',
   'cdr': 'cooldownRate',
@@ -64,18 +91,15 @@ export function parseItemStats(item: Item): ParsedItemStats {
   for (const [key, value] of Object.entries(item.stats)) {
     const lowerKey = key.toLowerCase();
     
-    // Handle adaptive stats separately - DON'T add to regular stats
+    // Handle adaptive stats separately
     if (lowerKey === 'adaptive') {
-      // Format 1: "15|20" (STR|INT pipe-separated)
       if (value.includes('|')) {
         const parts = value.split('|').map(v => parseFloat(v.trim()) || 0);
         result.adaptive = {
           strValue: parts[0] || 0,
           intValue: parts[1] || 0
         };
-      } 
-      // Format 2: "+35 Str or +60 Int" (text format)
-      else {
+      } else {
         const strMatch = value.match(/(\d+)\s*str/i);
         const intMatch = value.match(/(\d+)\s*int/i);
         if (strMatch || intMatch) {
@@ -85,7 +109,7 @@ export function parseItemStats(item: Item): ParsedItemStats {
           };
         }
       }
-      continue; // Skip adding to regular stats
+      continue;
     }
     
     const normalizedKey = statKeyMap[lowerKey];
@@ -94,6 +118,25 @@ export function parseItemStats(item: Item): ParsedItemStats {
     }
   }
   return result;
+}
+
+// ============================================================
+// ATTACK SPEED HELPERS
+// ============================================================
+
+/**
+ * Calculate actual attack speed
+ * Formula: floor(baseAS × (1 + totalAS%) × 100) / 100
+ */
+export function calculateActualAttackSpeed(
+  baseAS: number,
+  asPercent: number,
+  bonusASPercent: number = 0
+): number {
+  const totalASPercent = asPercent + bonusASPercent;
+  const rawAS = baseAS * (1 + totalASPercent / 100);
+  const flooredAS = Math.floor(rawAS * 100) / 100;
+  return Math.min(2.5, flooredAS); // Cap at 2.5
 }
 
 // ============================================================
@@ -108,23 +151,11 @@ export function calculateTotalStats(
 ): GodStats {
   const base = { ...god.statsByLevel[Math.max(0, Math.min(19, level - 1))] };
   
-  const bonuses: Record<keyof GodStats, { flat: number; percent: number }> = {
-    strength: { flat: 0, percent: 0 },
-    intelligence: { flat: 0, percent: 0 },
-    attackSpeed: { flat: 0, percent: 0 },
-    lifesteal: { flat: 0, percent: 0 },
-    critChance: { flat: 0, percent: 0 },
-    critDamage: { flat: 0, percent: 0 },
-    penetration: { flat: 0, percent: 0 },
-    physicalProtection: { flat: 0, percent: 0 },
-    magicalProtection: { flat: 0, percent: 0 },
-    maxHealth: { flat: 0, percent: 0 },
-    healthRegen: { flat: 0, percent: 0 },
-    maxMana: { flat: 0, percent: 0 },
-    manaRegen: { flat: 0, percent: 0 },
-    cooldownRate: { flat: 0, percent: 0 },
-    movementSpeed: { flat: 0, percent: 0 },
-  };
+  // Initialize bonuses for all stats
+  const bonuses: Record<keyof GodStats, { flat: number; percent: number }> = {} as any;
+  for (const key of Object.keys(DEFAULT_GOD_STATS) as (keyof GodStats)[]) {
+    bonuses[key] = { flat: 0, percent: 0 };
+  }
 
   // Collect adaptive bonuses for later processing
   const adaptiveBonuses: { strValue: number; intValue: number }[] = [];
@@ -134,7 +165,6 @@ export function calculateTotalStats(
     if (!item) continue;
     const parsed = parseItemStats(item);
     
-    // Add regular stats
     for (const [stat, values] of Object.entries(parsed.stats)) {
       const key = stat as keyof GodStats;
       if (bonuses[key]) {
@@ -143,24 +173,21 @@ export function calculateTotalStats(
       }
     }
     
-    // Collect adaptive for phase 2
     if (parsed.adaptive) {
       adaptiveBonuses.push(parsed.adaptive);
     }
   }
 
-  // Calculate current STR/INT (base + non-adaptive items) to determine adaptive
+  // Calculate current STR/INT to determine adaptive
   let currentStr = base.strength + bonuses.strength.flat + (base.strength * bonuses.strength.percent / 100);
   let currentInt = base.intelligence + bonuses.intelligence.flat + (base.intelligence * bonuses.intelligence.percent / 100);
 
-  // PHASE 2: Apply adaptive bonuses based on which stat is higher
+  // PHASE 2: Apply adaptive bonuses
   for (const adaptive of adaptiveBonuses) {
     if (currentStr >= currentInt) {
-      // STR is higher or equal - apply STR bonus
       bonuses.strength.flat += adaptive.strValue;
       currentStr += adaptive.strValue;
     } else {
-      // INT is higher - apply INT bonus
       bonuses.intelligence.flat += adaptive.intValue;
       currentInt += adaptive.intValue;
     }
@@ -168,18 +195,66 @@ export function calculateTotalStats(
 
   // Apply all bonuses to base stats
   const total: GodStats = { ...base };
+  
   for (const key of Object.keys(bonuses) as (keyof GodStats)[]) {
     const bonus = bonuses[key];
-    if (key === 'attackSpeed') {
+    
+    // Special handling for certain stats
+    if (key === 'attackSpeedPercent') {
+      // AS% is additive
       total[key] = base[key] + bonus.flat + bonus.percent;
     } else if (key === 'critDamage') {
+      // Crit damage bonus is added as decimal
       total[key] = base[key] + bonus.flat / 100;
+    } else if (key === 'flatPenetration' || key === 'percentPenetration' || key === 'damageMitigation') {
+      // These are purely additive from items
+      total[key] = (base[key] || 0) + bonus.flat + bonus.percent;
     } else {
+      // Standard: base + flat + (base * percent%)
       total[key] = base[key] + bonus.flat + (base[key] * bonus.percent / 100);
     }
   }
 
   return total;
+}
+
+// ============================================================
+// PENETRATION & PROTECTION CALCULATIONS
+// ============================================================
+
+/**
+ * Calculate effective protections after penetration
+ * Order: % Pen applies first, then Flat Pen
+ */
+export function calculateEffectiveProtections(
+  baseProtections: number,
+  percentPen: number,
+  flatPen: number
+): number {
+  const afterPercentPen = baseProtections * (1 - percentPen / 100);
+  return Math.max(0, afterPercentPen - flatPen);
+}
+
+/**
+ * Calculate damage reduction percentage from protections
+ */
+export function getProtectionDamageReduction(effectiveProts: number): number {
+  return (effectiveProts / (100 + effectiveProts)) * 100;
+}
+
+/**
+ * Calculate final damage after protections and mitigation
+ */
+export function calculateFinalDamage(
+  rawDamage: number,
+  effectiveProtections: number,
+  damageMitigation: number = 0
+): number {
+  // Damage after protections
+  const afterProts = rawDamage * (100 / (100 + effectiveProtections));
+  // Mitigation is flat percentage reduction AFTER prots
+  const afterMitigation = afterProts * (1 - damageMitigation / 100);
+  return Math.floor(afterMitigation);
 }
 
 // ============================================================
@@ -235,6 +310,7 @@ export interface DamageResult {
   rawDamage: number;
   effectiveProtections: number;
   damageAfterProts: number;
+  damageAfterMitigation: number;
   finalDamage: number;
   protectionReduction: number;
 }
@@ -245,9 +321,7 @@ export function calculateAbilityDamage(
   scaling: ScalingComponent[],
   attackerStats: GodStats,
   defenderStats: GodStats,
-  damageType: DamageType,
-  attackerPenPercent: number = 0,
-  attackerPenFlat: number = 0
+  damageType: DamageType
 ): DamageResult {
   const baseDamage = baseDamageValues[Math.max(0, Math.min(4, abilityRank - 1))] || 0;
   
@@ -259,15 +333,23 @@ export function calculateAbilityDamage(
   
   const rawDamage = baseDamage + scalingDamage;
   
+  // Get defender's base protections
   const baseProts = damageType === DamageType.Physical 
     ? defenderStats.physicalProtection 
     : defenderStats.magicalProtection;
   
-  const afterPercentPen = baseProts * (1 - attackerPenPercent / 100);
-  const effectiveProtections = Math.max(0, afterPercentPen - attackerPenFlat);
+  // Apply penetration (% first, then flat)
+  const effectiveProtections = calculateEffectiveProtections(
+    baseProts,
+    attackerStats.percentPenetration,
+    attackerStats.flatPenetration
+  );
   
   const damageAfterProts = rawDamage * (100 / (100 + effectiveProtections));
-  const protectionReduction = (effectiveProtections / (100 + effectiveProtections)) * 100;
+  const protectionReduction = getProtectionDamageReduction(effectiveProtections);
+  
+  // Apply mitigation
+  const damageAfterMitigation = damageAfterProts * (1 - (defenderStats.damageMitigation || 0) / 100);
   
   return {
     baseDamage,
@@ -275,7 +357,8 @@ export function calculateAbilityDamage(
     rawDamage: Math.round(rawDamage * 10) / 10,
     effectiveProtections: Math.round(effectiveProtections),
     damageAfterProts: Math.round(damageAfterProts * 10) / 10,
-    finalDamage: Math.floor(damageAfterProts),
+    damageAfterMitigation: Math.round(damageAfterMitigation * 10) / 10,
+    finalDamage: Math.floor(damageAfterMitigation),
     protectionReduction: Math.round(protectionReduction * 10) / 10,
   };
 }
@@ -299,20 +382,40 @@ export function calculateBasicAttack(
   strScaling: number = 100,
   intScaling: number = 20
 ): BasicAttackResult {
-  const rawDamage = (attackerStats.strength * strScaling / 100) + (attackerStats.intelligence * intScaling / 100);
+  // Calculate raw damage from inhand power + scaling
+  const rawDamage = (attackerStats.inhandPower || 0) +
+    (attackerStats.strength * strScaling / 100) + 
+    (attackerStats.intelligence * intScaling / 100);
   
+  // Get defender's protections
   const baseProts = damageType === DamageType.Physical 
     ? defenderStats.physicalProtection 
     : defenderStats.magicalProtection;
-  const effectiveProts = Math.max(0, baseProts * (1 - attackerStats.penetration / 100));
-  const damage = Math.floor(rawDamage * (100 / (100 + effectiveProts)));
   
+  // Apply penetration
+  const effectiveProts = calculateEffectiveProtections(
+    baseProts,
+    attackerStats.percentPenetration,
+    attackerStats.flatPenetration
+  );
+  
+  // Damage after protections
+  const afterProts = rawDamage * (100 / (100 + effectiveProts));
+  
+  // Apply mitigation
+  const damage = Math.floor(afterProts * (1 - (defenderStats.damageMitigation || 0) / 100));
+  
+  // Crit calculation
   const critMultiplier = attackerStats.critDamage || 1.65;
   const critDamage = Math.floor(damage * critMultiplier);
   
-  const baseAS = 1.0;
-  const attacksPerSecond = Math.min(2.5, baseAS * (1 + attackerStats.attackSpeed / 100));
+  // Attack speed calculation
+  const attacksPerSecond = calculateActualAttackSpeed(
+    attackerStats.baseAttackSpeed,
+    attackerStats.attackSpeedPercent
+  );
   
+  // DPS calculations
   const dps = Math.round(damage * attacksPerSecond);
   const critChance = Math.min(100, attackerStats.critChance) / 100;
   const avgDamage = damage * (1 - critChance) + critDamage * critChance;

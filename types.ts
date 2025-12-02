@@ -1,5 +1,3 @@
-
-
 export enum DamageType {
   Physical = 'Physical',
   Magical = 'Magical'
@@ -10,8 +8,6 @@ export interface AbilityStat {
   value: string;
 }
 
-// Add this new interface BEFORE the Ability interface
-
 export interface SubAbility {
   name: string;
   description: string;
@@ -19,7 +15,6 @@ export interface SubAbility {
   attributes?: AbilityStat[];
 }
 
-// Update the existing Ability interface to include subAbilities
 export interface Ability {
   name: string;
   description: string;
@@ -27,7 +22,7 @@ export interface Ability {
   cost: string;
   image?: string;
   attributes?: AbilityStat[];
-  subAbilities?: SubAbility[]; // NEW - for stance/phase abilities like Combat Dodge / Spear Strike
+  subAbilities?: SubAbility[];
 }
 
 export interface AbilityKit {
@@ -46,35 +41,84 @@ export interface Aspect extends AbilityKit {
   name: string;
   description: string;
   image?: string;
-  levelingOrder?: number[]; // Array of 20 integers representing ability index (1-4) to level up
+  levelingOrder?: number[];
 }
 
+// ============================================================
+// UPDATED GodStats Interface
+// ============================================================
 export interface GodStats {
+  // === OFFENSIVE STATS ===
   strength: number;
   intelligence: number;
-  attackSpeed: number;
-  lifesteal: number;
+  inhandPower: number;              // NEW - Basic Attack Power (base damage for autos)
+  
+  // === ATTACK SPEED ===
+  baseAttackSpeed: number;          // RENAMED - Base AS (e.g., 0.97)
+  attackSpeedPercent: number;       // NEW - Total AS% at this level (e.g., 2.91 at level 3)
+  
+  // === CRITICAL STRIKES ===
   critChance: number;
-  critDamage: number; // Multiplier (e.g., 1.25 for 125%)
-  penetration: number;
+  critDamage: number;               // Multiplier (e.g., 1.65 for 165%)
+  
+  // === PENETRATION (SPLIT) ===
+  flatPenetration: number;          // NEW - Flat pen value
+  percentPenetration: number;       // NEW - % pen value (was just "penetration")
+  
+  // === SUSTAIN ===
+  lifesteal: number;
+  
+  // === DEFENSIVE STATS ===
   physicalProtection: number;
   magicalProtection: number;
+  damageMitigation: number;         // NEW - Damage mitigation %
+  
+  // === HEALTH & MANA ===
   maxHealth: number;
-  healthRegen: number;
+  healthRegen: number;              // HP5 / Health Per Time
   maxMana: number;
-  manaRegen: number;
+  manaRegen: number;                // MP5 / Mana Per Time
+  
+  // === UTILITY ===
   cooldownRate: number;
   movementSpeed: number;
+  
+  // === PROGRESSION ===
+  xpRequirement: number;            // NEW - XP to next level
 }
+
+// Default stats for initialization
+export const DEFAULT_GOD_STATS: GodStats = {
+  strength: 0,
+  intelligence: 0,
+  inhandPower: 0,
+  baseAttackSpeed: 1.0,
+  attackSpeedPercent: 0,
+  critChance: 0,
+  critDamage: 1.65,
+  flatPenetration: 0,
+  percentPenetration: 0,
+  lifesteal: 0,
+  physicalProtection: 0,
+  magicalProtection: 0,
+  damageMitigation: 0,
+  maxHealth: 0,
+  healthRegen: 0,
+  maxMana: 0,
+  manaRegen: 0,
+  cooldownRate: 0,
+  movementSpeed: 0,
+  xpRequirement: 0,
+};
 
 export interface RecommendedBuild {
   name: string;
   author: string;
   role: string;
   starterId: string;
-  itemIds: (string | null)[]; // Array of 6 item IDs
+  itemIds: (string | null)[];
   relicId: string;
-  aspectId?: string; // Optional: Link build to a specific aspect. 'base' for base kit.
+  aspectId?: string;
 }
 
 export interface AspectMatchupData {
@@ -92,14 +136,14 @@ export interface God extends AbilityKit {
   damageType: DamageType;
   image: string;
   aspects: Aspect[];
-  statsByLevel: GodStats[]; // Array of 20 GodStats objects (Index 0 = Level 1, Index 19 = Level 20)
+  statsByLevel: GodStats[];
   recommendedBuilds: RecommendedBuild[];
-  levelingOrder: number[]; // Array of 20 integers (1-4)
-  goodAgainst: string[]; // Array of God IDs
-  badAgainst: string[]; // Array of God IDs
-  aspectLevelingOrders?: Record<string, number[]>; // Overrides for aspect leveling
-  aspectMatchups?: Record<string, AspectMatchupData>; // Overrides for aspect matchups
-  videoGuideUrl?: string; // YouTube URL for a guide
+  levelingOrder: number[];
+  goodAgainst: string[];
+  badAgainst: string[];
+  aspectLevelingOrders?: Record<string, number[]>;
+  aspectMatchups?: Record<string, AspectMatchupData>;
+  videoGuideUrl?: string;
 }
 
 export type ItemTier = 1 | 2 | 3;
@@ -115,7 +159,7 @@ export interface Item {
   passive?: string;
   image: string;
   category: 'Offense' | 'Defense' | 'Utility' | 'Hybrid';
-  buildsFrom?: string[]; // IDs of items required to build this
+  buildsFrom?: string[];
   god?: string;
 }
 
@@ -142,7 +186,7 @@ export interface NamedTierList {
   author: string;
   description: string;
   date: string;
-  type?: 'gods' | 'items'; // Differentiate between list types
+  type?: 'gods' | 'items';
   data: TierListState;
   streamerInfo: {
     platform: 'twitch' | 'youtube';
@@ -182,7 +226,7 @@ export interface TournamentTeam {
   name: string;
   players: TournamentPlayer[];
   totalScore: number;
-  isWinner?: boolean; // For bracket visualization
+  isWinner?: boolean;
 }
 
 export interface TournamentMatch {
@@ -190,7 +234,7 @@ export interface TournamentMatch {
   team1: TournamentTeam;
   team2: TournamentTeam;
   winnerId?: string;
-  nextMatchId?: string; // To draw lines
+  nextMatchId?: string;
   date: string;
 }
 
