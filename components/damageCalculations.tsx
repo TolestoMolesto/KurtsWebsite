@@ -4,7 +4,6 @@ import { God, GodStats, Item, Ability, DamageType } from '../types';
 // STAT PARSING UTILITIES
 // ============================================================
 
-// Normalize stat keys to a consistent format
 const statKeyMap: Record<string, keyof GodStats> = {
   'strength': 'strength',
   'str': 'strength',
@@ -41,7 +40,6 @@ const statKeyMap: Record<string, keyof GodStats> = {
   'move speed': 'movementSpeed',
 };
 
-// Parse a stat value string like "50", "+50", "25%"
 function parseStatValue(value: string): { flat: number; percent: number } {
   const cleaned = value.replace(/[+\s]/g, '');
   if (cleaned.endsWith('%')) {
@@ -50,22 +48,49 @@ function parseStatValue(value: string): { flat: number; percent: number } {
   return { flat: parseFloat(cleaned) || 0, percent: 0 };
 }
 
-// Parse item stats into usable format
-export function parseItemStats(item: Item): Partial<Record<keyof GodStats, { flat: number; percent: number }>> {
-  const result: Partial<Record<keyof GodStats, { flat: number; percent: number }>> = {};
+// Interface for parsed item stats including adaptive
+interface ParsedItemStats {
+  stats: Partial<Record<keyof GodStats, { flat: number; percent: number }>>;
+  adaptive: { strValue: number; intValue: number } | null;
+}
+
+// Parse item stats - keeps adaptive separate for proper handling
+export function parseItemStats(item: Item): ParsedItemStats {
+  const result: ParsedItemStats = {
+    stats: {},
+    adaptive: null
+  };
   
   for (const [key, value] of Object.entries(item.stats)) {
-    const normalizedKey = statKeyMap[key.toLowerCase()];
-    if (normalizedKey) {
-      result[normalizedKey] = parseStatValue(value);
+    const lowerKey = key.toLowerCase();
+    
+    // Handle adaptive stats separately - DON'T add to regular stats
+    if (lowerKey === 'adaptive') {
+      // Format 1: "15|20" (STR|INT pipe-separated)
+      if (value.includes('|')) {
+        const parts = value.split('|').map(v => parseFloat(v.trim()) || 0);
+        result.adaptive = {
+          strValue: parts[0] || 0,
+          intValue: parts[1] || 0
+        };
+      } 
+      // Format 2: "+35 Str or +60 Int" (text format)
+      else {
+        const strMatch = value.match(/(\d+)\s*str/i);
+        const intMatch = value.match(/(\d+)\s*int/i);
+        if (strMatch || intMatch) {
+          result.adaptive = {
+            strValue: strMatch ? parseFloat(strMatch[1]) : 0,
+            intValue: intMatch ? parseFloat(intMatch[1]) : 0
+          };
+        }
+      }
+      continue; // Skip adding to regular stats
     }
-    // Handle adaptive stats
-    if (key.toLowerCase() === 'adaptive') {
-      // Parse "+35 Str or +60 Int" - we'll use strength for physical, int for magical
-      const strMatch = value.match(/(\d+)\s*str/i);
-      const intMatch = value.match(/(\d+)\s*int/i);
-      if (strMatch) result.strength = { flat: parseFloat(strMatch[1]), percent: 0 };
-      if (intMatch) result.intelligence = { flat: parseFloat(intMatch[1]), percent: 0 };
+    
+    const normalizedKey = statKeyMap[lowerKey];
+    if (normalizedKey) {
+      result.stats[normalizedKey] = parseStatValue(value);
     }
   }
   return result;
@@ -81,10 +106,8 @@ export function calculateTotalStats(
   items: (Item | null)[],
   damageType: DamageType
 ): GodStats {
-  // Start with base stats at level
   const base = { ...god.statsByLevel[Math.max(0, Math.min(19, level - 1))] };
   
-  // Track flat and percent bonuses separately
   const bonuses: Record<keyof GodStats, { flat: number; percent: number }> = {
     strength: { flat: 0, percent: 0 },
     intelligence: { flat: 0, percent: 0 },
@@ -103,29 +126,53 @@ export function calculateTotalStats(
     movementSpeed: { flat: 0, percent: 0 },
   };
 
-  // Aggregate item stats
+  // Collect adaptive bonuses for later processing
+  const adaptiveBonuses: { strValue: number; intValue: number }[] = [];
+
+  // PHASE 1: Aggregate all NON-adaptive item stats
   for (const item of items) {
     if (!item) continue;
     const parsed = parseItemStats(item);
-    for (const [stat, values] of Object.entries(parsed)) {
+    
+    // Add regular stats
+    for (const [stat, values] of Object.entries(parsed.stats)) {
       const key = stat as keyof GodStats;
       if (bonuses[key]) {
         bonuses[key].flat += values.flat;
         bonuses[key].percent += values.percent;
       }
     }
+    
+    // Collect adaptive for phase 2
+    if (parsed.adaptive) {
+      adaptiveBonuses.push(parsed.adaptive);
+    }
   }
 
-  // Apply bonuses to base stats
+  // Calculate current STR/INT (base + non-adaptive items) to determine adaptive
+  let currentStr = base.strength + bonuses.strength.flat + (base.strength * bonuses.strength.percent / 100);
+  let currentInt = base.intelligence + bonuses.intelligence.flat + (base.intelligence * bonuses.intelligence.percent / 100);
+
+  // PHASE 2: Apply adaptive bonuses based on which stat is higher
+  for (const adaptive of adaptiveBonuses) {
+    if (currentStr >= currentInt) {
+      // STR is higher or equal - apply STR bonus
+      bonuses.strength.flat += adaptive.strValue;
+      currentStr += adaptive.strValue;
+    } else {
+      // INT is higher - apply INT bonus
+      bonuses.intelligence.flat += adaptive.intValue;
+      currentInt += adaptive.intValue;
+    }
+  }
+
+  // Apply all bonuses to base stats
   const total: GodStats = { ...base };
   for (const key of Object.keys(bonuses) as (keyof GodStats)[]) {
     const bonus = bonuses[key];
-    // For most stats: base + flat + (base * percent / 100)
-    // For attack speed: it's additive percentage
     if (key === 'attackSpeed') {
       total[key] = base[key] + bonus.flat + bonus.percent;
     } else if (key === 'critDamage') {
-      // Crit damage is a multiplier, add flat bonus to it
       total[key] = base[key] + bonus.flat / 100;
     } else {
       total[key] = base[key] + bonus.flat + (base[key] * bonus.percent / 100);
@@ -139,13 +186,11 @@ export function calculateTotalStats(
 // ABILITY PARSING
 // ============================================================
 
-// Parse "180 | 270 | 360 | 450 | 540" into [180, 270, 360, 450, 540]
 export function parseAbilityValues(valueStr: string): number[] {
   if (!valueStr) return [0];
   return valueStr.split('|').map(v => parseFloat(v.trim()) || 0);
 }
 
-// Parse scaling strings like "100% Strength", "80% Strength + 60% Intelligence"
 export interface ScalingComponent {
   percent: number;
   stat: 'strength' | 'intelligence';
@@ -155,7 +200,6 @@ export function parseScaling(scalingStr: string): ScalingComponent[] {
   if (!scalingStr) return [];
   const results: ScalingComponent[] = [];
   
-  // Match patterns like "100% Strength", "45% Str"
   const strMatch = scalingStr.match(/(\d+(?:\.\d+)?)\s*%?\s*(?:strength|str)/gi);
   const intMatch = scalingStr.match(/(\d+(?:\.\d+)?)\s*%?\s*(?:intelligence|int)/gi);
   
@@ -175,7 +219,6 @@ export function parseScaling(scalingStr: string): ScalingComponent[] {
   return results;
 }
 
-// Get ability rank based on leveling order
 export function getAbilityRank(levelingOrder: number[], currentLevel: number, abilityNum: number): number {
   if (!levelingOrder || levelingOrder.length === 0) return 1;
   const pointsInAbility = levelingOrder.slice(0, currentLevel).filter(n => n === abilityNum).length;
@@ -193,7 +236,7 @@ export interface DamageResult {
   effectiveProtections: number;
   damageAfterProts: number;
   finalDamage: number;
-  protectionReduction: number; // percentage
+  protectionReduction: number;
 }
 
 export function calculateAbilityDamage(
@@ -206,10 +249,8 @@ export function calculateAbilityDamage(
   attackerPenPercent: number = 0,
   attackerPenFlat: number = 0
 ): DamageResult {
-  // Get base damage at rank (rank 1 = index 0)
   const baseDamage = baseDamageValues[Math.max(0, Math.min(4, abilityRank - 1))] || 0;
   
-  // Calculate scaling damage
   let scalingDamage = 0;
   for (const scale of scaling) {
     const statValue = attackerStats[scale.stat] || 0;
@@ -218,19 +259,14 @@ export function calculateAbilityDamage(
   
   const rawDamage = baseDamage + scalingDamage;
   
-  // Get defender's relevant protection
   const baseProts = damageType === DamageType.Physical 
     ? defenderStats.physicalProtection 
     : defenderStats.magicalProtection;
   
-  // Apply penetration: % pen first, then flat
   const afterPercentPen = baseProts * (1 - attackerPenPercent / 100);
   const effectiveProtections = Math.max(0, afterPercentPen - attackerPenFlat);
   
-  // Damage reduction formula: damage * (100 / (100 + protections))
   const damageAfterProts = rawDamage * (100 / (100 + effectiveProtections));
-  
-  // Calculate protection reduction percentage
   const protectionReduction = (effectiveProtections / (100 + effectiveProtections)) * 100;
   
   return {
@@ -263,26 +299,20 @@ export function calculateBasicAttack(
   strScaling: number = 100,
   intScaling: number = 20
 ): BasicAttackResult {
-  // Basic attack damage = (Strength * strScaling%) + (Intelligence * intScaling%)
   const rawDamage = (attackerStats.strength * strScaling / 100) + (attackerStats.intelligence * intScaling / 100);
   
-  // Apply protections
   const baseProts = damageType === DamageType.Physical 
     ? defenderStats.physicalProtection 
     : defenderStats.magicalProtection;
   const effectiveProts = Math.max(0, baseProts * (1 - attackerStats.penetration / 100));
   const damage = Math.floor(rawDamage * (100 / (100 + effectiveProts)));
   
-  // Crit damage
   const critMultiplier = attackerStats.critDamage || 1.65;
   const critDamage = Math.floor(damage * critMultiplier);
   
-  // Attack speed (base is stored as percentage bonus, e.g., 10 = 10%)
-  // Assuming base attack speed around 1.0, this calculates actual attacks/sec
   const baseAS = 1.0;
   const attacksPerSecond = Math.min(2.5, baseAS * (1 + attackerStats.attackSpeed / 100));
   
-  // DPS calculations
   const dps = Math.round(damage * attacksPerSecond);
   const critChance = Math.min(100, attackerStats.critChance) / 100;
   const avgDamage = damage * (1 - critChance) + critDamage * critChance;
@@ -329,26 +359,22 @@ export function extractAbilityDamageInfo(ability: Ability): AbilityDamageInfo {
   for (const attr of ability.attributes) {
     const label = attr.label.toLowerCase();
     
-    // Check for damage
     if (label === 'damage' || label.includes('damage') && !label.includes('scaling')) {
       result.baseDamageValues = parseAbilityValues(attr.value);
       result.hasDamage = true;
       result.isUtility = false;
     }
     
-    // Check for scaling
     if (label.includes('scaling')) {
       result.scaling = parseScaling(attr.value);
     }
     
-    // Check for execute
     if (label.includes('execute')) {
       result.isExecute = true;
       const match = attr.value.match(/(\d+)/);
       if (match) result.executeThreshold = parseFloat(match[1]);
     }
     
-    // Check for heal
     if (label === 'heal' || label.includes('heal')) {
       result.healValues = parseAbilityValues(attr.value);
       result.isHeal = true;
