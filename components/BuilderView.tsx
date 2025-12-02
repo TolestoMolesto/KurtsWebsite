@@ -1,8 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Share2, Check, Link as LinkIcon, Search, Plus, X, ChevronLeft, Shuffle, Sword, Shield, Dices, Sparkles, Info, Filter, BicepsFlexed, BookOpen, Zap, Target, Crosshair, Heart, Activity, Droplet, RotateCcw } from 'lucide-react';
+import { 
+  Share2, Check, Link as LinkIcon, Search, Plus, X, ChevronLeft, Shuffle, Sword, Shield, Dices, Sparkles, Info, Filter, 
+  BicepsFlexed, BookOpen, Zap, Target, Crosshair, Heart, Activity, Droplet, RotateCcw, Footprints, Skull, Layers, ShieldOff,
+  ChevronUp, ChevronDown, BarChart3
+} from 'lucide-react';
 import { useData } from '../contexts/DataContext';
-import { God, Item } from '../types';
+import { God, Item, GodStats } from '../types';
+import { calculateTotalStats, calculateAttackSpeed, getAttackSpeedPercentAtLevel } from './damageCalculations';
+
+// ... (keep all existing interfaces and helper functions the same)
 
 interface CurrentBuild {
   starter: string | null;
@@ -48,7 +55,115 @@ const findRoots = (item: Item, allItems: Item[], visited = new Set<string>()): I
   return upgrades.flatMap(u => findRoots(u, allItems, new Set(visited)));
 };
 
-// Item Inspector Component
+// ============================================================
+// NEW: Stats Panel Component for Builder
+// ============================================================
+const BuilderStatsPanel: React.FC<{
+  god: God;
+  level: number;
+  items: (Item | null)[];
+}> = ({ god, level, items }) => {
+  const totalStats = useMemo(() => 
+    calculateTotalStats(god, level, items, god.damageType),
+    [god, level, items]
+  );
+  
+  const baseStats = useMemo(() => 
+    god.statsByLevel[Math.max(0, Math.min(19, level - 1))],
+    [god, level]
+  );
+
+  const asPercentFromLevel = getAttackSpeedPercentAtLevel(totalStats.attackSpeedPercent, level);
+  const actualAS = calculateAttackSpeed(totalStats.baseAttackSpeed, asPercentFromLevel, 0);
+  const baseAsPercent = getAttackSpeedPercentAtLevel(baseStats.attackSpeedPercent, level);
+  const baseActualAS = calculateAttackSpeed(baseStats.baseAttackSpeed, baseAsPercent, 0);
+
+  const hasItems = items.some(item => item !== null);
+
+  const StatRow: React.FC<{
+    icon: React.ReactNode;
+    label: string;
+    value: string | number;
+    baseValue?: number;
+    color?: string;
+  }> = ({ icon, label, value, baseValue, color = 'text-white' }) => {
+    const numericValue = typeof value === 'string' ? parseFloat(value) : value;
+    const diff = baseValue !== undefined ? numericValue - baseValue : 0;
+    
+    return (
+      <div className="flex items-center justify-between py-0.5">
+        <div className="flex items-center gap-1.5 text-slate-400">
+          <span className="text-slate-500">{icon}</span>
+          <span className="text-[10px]">{label}</span>
+        </div>
+        <div className={`font-mono text-[10px] ${color} flex items-center gap-1`}>
+          {value}
+          {hasItems && baseValue !== undefined && Math.abs(diff) >= 0.1 && (
+            <span className={diff > 0 ? 'text-green-400' : 'text-red-400'}>
+              ({diff > 0 ? '+' : ''}{typeof value === 'string' ? diff.toFixed(1) : Math.round(diff)})
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-2 text-xs">
+      {/* Offensive */}
+      <div className="bg-slate-800/30 rounded p-2">
+        <div className="text-[9px] font-bold text-red-400 uppercase mb-1">Offensive</div>
+        <StatRow icon={<BicepsFlexed size={10} />} label="STR" value={Math.round(totalStats.strength)} baseValue={Math.round(baseStats.strength)} color="text-orange-400" />
+        <StatRow icon={<BookOpen size={10} />} label="INT" value={Math.round(totalStats.intelligence)} baseValue={Math.round(baseStats.intelligence)} color="text-purple-400" />
+        <StatRow icon={<Sword size={10} />} label="Basic Power" value={Math.round(totalStats.inhandPower || 0)} baseValue={Math.round(baseStats.inhandPower || 0)} color="text-red-400" />
+      </div>
+
+      {/* Attack Speed & Crit */}
+      <div className="bg-slate-800/30 rounded p-2">
+        <div className="text-[9px] font-bold text-yellow-400 uppercase mb-1">Speed & Crit</div>
+        <StatRow icon={<Zap size={10} />} label="Attack Speed" value={actualAS.toFixed(2)} baseValue={baseActualAS} color="text-yellow-300" />
+        <StatRow icon={<Target size={10} />} label="Crit Chance" value={`${totalStats.critChance}%`} baseValue={baseStats.critChance} color="text-amber-400" />
+        <StatRow icon={<Skull size={10} />} label="Crit Damage" value={`${(totalStats.critDamage * 100).toFixed(0)}%`} baseValue={baseStats.critDamage * 100} color="text-amber-400" />
+      </div>
+
+      {/* Penetration */}
+      <div className="bg-slate-800/30 rounded p-2">
+        <div className="text-[9px] font-bold text-rose-400 uppercase mb-1">Penetration</div>
+        <StatRow icon={<Crosshair size={10} />} label="Flat Pen" value={Math.round(totalStats.flatPenetration || 0)} baseValue={Math.round(baseStats.flatPenetration || 0)} color="text-rose-400" />
+        <StatRow icon={<Layers size={10} />} label="% Pen" value={`${totalStats.percentPenetration || 0}%`} baseValue={baseStats.percentPenetration || 0} color="text-rose-400" />
+        <StatRow icon={<Heart size={10} />} label="Lifesteal" value={`${totalStats.lifesteal}%`} baseValue={baseStats.lifesteal} color="text-pink-400" />
+      </div>
+
+      {/* Defensive */}
+      <div className="bg-slate-800/30 rounded p-2">
+        <div className="text-[9px] font-bold text-cyan-400 uppercase mb-1">Defensive</div>
+        <StatRow icon={<Shield size={10} />} label="Phys Prot" value={Math.round(totalStats.physicalProtection)} baseValue={Math.round(baseStats.physicalProtection)} color="text-cyan-400" />
+        <StatRow icon={<Shield size={10} className="text-purple-400" />} label="Mag Prot" value={Math.round(totalStats.magicalProtection)} baseValue={Math.round(baseStats.magicalProtection)} color="text-purple-400" />
+        <StatRow icon={<ShieldOff size={10} />} label="Mitigation" value={`${totalStats.damageMitigation || 0}%`} baseValue={baseStats.damageMitigation || 0} color="text-cyan-300" />
+      </div>
+
+      {/* Health & Mana */}
+      <div className="bg-slate-800/30 rounded p-2">
+        <div className="text-[9px] font-bold text-green-400 uppercase mb-1">Health & Mana</div>
+        <StatRow icon={<Heart size={10} className="text-green-500" />} label="Max HP" value={Math.round(totalStats.maxHealth)} baseValue={Math.round(baseStats.maxHealth)} color="text-green-400" />
+        <StatRow icon={<Activity size={10} className="text-green-500" />} label="HP Regen" value={totalStats.healthRegen.toFixed(1)} baseValue={baseStats.healthRegen} color="text-green-400" />
+        <StatRow icon={<Droplet size={10} className="text-blue-500" />} label="Max Mana" value={Math.round(totalStats.maxMana)} baseValue={Math.round(baseStats.maxMana)} color="text-blue-400" />
+        <StatRow icon={<Activity size={10} className="text-blue-300" />} label="MP Regen" value={totalStats.manaRegen.toFixed(1)} baseValue={baseStats.manaRegen} color="text-blue-400" />
+      </div>
+
+      {/* Utility */}
+      <div className="bg-slate-800/30 rounded p-2">
+        <div className="text-[9px] font-bold text-slate-400 uppercase mb-1">Utility</div>
+        <StatRow icon={<Footprints size={10} />} label="Move Speed" value={Math.round(totalStats.movementSpeed)} baseValue={Math.round(baseStats.movementSpeed)} />
+        <StatRow icon={<RotateCcw size={10} />} label="CDR" value={`${Math.min(40, totalStats.cooldownRate)}%`} baseValue={baseStats.cooldownRate} />
+      </div>
+    </div>
+  );
+};
+
+// ... (keep BuilderItemInspector and ShareBuildButton components the same)
+
+// Item Inspector Component (KEEP AS IS)
 const BuilderItemInspector: React.FC<{ 
   item: Item; 
   allItems: Item[]; 
@@ -84,7 +199,6 @@ const BuilderItemInspector: React.FC<{
 
   return (
     <div className="flex flex-col h-full max-h-[80vh]">
-      {/* Header */}
       <div className="p-4 border-b border-slate-700 bg-slate-800/50 flex gap-3 items-center shrink-0">
         <div className="w-14 h-14 bg-slate-900 rounded-lg border border-slate-600 overflow-hidden shadow-lg shrink-0">
           <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
@@ -107,10 +221,7 @@ const BuilderItemInspector: React.FC<{
           <X size={20} />
         </button>
       </div>
-
-      {/* Content */}
       <div className="p-4 overflow-y-auto flex-1 custom-scrollbar">
-        {/* Stats */}
         {Object.keys(item.stats).length > 0 && (
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 mb-4">
             {Object.entries(item.stats).map(([label, value]) => (
@@ -121,16 +232,12 @@ const BuilderItemInspector: React.FC<{
             ))}
           </div>
         )}
-
-        {/* Passive */}
         {item.passive && (
           <div className="bg-slate-800/50 p-3 rounded-lg border border-slate-700 mb-4">
             <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider mb-1 block">Passive</span>
             <p className="text-xs text-slate-300 italic leading-relaxed">{item.passive}</p>
           </div>
         )}
-
-        {/* Build Path */}
         {(item.type === 'Item' || item.type === 'Starter') && uniqueRoots.length > 0 && (
           <div className="pt-3 border-t border-slate-800">
             <h3 className="text-[10px] uppercase font-bold text-slate-500 mb-3 tracking-wider flex items-center gap-1">
@@ -146,8 +253,6 @@ const BuilderItemInspector: React.FC<{
           </div>
         )}
       </div>
-
-      {/* Action Buttons */}
       <div className="p-3 border-t border-slate-700 shrink-0 flex gap-2">
         {mode === 'preview' && onSelect && (
           <button onClick={onSelect} className="flex-1 py-2 bg-mythic-gold text-slate-900 font-bold rounded-lg hover:bg-yellow-400 transition-colors">
@@ -173,7 +278,7 @@ const BuilderItemInspector: React.FC<{
   );
 };
 
-// Share Button Component
+// Share Button Component (KEEP AS IS)
 const ShareBuildButton: React.FC<{ godId: string | null; aspectId: string | null; build: CurrentBuild }> = ({ godId, aspectId, build }) => {
   const [copied, setCopied] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
@@ -222,20 +327,29 @@ export const BuilderView: React.FC = () => {
   const [activeAspectId, setActiveAspectId] = useState<string | null>(null);
   const [build, setBuild] = useState<CurrentBuild>({ starter: null, items: [null, null, null, null, null, null], relic: null });
 
+  // NEW: Level state for stats panel
+  const [builderLevel, setBuilderLevel] = useState(20);
+  const [showStats, setShowStats] = useState(true);
+
   const [godSearch, setGodSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
   const [itemPickerSlot, setItemPickerSlot] = useState<ItemPickerSlot | null>(null);
   
-  // Item picker filters
   const [itemSearch, setItemSearch] = useState('');
   const [itemCategory, setItemCategory] = useState('All');
   const [itemTier, setItemTier] = useState('All');
   const [activeStats, setActiveStats] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   
-  // Item viewing states
-  const [previewItem, setPreviewItem] = useState<Item | null>(null); // For picker preview
-  const [viewingBuildItem, setViewingBuildItem] = useState<{ item: Item; slot: ItemPickerSlot } | null>(null); // For viewing items in build
+  const [previewItem, setPreviewItem] = useState<Item | null>(null);
+  const [viewingBuildItem, setViewingBuildItem] = useState<{ item: Item; slot: ItemPickerSlot } | null>(null);
+
+  // Get all equipped items as Item objects for stats calculation
+  const equippedItems = useMemo(() => {
+    if (!ITEMS) return [];
+    return [build.starter, ...build.items, build.relic]
+      .map(id => id ? ITEMS.find(i => i.id === id) || null : null);
+  }, [build, ITEMS]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -262,7 +376,6 @@ export const BuilderView: React.FC = () => {
     if (!GODS || GODS.length === 0) return;
     const god = pickRandom(GODS);
     setSelectedGod(god);
-    // 50% chance to pick an aspect if the god has aspects
     if (god.aspects.length > 0 && Math.random() < 0.5) {
       setActiveAspectId(pickRandom(god.aspects).id);
     } else {
@@ -335,14 +448,11 @@ export const BuilderView: React.FC = () => {
     setViewingBuildItem(null);
   };
 
-  // Handle clicking on a build slot
   const handleSlotClick = (slot: ItemPickerSlot, currentItemId: string | null) => {
     if (currentItemId) {
-      // Slot has an item - show details
       const item = getItem(currentItemId);
       if (item) setViewingBuildItem({ item, slot });
     } else {
-      // Empty slot - open picker
       setItemPickerSlot(slot);
     }
   };
@@ -351,33 +461,20 @@ export const BuilderView: React.FC = () => {
     setActiveStats(prev => prev.includes(statId) ? prev.filter(s => s !== statId) : [...prev, statId]);
   };
 
-  // Filter items for picker
   const filteredItems = (ITEMS || []).filter(item => {
     if (!itemPickerSlot) return false;
-
-    // Type matching
     let typeMatch = false;
     if (itemPickerSlot.type === 'Starter') typeMatch = item.type === 'Starter';
     else if (itemPickerSlot.type === 'Relic') typeMatch = item.type === 'Relic';
     else if (itemPickerSlot.type === 'Item') typeMatch = item.type === 'Item' || item.type === 'God Specific';
-
-    // Search
     const searchMatch = item.name.toLowerCase().includes(itemSearch.toLowerCase());
-
-    // God specific check
     const godMatch = item.type !== 'God Specific' || (selectedGod && (item as any).god === selectedGod.name);
-
-    // Category filter (only for regular items)
     const categoryMatch = itemCategory === 'All' || item.category === itemCategory;
-
-    // Tier filter (only for regular items)
     let tierMatch = true;
     if (itemTier !== 'All' && itemPickerSlot.type === 'Item') {
       const tierNum = parseInt(itemTier.replace('Tier ', ''));
       tierMatch = item.tier === tierNum;
     }
-
-    // Stat filters
     let statsMatch = true;
     if (activeStats.length > 0) {
       statsMatch = activeStats.every(statId => {
@@ -388,7 +485,6 @@ export const BuilderView: React.FC = () => {
         );
       });
     }
-
     return typeMatch && searchMatch && godMatch && categoryMatch && tierMatch && statsMatch;
   }).sort((a, b) => a.name.localeCompare(b.name));
 
@@ -400,7 +496,7 @@ export const BuilderView: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 pb-24">
-      {/* Builder Header */}
+      {/* Builder Header - SAME AS BEFORE */}
       <div className="bg-slate-900 border border-slate-800 p-4 flex flex-wrap gap-4 items-center justify-between rounded-xl mb-6">
         <div className="flex items-center gap-4">
           {selectedGod ? (
@@ -424,15 +520,12 @@ export const BuilderView: React.FC = () => {
         </div>
       </div>
 
-      {/* FUN RANDOMIZER SECTION */}
+      {/* Randomizer Section - SAME AS BEFORE */}
       <div className="mb-6 relative overflow-hidden">
         <div className="bg-gradient-to-r from-purple-900/40 via-pink-900/40 to-orange-900/40 border border-purple-500/30 rounded-xl p-4 sm:p-5">
-          {/* Decorative elements */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/20 to-transparent rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-pink-500/20 to-transparent rounded-full blur-2xl translate-y-1/2 -translate-x-1/2"></div>
-          
           <div className="relative flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-            {/* Text */}
             <div className="flex items-center gap-3 text-center sm:text-left">
               <div className="hidden sm:flex w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 items-center justify-center shadow-lg shadow-purple-500/30 animate-pulse">
                 <Dices size={24} className="text-white" />
@@ -446,8 +539,6 @@ export const BuilderView: React.FC = () => {
                 <p className="text-sm text-purple-200/70">Try a random build and embrace the chaos!</p>
               </div>
             </div>
-
-            {/* Buttons */}
             <div className="flex gap-2 sm:ml-auto">
               <button onClick={randomizeAll} className="group flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white transition-all shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-105 active:scale-95">
                 <Shuffle size={16} className="group-hover:rotate-180 transition-transform duration-500" />
@@ -466,10 +557,9 @@ export const BuilderView: React.FC = () => {
         </div>
       </div>
 
-      {/* God Picker */}
+      {/* God Picker - SAME AS BEFORE */}
       {!selectedGod ? (
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-          {/* Randomized Build Preview (when no god selected but items are randomized) */}
           {(build.starter || build.items.some(i => i)) && (
             <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 mb-6">
               <h4 className="text-xs font-bold text-slate-500 uppercase mb-3">Randomized Build Preview</h4>
@@ -491,7 +581,7 @@ export const BuilderView: React.FC = () => {
                     <span className="text-[9px] text-cyan-400 font-bold">Relic</span>
                     <img src={getItem(build.relic)?.image} className="w-12 h-12 rounded-full border border-slate-600 hover:border-cyan-400 transition-colors" />
                   </div>
-                ))}
+                )}
               </div>
               <p className="text-[10px] text-slate-600 mt-3">Select a god to complete your build • Click items to view details</p>
             </div>
@@ -520,7 +610,10 @@ export const BuilderView: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        /* ============================================================
+           UPDATED: 4-column grid with Stats Panel
+           ============================================================ */
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Aspect Selector */}
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
             <h4 className="text-xs font-bold text-slate-500 uppercase mb-3">Select Aspect</h4>
@@ -544,14 +637,12 @@ export const BuilderView: React.FC = () => {
             </div>
             
             <div className="flex justify-center gap-6 mb-6">
-              {/* Starter */}
               <div onClick={() => handleSlotClick({ type: 'Starter' }, build.starter)} className="flex flex-col items-center gap-2 cursor-pointer group">
                 <span className="text-[10px] font-bold text-purple-400 uppercase">Starter</span>
                 <div className={`w-16 h-16 bg-slate-800 rounded-lg border-2 overflow-hidden transition-all group-hover:border-purple-400 ${build.starter ? 'border-purple-500/50' : 'border-slate-600'}`}>
                   {build.starter ? <img src={getItem(build.starter)?.image} className="w-full h-full object-cover" /> : <div className="flex items-center justify-center h-full text-slate-600"><Plus size={20} /></div>}
                 </div>
               </div>
-              {/* Relic */}
               <div onClick={() => handleSlotClick({ type: 'Relic' }, build.relic)} className="flex flex-col items-center gap-2 cursor-pointer group">
                 <span className="text-[10px] font-bold text-cyan-400 uppercase">Relic</span>
                 <div className={`w-16 h-16 bg-slate-800 rounded-full border-2 overflow-hidden transition-all group-hover:border-cyan-400 ${build.relic ? 'border-cyan-500/50' : 'border-slate-600'}`}>
@@ -577,33 +668,75 @@ export const BuilderView: React.FC = () => {
             </div>
           </div>
 
+          {/* NEW: Stats Panel */}
+          <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+            {/* Stats Header with Toggle */}
+            <button 
+              onClick={() => setShowStats(!showStats)}
+              className="w-full p-3 flex justify-between items-center hover:bg-slate-800/50 transition-colors border-b border-slate-800"
+            >
+              <span className="text-xs font-bold text-white flex items-center gap-2">
+                <BarChart3 size={14} className="text-mythic-gold" />
+                Stats Tracker
+              </span>
+              {showStats ? <ChevronUp size={14} className="text-slate-400" /> : <ChevronDown size={14} className="text-slate-400" />}
+            </button>
+
+            {showStats && (
+              <>
+                {/* Level Slider */}
+                <div className="p-3 border-b border-slate-800 bg-slate-950/50">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-[10px] uppercase font-bold text-slate-500">God Level</span>
+                    <span className="text-mythic-gold font-mono font-bold">{builderLevel}</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min="1" 
+                    max="20" 
+                    value={builderLevel} 
+                    onChange={(e) => setBuilderLevel(parseInt(e.target.value))}
+                    className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-mythic-gold"
+                  />
+                  <div className="flex justify-between text-[8px] text-slate-600 mt-0.5 font-mono">
+                    <span>1</span><span>10</span><span>20</span>
+                  </div>
+                </div>
+
+                {/* Stats Panel */}
+                <div className="p-3 max-h-[400px] overflow-y-auto custom-scrollbar">
+                  <BuilderStatsPanel 
+                    god={selectedGod}
+                    level={builderLevel}
+                    items={equippedItems}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+
           {/* Item Picker */}
           <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
             {itemPickerSlot ? (
               <div className="flex flex-col h-full">
-                {/* Picker Header */}
                 <div className="p-4 bg-slate-950 border-b border-slate-800">
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="font-bold text-white">Select {itemPickerSlot.type}{itemPickerSlot.type === 'Item' && itemPickerSlot.index !== undefined && ` ${itemPickerSlot.index + 1}`}</h4>
                     <button onClick={() => { setItemPickerSlot(null); resetFilters(); }} className="p-1 hover:bg-slate-800 rounded"><X size={18} className="text-slate-400" /></button>
                   </div>
                   
-                  {/* Search */}
                   <div className="relative mb-3">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
                     <input autoFocus placeholder={`Search ${itemPickerSlot.type.toLowerCase()}s...`} value={itemSearch} onChange={e => setItemSearch(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder:text-slate-500 focus:border-mythic-gold focus:outline-none" />
                   </div>
 
-                  {/* Filter Toggle */}
                   <button onClick={() => setShowFilters(!showFilters)} className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold transition-colors ${showFilters || hasActiveFilters ? 'bg-mythic-gold/20 text-mythic-gold border border-mythic-gold/30' : 'bg-slate-800 text-slate-400 border border-slate-700'}`}>
                     <span className="flex items-center gap-2"><Filter size={14} />Filters {hasActiveFilters && `(${(itemCategory !== 'All' ? 1 : 0) + (itemTier !== 'All' ? 1 : 0) + activeStats.length})`}</span>
                     <span>{showFilters ? '▲' : '▼'}</span>
                   </button>
 
-                  {/* Filters Panel */}
                   {showFilters && (
                     <div className="mt-3 p-3 bg-slate-800/50 rounded-lg border border-slate-700 space-y-3">
-                      {/* Category Filter (only for Items) */}
                       {itemPickerSlot.type === 'Item' && (
                         <div>
                           <label className="text-[10px] text-slate-500 uppercase font-bold mb-1 block">Category</label>
@@ -615,7 +748,6 @@ export const BuilderView: React.FC = () => {
                         </div>
                       )}
 
-                      {/* Tier Filter (only for Items) */}
                       {itemPickerSlot.type === 'Item' && (
                         <div>
                           <label className="text-[10px] text-slate-500 uppercase font-bold mb-1 block">Tier</label>
@@ -627,7 +759,6 @@ export const BuilderView: React.FC = () => {
                         </div>
                       )}
 
-                      {/* Stat Filters */}
                       <div>
                         <label className="text-[10px] text-slate-500 uppercase font-bold mb-1 block">Stats</label>
                         <div className="grid grid-cols-4 gap-1">
@@ -640,7 +771,6 @@ export const BuilderView: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Clear Filters */}
                       {hasActiveFilters && (
                         <button onClick={resetFilters} className="w-full text-[10px] text-red-400 hover:text-red-300 py-1">Clear All Filters</button>
                       )}
@@ -648,7 +778,6 @@ export const BuilderView: React.FC = () => {
                   )}
                 </div>
 
-                {/* Items Grid */}
                 <div className="flex-1 overflow-y-auto p-3 custom-scrollbar max-h-[400px]">
                   <div className="grid grid-cols-4 gap-2">
                     <div onClick={() => handleClearSlot()} className="aspect-square bg-red-900/20 border border-red-500/30 rounded-lg flex items-center justify-center cursor-pointer hover:bg-red-900/40 transition-colors">
@@ -692,7 +821,7 @@ export const BuilderView: React.FC = () => {
         </div>
       )}
 
-      {/* Item Preview Modal (from picker) */}
+      {/* Modals - SAME AS BEFORE */}
       {previewItem && createPortal(
         <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setPreviewItem(null)}>
           <div className="bg-slate-900 w-full max-w-md max-h-[85vh] sm:rounded-2xl rounded-t-2xl border border-slate-700 shadow-2xl flex flex-col relative overflow-hidden" onClick={e => e.stopPropagation()}>
@@ -702,7 +831,6 @@ export const BuilderView: React.FC = () => {
         document.body
       )}
 
-      {/* Build Item View Modal (from build slots) */}
       {viewingBuildItem && createPortal(
         <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setViewingBuildItem(null)}>
           <div className="bg-slate-900 w-full max-w-md max-h-[85vh] sm:rounded-2xl rounded-t-2xl border border-slate-700 shadow-2xl flex flex-col relative overflow-hidden" onClick={e => e.stopPropagation()}>

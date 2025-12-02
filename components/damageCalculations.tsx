@@ -128,7 +128,7 @@ export function parseItemStats(item: Item): ParsedItemStats {
  * Calculate actual attack speed
  * Formula: floor(baseAS × (1 + totalAS%) × 100) / 100
  */
-export function calculateActualAttackSpeed(
+export function calculateAttackSpeed(
   baseAS: number,
   asPercent: number,
   bonusASPercent: number = 0
@@ -137,6 +137,11 @@ export function calculateActualAttackSpeed(
   const rawAS = baseAS * (1 + totalASPercent / 100);
   const flooredAS = Math.floor(rawAS * 100) / 100;
   return Math.min(2.5, flooredAS); // Cap at 2.5
+}
+
+export function getAttackSpeedPercentAtLevel(asPercent: number, level: number): number {
+  // Currently just passing through as the god stats array already contains the scaled value
+  return asPercent;
 }
 
 // ============================================================
@@ -321,7 +326,9 @@ export function calculateAbilityDamage(
   scaling: ScalingComponent[],
   attackerStats: GodStats,
   defenderStats: GodStats,
-  damageType: DamageType
+  damageType: DamageType,
+  percentPen: number = 0,
+  flatPen: number = 0
 ): DamageResult {
   const baseDamage = baseDamageValues[Math.max(0, Math.min(4, abilityRank - 1))] || 0;
   
@@ -341,8 +348,8 @@ export function calculateAbilityDamage(
   // Apply penetration (% first, then flat)
   const effectiveProtections = calculateEffectiveProtections(
     baseProts,
-    attackerStats.percentPenetration,
-    attackerStats.flatPenetration
+    percentPen, // Use passed params if available, defaulting to stats logic if calculated outside
+    flatPen
   );
   
   const damageAfterProts = rawDamage * (100 / (100 + effectiveProtections));
@@ -410,7 +417,7 @@ export function calculateBasicAttack(
   const critDamage = Math.floor(damage * critMultiplier);
   
   // Attack speed calculation
-  const attacksPerSecond = calculateActualAttackSpeed(
+  const attacksPerSecond = calculateAttackSpeed(
     attackerStats.baseAttackSpeed,
     attackerStats.attackSpeedPercent
   );

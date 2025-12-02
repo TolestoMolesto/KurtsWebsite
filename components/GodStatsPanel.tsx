@@ -1,12 +1,12 @@
 // ============================================================
-// GodStatsPanel.tsx - Full Stats Display Component
+// GodStatsPanel.tsx - Full Stats Display Component (UPDATED)
 // ============================================================
 
 import React from 'react';
 import { 
   BicepsFlexed, BookOpen, Swords, Zap, Target, Crosshair, 
   Heart, Shield, Activity, Droplet, RotateCcw, Footprints,
-  Skull, Star
+  Skull, Star, Layers, ShieldOff
 } from 'lucide-react';
 import { GodStats, God } from '../types';
 import { calculateAttackSpeed, getAttackSpeedPercentAtLevel } from './damageCalculations';
@@ -15,10 +15,9 @@ interface GodStatsPanelProps {
   god: God;
   level: number;
   stats: GodStats;
-  showBaseValues?: boolean; // Show base (level 1) values in parentheses
+  showBaseValues?: boolean;
 }
 
-// Individual stat row component
 const StatRow: React.FC<{
   icon: React.ReactNode;
   label: string;
@@ -40,7 +39,6 @@ const StatRow: React.FC<{
   </div>
 );
 
-// Section header
 const SectionHeader: React.FC<{ title: string; color: string }> = ({ title, color }) => (
   <div className={`text-xs font-bold uppercase tracking-widest ${color} mt-4 mb-2 first:mt-0`}>
     {title}
@@ -53,7 +51,7 @@ export const GodStatsPanel: React.FC<GodStatsPanelProps> = ({
   stats,
   showBaseValues = true 
 }) => {
-  const baseStats = god.statsByLevel[0]; // Level 1 stats for comparison
+  const baseStats = god.statsByLevel[0];
   
   // Calculate actual attack speed
   const asPercentFromLevel = getAttackSpeedPercentAtLevel(stats.attackSpeedPercent, level);
@@ -76,21 +74,21 @@ export const GodStatsPanel: React.FC<GodStatsPanelProps> = ({
         label="Strength"
         value={Math.round(stats.strength)}
         baseValue={showBaseValues ? Math.round(baseStats.strength) : undefined}
-        color="text-red-400"
+        color="text-orange-400"
       />
       <StatRow 
         icon={<BookOpen size={14} />}
         label="Intelligence"
         value={Math.round(stats.intelligence)}
         baseValue={showBaseValues ? Math.round(baseStats.intelligence) : undefined}
-        color="text-blue-400"
+        color="text-purple-400"
       />
       <StatRow 
         icon={<Swords size={14} />}
-        label="Inhand Power"
-        value={stats.inhandPower.toFixed(1)}
-        baseValue={showBaseValues ? baseStats.inhandPower.toFixed(1) : undefined}
-        color="text-orange-400"
+        label="Basic Attack Power"
+        value={Math.round(stats.inhandPower || 0)}
+        baseValue={showBaseValues ? Math.round(baseStats.inhandPower || 0) : undefined}
+        color="text-red-400"
       />
 
       {/* === ATTACK SPEED === */}
@@ -101,56 +99,57 @@ export const GodStatsPanel: React.FC<GodStatsPanelProps> = ({
         label="Base Attack Speed"
         value={stats.baseAttackSpeed.toFixed(2)}
         baseValue={showBaseValues ? baseStats.baseAttackSpeed.toFixed(2) : undefined}
+        color="text-yellow-400"
       />
       <StatRow 
         icon={<Zap size={14} />}
         label="Attack Speed %"
-        value={`${asPercentFromLevel.toFixed(2)}%`}
-        baseValue={showBaseValues ? `${baseStats.attackSpeedPercent.toFixed(2)}` : undefined}
+        value={`+${stats.attackSpeedPercent.toFixed(1)}%`}
+        baseValue={showBaseValues ? `+${baseStats.attackSpeedPercent.toFixed(1)}%` : undefined}
         color="text-yellow-400"
       />
       <StatRow 
-        icon={<Zap size={14} className="text-green-400" />}
+        icon={<Zap size={14} className="text-yellow-300" />}
         label="Actual Attack Speed"
-        value={`${actualAttackSpeed.toFixed(2)}/s`}
-        baseValue={showBaseValues ? `${baseActualAS.toFixed(2)}` : undefined}
-        color="text-green-400"
+        value={actualAttackSpeed.toFixed(2)}
+        baseValue={showBaseValues ? baseActualAS.toFixed(2) : undefined}
+        color="text-yellow-300"
       />
 
       {/* === CRITICAL === */}
-      <SectionHeader title="Critical Strikes" color="text-yellow-500" />
+      <SectionHeader title="Critical" color="text-amber-400" />
       
       <StatRow 
         icon={<Target size={14} />}
         label="Crit Chance"
         value={`${stats.critChance}%`}
         baseValue={showBaseValues ? `${baseStats.critChance}%` : undefined}
-        color="text-yellow-400"
+        color="text-amber-400"
       />
       <StatRow 
         icon={<Skull size={14} />}
         label="Crit Damage"
         value={`${(stats.critDamage * 100).toFixed(0)}%`}
         baseValue={showBaseValues ? `${(baseStats.critDamage * 100).toFixed(0)}%` : undefined}
-        color="text-yellow-400"
+        color="text-amber-400"
       />
 
       {/* === PENETRATION === */}
-      <SectionHeader title="Penetration" color="text-orange-400" />
+      <SectionHeader title="Penetration" color="text-rose-400" />
       
       <StatRow 
         icon={<Crosshair size={14} />}
         label="Flat Penetration"
-        value={Math.round(stats.flatPenetration)}
-        baseValue={showBaseValues ? Math.round(baseStats.flatPenetration) : undefined}
-        color="text-orange-400"
+        value={Math.round(stats.flatPenetration || 0)}
+        baseValue={showBaseValues ? Math.round(baseStats.flatPenetration || 0) : undefined}
+        color="text-rose-400"
       />
       <StatRow 
-        icon={<Crosshair size={14} />}
+        icon={<Layers size={14} />}
         label="% Penetration"
-        value={`${stats.percentPenetration}%`}
-        baseValue={showBaseValues ? `${baseStats.percentPenetration}%` : undefined}
-        color="text-orange-400"
+        value={`${stats.percentPenetration || 0}%`}
+        baseValue={showBaseValues ? `${baseStats.percentPenetration || 0}%` : undefined}
+        color="text-rose-400"
       />
 
       {/* === SUSTAIN === */}
@@ -165,14 +164,14 @@ export const GodStatsPanel: React.FC<GodStatsPanelProps> = ({
       />
 
       {/* === DEFENSIVE === */}
-      <SectionHeader title="Defensive" color="text-slate-300" />
+      <SectionHeader title="Defensive" color="text-cyan-400" />
       
       <StatRow 
-        icon={<Shield size={14} className="text-orange-300" />}
+        icon={<Shield size={14} />}
         label="Physical Protection"
         value={Math.round(stats.physicalProtection)}
         baseValue={showBaseValues ? Math.round(baseStats.physicalProtection) : undefined}
-        color="text-orange-300"
+        color="text-cyan-400"
       />
       <StatRow 
         icon={<Shield size={14} className="text-purple-400" />}
@@ -182,18 +181,18 @@ export const GodStatsPanel: React.FC<GodStatsPanelProps> = ({
         color="text-purple-400"
       />
       <StatRow 
-        icon={<Shield size={14} className="text-cyan-400" />}
+        icon={<ShieldOff size={14} />}
         label="Damage Mitigation"
-        value={`${stats.damageMitigation}%`}
-        baseValue={showBaseValues ? `${baseStats.damageMitigation}%` : undefined}
-        color="text-cyan-400"
+        value={`${stats.damageMitigation || 0}%`}
+        baseValue={showBaseValues ? `${baseStats.damageMitigation || 0}%` : undefined}
+        color="text-cyan-300"
       />
 
       {/* === HEALTH === */}
       <SectionHeader title="Health" color="text-green-400" />
       
       <StatRow 
-        icon={<Heart size={14} className="text-red-500" />}
+        icon={<Heart size={14} className="text-green-500" />}
         label="Max Health"
         value={Math.round(stats.maxHealth)}
         baseValue={showBaseValues ? Math.round(baseStats.maxHealth) : undefined}
