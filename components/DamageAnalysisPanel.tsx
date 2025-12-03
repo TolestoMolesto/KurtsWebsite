@@ -210,10 +210,10 @@ export const DamageAnalysisPanel: React.FC<DamageAnalysisPanelProps> = ({
     );
   }
 
-  // Create default enemy stats if no enemy god selected
+  // Create default enemy stats if no enemy god selected (Target Dummy)
   const defaultEnemyStats: GodStats = {
     strength: 0, intelligence: 0, attackSpeed: 0, lifesteal: 0, critChance: 0, critDamage: 1.65,
-    penetration: 0, physicalProtection: 50, magicalProtection: 30, maxHealth: 2000,
+    penetration: 0, physicalProtection: 0, magicalProtection: 0, maxHealth: 10000,
     healthRegen: 0, maxMana: 500, manaRegen: 0, cooldownRate: 0, movementSpeed: 365,
   };
 
