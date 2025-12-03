@@ -21,6 +21,14 @@ import {
   parseScaling
 } from './damageCalculations';
 
+import { 
+  hasPassiveStances, 
+  getDefaultStance, 
+  applyPassiveStanceBonuses,
+  StanceId 
+} from './passiveStanceUtils';
+import { PassiveStanceToggle } from './PassiveStanceToggle';
+
 // ============================================================
 // INTERFACES
 // ============================================================
@@ -297,9 +305,18 @@ interface AbilitiesPanelProps {
   aspectId: string | null;
   level: number;
   stats: GodStats;
+  passiveStance?: StanceId | null;
+  onPassiveStanceChange?: (stance: StanceId) => void;
 }
 
-const AbilitiesPanel: React.FC<AbilitiesPanelProps> = ({ god, aspectId, level, stats }) => {
+const AbilitiesPanel: React.FC<AbilitiesPanelProps> = ({ 
+  god, 
+  aspectId, 
+  level, 
+  stats,
+  passiveStance,
+  onPassiveStanceChange 
+}) => {
   const [expandedAbility, setExpandedAbility] = useState<string | null>(null);
   
   // Get the active ability kit (base or aspect)
@@ -334,6 +351,16 @@ const AbilitiesPanel: React.FC<AbilitiesPanelProps> = ({ god, aspectId, level, s
           {aspectId ? god.aspects.find(a => a.id === aspectId)?.name || 'Aspect' : 'Base Kit'}
         </span>
       </div>
+
+      {/* Passive Stance Toggle */}
+      {hasPassiveStances(activeKit.passive) && onPassiveStanceChange && (
+        <PassiveStanceToggle
+          passive={activeKit.passive}
+          currentStance={passiveStance || 'armored'}
+          onStanceChange={onPassiveStanceChange}
+          level={level}
+        />
+      )}
 
       {/* Passive */}
       <AbilityCard
@@ -762,6 +789,7 @@ export const BuilderView: React.FC = () => {
   // Item preview/view states
   const [previewItem, setPreviewItem] = useState<Item | null>(null);
   const [viewingBuildItem, setViewingBuildItem] = useState<{ item: Item; slot: ItemPickerSlot } | null>(null);
+  const [passiveStance, setPassiveStance] = useState<StanceId | null>(null);
 
   // Get all equipped items as Item objects for stats calculation
   const equippedItems = useMemo(() => {
@@ -770,11 +798,35 @@ export const BuilderView: React.FC = () => {
       .map(id => id ? ITEMS.find(i => i.id === id) || null : null);
   }, [build, ITEMS]);
 
+  const activePassive = useMemo(() => {
+  if (!selectedGod) return undefined;
+  const activeKit = activeAspectId 
+    ? selectedGod.aspects.find(a => a.id === activeAspectId) 
+    : selectedGod;
+  return activeKit?.passive;
+  }, [selectedGod, activeAspectId]);
+
   // Calculate total stats with items
   const totalStats = useMemo(() => {
-    if (!selectedGod) return null;
-    return calculateTotalStats(selectedGod, builderLevel, equippedItems, selectedGod.damageType);
-  }, [selectedGod, builderLevel, equippedItems]);
+  if (!selectedGod) return null;
+  let stats = calculateTotalStats(selectedGod, builderLevel, equippedItems, selectedGod.damageType);
+  
+  // Apply passive stance bonuses if applicable
+  if (activePassive && passiveStance) {
+    stats = applyPassiveStanceBonuses(stats, activePassive, passiveStance, builderLevel);
+  }
+  
+  return stats;
+  }, [selectedGod, builderLevel, equippedItems, activePassive, passiveStance]);
+
+  useEffect(() => {
+  if (!selectedGod) {
+    setPassiveStance(null);
+    return;
+  }
+  const defaultStance = getDefaultStance(activePassive);
+  setPassiveStance(defaultStance);
+  }, [selectedGod?.id, activeAspectId, activePassive]);
 
   // URL parsing for shared builds
   useEffect(() => {
@@ -1184,12 +1236,14 @@ export const BuilderView: React.FC = () => {
             </button>
             {showAbilities && totalStats && (
               <div className="px-4 pb-4">
-                <AbilitiesPanel 
-                  god={selectedGod} 
-                  aspectId={activeAspectId} 
-                  level={builderLevel} 
-                  stats={totalStats} 
-                />
+              <AbilitiesPanel 
+                god={selectedGod} 
+                aspectId={activeAspectId} 
+                level={builderLevel} 
+                stats={totalStats}
+                passiveStance={passiveStance}
+                onPassiveStanceChange={setPassiveStance}
+              />
               </div>
             )}
           </div>
