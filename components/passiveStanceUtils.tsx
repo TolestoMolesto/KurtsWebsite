@@ -53,7 +53,7 @@ export function getStanceById(passive: Ability | undefined, stanceId: StanceId):
  * Calculate the bonus value at a given level
  */
 export function calculateStanceBonus(bonus: PassiveStanceBonus, level: number): number {
-  return bonus.base + (bonus.perLevel * (level - 1));
+  return bonus.base + (bonus.perLevel * (level));
 }
 
 /**
