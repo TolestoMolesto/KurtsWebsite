@@ -1,3 +1,4 @@
+
 // ============================================================
 // BuilderStatsPanel.tsx - Stats Panel for Builder with Items
 // ============================================================
@@ -15,8 +16,7 @@ interface BuilderStatsPanelProps {
   god: God;
   level: number;
   items: (Item | null)[];
-  stats?: GodStats; // NEW: Allow passing pre-calculated stats (includes Stances)
-  compact?: boolean;
+  stats?: GodStats; // Allow passing pre-calculated stats
 }
 
 const StatRow: React.FC<{
@@ -50,7 +50,8 @@ export const BuilderStatsPanel: React.FC<BuilderStatsPanelProps> = ({
   items,
   stats: providedStats // Optional prop
 }) => {
-  // Use provided stats (which include Passive Stances) if available, otherwise calculate from items
+  // Use provided stats (which can be either displayStats or combatStats passed from parent)
+  // or calculate basic stats from items if not provided
   const totalStats = useMemo(() => {
     if (providedStats) return providedStats;
     return calculateTotalStats(god, level, items, god.damageType);

@@ -1,3 +1,4 @@
+
 // BuilderView.tsx - Enhanced True God Builder
 // Features: Ability Panel, Basic Attack Calculator, Item Passives, Real-time Stats
 
@@ -134,25 +135,51 @@ const AbilityCard: React.FC<AbilityCardProps> = ({
         damageMitigation: 0
       };
       
-      // Separate base scaling from potential bonus scaling
-      // This ensures we never mutate the original damageInfo.scaling array
-      const baseScaling = damageInfo.scaling;
+      // 1. Determine Base Scaling (Handle OR conditions)
+      // Defaults to the first part found (e.g. "45% Strength")
+      let currentScaling = damageInfo.scaling;
+      
+      // If there is a conditional scaling (e.g. "OR 60% Strength If Foregoing Armor")
+      // And we have a passive stance selected, check if we should swap.
+      if (damageInfo.conditionalScaling?.conditional && passiveStance) {
+         const { scaling: altScaling, condition } = damageInfo.conditionalScaling.conditional;
+         const stance = passiveStance.toLowerCase();
+         const condLower = condition.toLowerCase();
+         
+         let matches = false;
+         
+         // Unarmored Logic
+         if (stance === 'unarmored') {
+            matches = condLower.includes('foregoing') || condLower.includes('forego') || condLower.includes('unarmored') || condLower.includes('no armor');
+         } 
+         // Armored Logic
+         else if (stance === 'armored') {
+            matches = (condLower.includes('armored') || condLower.includes('wearing armor')) && !condLower.includes('unarmored');
+         }
+
+         if (matches) {
+            currentScaling = altScaling;
+         }
+      }
+      
+      // 2. Add Bonus Scaling from separate Attributes (Additive)
+      // e.g. "Bonus Damage Scaling (Unarmored): 15% Strength"
       let bonusScaling: ScalingComponent[] = [];
       
-      // Handle conditional scaling from attributes (e.g. Unarmored Bonus)
-      if (passiveStance === 'unarmored' && ability.attributes) {
+      if (passiveStance && ability.attributes) {
+        const stanceName = passiveStance.charAt(0).toUpperCase() + passiveStance.slice(1);
         const bonusScalingAttr = ability.attributes.find(a => 
           a.label.toLowerCase().includes('bonus') && 
           a.label.toLowerCase().includes('scaling') &&
-          a.label.toLowerCase().includes('unarmored')
+          a.label.includes(stanceName)
         );
         if (bonusScalingAttr) {
           bonusScaling = parseScaling(bonusScalingAttr.value);
         }
       }
       
-      // Combine base and bonus for this calculation only
-      const finalScaling = [...baseScaling, ...bonusScaling];
+      // Combine for calculation
+      const finalScaling = [...currentScaling, ...bonusScaling];
       
       return calculateAbilityDamage(
         damageInfo.baseDamageValues,
@@ -551,27 +578,36 @@ export const BuilderView: React.FC = () => {
     }
   }, [selectedGod]);
 
-  const activeStats = useMemo(() => {
+  // 1. Base + Items Stats (For Display in Panel - Keeps stats clean)
+  const displayStats = useMemo(() => {
     if (!selectedGod) return DEFAULT_GOD_STATS;
     
-    // Get base stats
+    // Get equipped items
     const allItems = [
       build.starter ? ITEMS.find(i => i.id === build.starter) || null : null,
       ...build.items.map(id => id ? ITEMS.find(i => i.id === id) || null : null),
       build.relic ? ITEMS.find(i => i.id === build.relic) || null : null
     ].filter(Boolean);
 
-    // Initial stats
-    let stats = calculateTotalStats(selectedGod, level, allItems, selectedGod.damageType);
+    // Calculate base god stats + item bonuses only
+    return calculateTotalStats(selectedGod, level, allItems, selectedGod.damageType);
+  }, [selectedGod, level, build, ITEMS]);
 
-    // Apply passive stance bonuses if applicable
+  // 2. Combat Stats (For Damage Calculation - Includes Passive Stance Bonuses)
+  const combatStats = useMemo(() => {
+    if (!selectedGod) return DEFAULT_GOD_STATS;
+    
+    // Start with display stats
+    let stats = { ...displayStats };
+
+    // Apply passive stance bonuses if applicable (e.g., Unarmored Strength)
     if (passiveStance) {
       const activeKit = aspectId ? selectedGod.aspects.find(a => a.id === aspectId) || selectedGod : selectedGod;
       stats = applyPassiveStanceBonuses(stats, activeKit.passive, passiveStance, level);
     }
 
     return stats;
-  }, [selectedGod, aspectId, level, build, ITEMS, passiveStance]);
+  }, [displayStats, passiveStance, aspectId, selectedGod, level]);
 
   // Handlers
   const handleGodSelect = (god: God) => {
@@ -876,12 +912,12 @@ export const BuilderView: React.FC = () => {
             </div>
           </div>
 
-          {/* Stats Panel - Now receives fully calculated stats */}
+          {/* Stats Panel - Using displayStats (Base + Items only) */}
           <BuilderStatsPanel 
             god={selectedGod} 
             level={level} 
             items={equippedItems} 
-            stats={activeStats}
+            stats={displayStats}
           />
 
         </div>
@@ -893,7 +929,7 @@ export const BuilderView: React.FC = () => {
               god={selectedGod}
               aspectId={aspectId}
               level={level}
-              stats={activeStats}
+              stats={combatStats} // Using combatStats (Includes Passive) for damage
               passiveStance={passiveStance}
               onPassiveStanceChange={setPassiveStance}
             />

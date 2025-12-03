@@ -681,7 +681,7 @@ export const GodsView: React.FC = () => {
                         min="1" 
                         max="20" 
                         value={godLevel} 
-                        onChange={(e) => setGodLevel(parseInt(e.target.value))}
+                        onChange={(e) => setGodLevel(parseInt(e.target.value, 10))}
                         className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-mythic-gold"
                       />
                       <div className="flex justify-between text-[10px] text-slate-600 mt-1 font-mono">
