@@ -1,38 +1,5 @@
 import { God, DamageType, GodStats } from '../types';
 
-// Helper function to generate 20 levels of stats based on linear growth
-// Used as fallback for gods without manual data
-const generateStats = (base: Partial<GodStats>, perLevel: Partial<GodStats>): GodStats[] => {
-  const levels: GodStats[] = [];
-  const defaultStats: GodStats = {
-    strength: 0, intelligence: 0, attackSpeed: 1.0, lifesteal: 0, critChance: 0, critDamage: 1.65,
-    penetration: 0, physicalProtection: 0, magicalProtection: 0, maxHealth: 500, healthRegen: 0,
-    maxMana: 200, manaRegen: 0, cooldownRate: 0, movementSpeed: 360,
-    ...base
-  };
-
-  for (let i = 0; i < 20; i++) {
-    levels.push({
-      strength: defaultStats.strength + ((perLevel.strength || 0) * i),
-      intelligence: defaultStats.intelligence + ((perLevel.intelligence || 0) * i),
-      attackSpeed: defaultStats.attackSpeed + ((perLevel.attackSpeed || 0) * i),
-      lifesteal: defaultStats.lifesteal + ((perLevel.lifesteal || 0) * i),
-      critChance: defaultStats.critChance + ((perLevel.critChance || 0) * i),
-      critDamage: defaultStats.critDamage + ((perLevel.critDamage || 0) * i),
-      penetration: defaultStats.penetration + ((perLevel.penetration || 0) * i),
-      physicalProtection: defaultStats.physicalProtection + ((perLevel.physicalProtection || 0) * i),
-      magicalProtection: defaultStats.magicalProtection + ((perLevel.magicalProtection || 0) * i),
-      maxHealth: defaultStats.maxHealth + ((perLevel.maxHealth || 0) * i),
-      healthRegen: defaultStats.healthRegen + ((perLevel.healthRegen || 0) * i),
-      maxMana: defaultStats.maxMana + ((perLevel.maxMana || 0) * i),
-      manaRegen: defaultStats.manaRegen + ((perLevel.manaRegen || 0) * i),
-      cooldownRate: defaultStats.cooldownRate + ((perLevel.cooldownRate || 0) * i),
-      movementSpeed: defaultStats.movementSpeed + ((perLevel.movementSpeed || 0) * i),
-    });
-  }
-  return levels;
-};
-
 export const GODS: God[] = [
 {
   id: 'achilles',
@@ -102,18 +69,53 @@ export const GODS: God[] = [
     ]
   },
   passive: {
-    name: 'Gift of the Gods',
-    image: 'https://image2url.com/images/1764570709219-d51deb1e-d047-4553-a005-2514ce47d6e0.webp',
-    description: 'Choose to wear armor or forgo it. Wearing armor grants bonus Health and Protections, while forgoing it grants bonus Strength and Movement Speed.\n\n• Swap between armor states by using Basic Attacks while the Passive targeter is active inside the Fountain.\n• Your chosen armor state also adds effects to Radiant Glory and Combat Dodge.',
-    cooldown: '-',
-    cost: '-',
-    attributes: [
-      { label: 'Armored Health', value: '25 + 10 Per Level' },
-      { label: 'Armored Protections', value: '5 + 2 Per Level' },
-      { label: 'Unarmored Strength', value: '3 + 1.5 Per Level' },
-      { label: 'Unarmored Movement Speed', value: '1% + 0.25% Per Level' }
-    ]
-  },
+  name: 'Gift of the Gods',
+  image: 'https://image2url.com/images/1764570709219-d51deb1e-d047-4553-a005-2514ce47d6e0.webp',
+  description: 'Choose to wear armor or forgo it. Wearing armor grants bonus Health and Protections, while forgoing it grants bonus Strength and Movement Speed.\n\n• Swap between armor states by using Basic Attacks while the Passive targeter is active inside the Fountain.\n• Your chosen armor state also adds effects to Radiant Glory and Combat Dodge.',
+  cooldown: '-',
+  cost: '-',
+  attributes: [
+    { label: 'Armored Health', value: '25 + 10 Per Level' },
+    { label: 'Armored Protections', value: '5 + 2 Per Level' },
+    { label: 'Unarmored Strength', value: '3 + 1.5 Per Level' },
+    { label: 'Unarmored Movement Speed', value: '1% + 0.25% Per Level' }
+  ],
+  // NEW: Stances definition
+  stances: [
+    {
+      id: 'armored',
+      name: 'Armored',
+      icon: 'shield',
+      color: 'cyan',
+      statBonuses: [
+        { stat: 'maxHealth', base: 25, perLevel: 10 },
+        { stat: 'physicalProtection', base: 5, perLevel: 2 },
+        { stat: 'magicalProtection', base: 5, perLevel: 2 },
+      ],
+      abilityEffects: [
+        { abilityNum: 1, description: '+0.2s Stun Duration', bonusValue: 0.2 },
+        { abilityNum: 2, description: 'Grants Physical Shield (50 + 10/Lv)' },
+        { abilityNum: 3, description: 'Spear Strike slows (7.5%/stack)' },
+      ]
+    },
+    {
+      id: 'unarmored',
+      name: 'Unarmored',
+      icon: 'sword',
+      color: 'orange',
+      statBonuses: [
+        { stat: 'strength', base: 3, perLevel: 1.5 },
+        { stat: 'movementSpeed', base: 1, perLevel: 0.25, isPercent: true },
+      ],
+      abilityEffects: [
+        { abilityNum: 1, description: '+15% Strength Scaling', bonusScaling: '+15% Strength' },
+        { abilityNum: 2, description: 'Back hits reduce enemy prots' },
+        { abilityNum: 3, description: 'Doubled dodge speed' },
+      ]
+    }
+  ],
+  defaultStance: 'armored'
+},
   abilities: {
     1: {
       name: 'Shield of Achilles',
@@ -217,18 +219,53 @@ export const GODS: God[] = [
         ]
       },
       passive: {
-        name: 'Gift of the Gods',
-        image: 'https://image2url.com/images/1764570709219-d51deb1e-d047-4553-a005-2514ce47d6e0.webp',
-        description: 'Choose to wear armor or forgo it. Wearing armor grants bonus Health and Protections, while forgoing it grants bonus Strength and Movement Speed.\n\n• Swap between armor states by using Basic Attacks while the Passive targeter is active inside the Fountain.\n• Your chosen armor state also adds effects to Radiant Glory and Combat Dodge.',
-        cooldown: '-',
-        cost: '-',
-        attributes: [
-          { label: 'Armored Health', value: '25 + 10 Per Level' },
-          { label: 'Armored Protections', value: '5 + 2 Per Level' },
-          { label: 'Unarmored Strength', value: '3 + 1.5 Per Level' },
-          { label: 'Unarmored Movement Speed', value: '1% + 0.25% Per Level' }
-        ]
-      },
+  name: 'Gift of the Gods',
+  image: 'https://image2url.com/images/1764570709219-d51deb1e-d047-4553-a005-2514ce47d6e0.webp',
+  description: 'Choose to wear armor or forgo it. Wearing armor grants bonus Health and Protections, while forgoing it grants bonus Strength and Movement Speed.\n\n• Swap between armor states by using Basic Attacks while the Passive targeter is active inside the Fountain.\n• Your chosen armor state also adds effects to Radiant Glory and Combat Dodge.',
+  cooldown: '-',
+  cost: '-',
+  attributes: [
+    { label: 'Armored Health', value: '25 + 10 Per Level' },
+    { label: 'Armored Protections', value: '5 + 2 Per Level' },
+    { label: 'Unarmored Strength', value: '3 + 1.5 Per Level' },
+    { label: 'Unarmored Movement Speed', value: '1% + 0.25% Per Level' }
+  ],
+  // NEW: Stances definition
+  stances: [
+    {
+      id: 'armored',
+      name: 'Armored',
+      icon: 'shield',
+      color: 'cyan',
+      statBonuses: [
+        { stat: 'maxHealth', base: 25, perLevel: 10 },
+        { stat: 'physicalProtection', base: 5, perLevel: 2 },
+        { stat: 'magicalProtection', base: 5, perLevel: 2 },
+      ],
+      abilityEffects: [
+        { abilityNum: 1, description: '+0.2s Stun Duration', bonusValue: 0.2 },
+        { abilityNum: 2, description: 'Grants Physical Shield (50 + 10/Lv)' },
+        { abilityNum: 3, description: 'Spear Strike slows (7.5%/stack)' },
+      ]
+    },
+    {
+      id: 'unarmored',
+      name: 'Unarmored',
+      icon: 'sword',
+      color: 'orange',
+      statBonuses: [
+        { stat: 'strength', base: 3, perLevel: 1.5 },
+        { stat: 'movementSpeed', base: 1, perLevel: 0.25, isPercent: true },
+      ],
+      abilityEffects: [
+        { abilityNum: 1, description: '+15% Strength Scaling', bonusScaling: '+15% Strength' },
+        { abilityNum: 2, description: 'Back hits reduce enemy prots' },
+        { abilityNum: 3, description: 'Doubled dodge speed' },
+      ]
+    }
+  ],
+  defaultStance: 'armored'
+},
       abilities: {
         1: {
           name: 'Shield of Achilles',

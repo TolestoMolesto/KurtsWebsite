@@ -15,7 +15,31 @@ export interface SubAbility {
   attributes?: { label: string; value: string }[];
 }
 
-// Update your Ability interface to include subAbilities:
+export interface PassiveStanceBonus {
+  stat: keyof GodStats;
+  base: number;
+  perLevel: number;
+  isPercent?: boolean;
+}
+
+export interface PassiveStanceAbilityEffect {
+  abilityNum: 1 | 2 | 3 | 4;
+  description: string;
+  // Optional: actual modifications for damage calc
+  bonusScaling?: string;      // e.g., "+15% Strength"
+  bonusValue?: number;        // e.g., 0.2 for +0.2s stun
+}
+
+export interface PassiveStance {
+  id: string;                 // 'armored', 'unarmored', 'blade', 'bow', etc.
+  name: string;               // Display name
+  icon: 'shield' | 'sword' | 'zap' | 'target' | 'flame' | 'snowflake';
+  color: 'cyan' | 'orange' | 'red' | 'blue' | 'purple' | 'green' | 'yellow';
+  statBonuses: PassiveStanceBonus[];
+  abilityEffects?: PassiveStanceAbilityEffect[];
+}
+
+// Update the Ability interface to include optional stances
 export interface Ability {
   name: string;
   description: string;
@@ -23,7 +47,10 @@ export interface Ability {
   cost: string;
   image?: string;
   attributes?: { label: string; value: string }[];
-  subAbilities?: SubAbility[];  // ADD THIS LINE
+  subAbilities?: SubAbility[];
+  // NEW: For toggle passives
+  stances?: PassiveStance[];
+  defaultStance?: string;
 }
 
 export interface AbilityKit {

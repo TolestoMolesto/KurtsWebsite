@@ -106,9 +106,9 @@ const AbilityCard: React.FC<AbilityCardProps> = ({
       // Basic attack calculation
       const dummyDefender: GodStats = {
         ...godStats,
-        physicalProtection: 50,
-        magicalProtection: 30,
-        maxHealth: 2000,
+        physicalProtection: 0,
+        magicalProtection: 0,
+        maxHealth: 10000,
         damageMitigation: 0
       };
       return calculateBasicAttack(godStats, dummyDefender, godDamageType);
@@ -117,9 +117,9 @@ const AbilityCard: React.FC<AbilityCardProps> = ({
     if (damageInfo.hasDamage && damageInfo.baseDamageValues.length > 0) {
       const dummyDefender: GodStats = {
         ...godStats,
-        physicalProtection: 50,
-        magicalProtection: 30,
-        maxHealth: 2000,
+        physicalProtection: 0,
+        magicalProtection: 0,
+        maxHealth: 10000,
         damageMitigation: 0
       };
       return calculateAbilityDamage(
