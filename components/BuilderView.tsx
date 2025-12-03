@@ -477,13 +477,15 @@ interface EnhancedStatsPanelProps {
   god: God;
   level: number;
   items: (Item | null)[];
+  calculatedStats?: GodStats | null;  // NEW: Accept pre-calculated stats
 }
 
-const EnhancedStatsPanel: React.FC<EnhancedStatsPanelProps> = ({ god, level, items }) => {
-  const totalStats = useMemo(() => 
-    calculateTotalStats(god, level, items, god.damageType),
-    [god, level, items]
-  );
+const EnhancedStatsPanel: React.FC<EnhancedStatsPanelProps> = ({ god, level, items, calculatedStats }) => {
+  // Use pre-calculated stats if provided, otherwise calculate
+  const totalStats = useMemo(() => {
+    if (calculatedStats) return calculatedStats;
+    return calculateTotalStats(god, level, items, god.damageType);
+  }, [god, level, items, calculatedStats]);
   
   const baseStats = useMemo(() => 
     god.statsByLevel[Math.max(0, Math.min(19, level - 1))],
@@ -1217,7 +1219,12 @@ export const BuilderView: React.FC = () => {
             </button>
             {showStats && totalStats && (
               <div className="px-4 pb-4">
-                <EnhancedStatsPanel god={selectedGod} level={builderLevel} items={equippedItems} />
+               <EnhancedStatsPanel 
+                  god={selectedGod} 
+                  level={builderLevel} 
+                  items={equippedItems} 
+                  calculatedStats={totalStats}
+                />
               </div>
             )}
           </div>

@@ -2,6 +2,7 @@
 // Handles: Stats aggregation, Basic attacks, Ability damage, Penetration, SubAbilities
 
 import { God, GodStats, Item, Ability, DamageType, DEFAULT_GOD_STATS } from '../types';
+export const BASE_MOVEMENT_SPEED_MULTIPLIER = 1.178; // 17.8% base buff in Smite 2
 
 // ============================================================
 // STAT PARSING UTILITIES
@@ -231,8 +232,8 @@ export function calculateTotalStats(
   }
   
   // Apply caps
-  total.cooldownRate = Math.min(40, total.cooldownRate); // 40% CDR cap
   total.critChance = Math.min(100, total.critChance); // 100% crit cap
+  total.movementSpeed = total.movementSpeed * BASE_MOVEMENT_SPEED_MULTIPLIER;
   
   return total;
 }
