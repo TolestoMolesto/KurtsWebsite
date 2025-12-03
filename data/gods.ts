@@ -1,5 +1,3 @@
-
-
 import { God, DamageType, GodStats } from '../types';
 
 // Helper function to generate 20 levels of stats based on linear growth

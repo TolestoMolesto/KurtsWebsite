@@ -12,17 +12,18 @@ export interface SubAbility {
   name: string;
   description: string;
   image?: string;
-  attributes?: AbilityStat[];
+  attributes?: { label: string; value: string }[];
 }
 
+// Update your Ability interface to include subAbilities:
 export interface Ability {
   name: string;
   description: string;
   cooldown: string;
   cost: string;
   image?: string;
-  attributes?: AbilityStat[];
-  subAbilities?: SubAbility[];
+  attributes?: { label: string; value: string }[];
+  subAbilities?: SubAbility[];  // ADD THIS LINE
 }
 
 export interface AbilityKit {

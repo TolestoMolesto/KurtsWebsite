@@ -1,3 +1,6 @@
+// damageCalculations.tsx - Complete damage calculation utilities for Smite Source 2
+// Handles: Stats aggregation, Basic attacks, Ability damage, Penetration, SubAbilities
+
 import { God, GodStats, Item, Ability, DamageType, DEFAULT_GOD_STATS } from '../types';
 
 // ============================================================
@@ -18,21 +21,23 @@ const statKeyMap: Record<string, keyof GodStats> = {
   
   // Attack Speed
   'base attack speed': 'baseAttackSpeed',
-  'attack speed': 'attackSpeedPercent',  // Items give AS% bonus
+  'attack speed': 'attackSpeedPercent',
   'atk speed': 'attackSpeedPercent',
   
   // Critical
   'crit chance': 'critChance',
   'critical chance': 'critChance',
+  'critical strike chance': 'critChance',
   'crit damage': 'critDamage',
   'critical damage': 'critDamage',
+  'critical strike damage': 'critDamage',
   
   // Penetration (Split)
   'flat penetration': 'flatPenetration',
   'flat pen': 'flatPenetration',
   'percent penetration': 'percentPenetration',
   '% penetration': 'percentPenetration',
-  'penetration': 'percentPenetration',  // Default to % pen
+  'penetration': 'percentPenetration',
   'pen': 'percentPenetration',
   
   // Sustain
@@ -62,6 +67,7 @@ const statKeyMap: Record<string, keyof GodStats> = {
   // Utility
   'cooldown': 'cooldownRate',
   'cooldown rate': 'cooldownRate',
+  'cooldown reduction': 'cooldownRate',
   'cdr': 'cooldownRate',
   'movement speed': 'movementSpeed',
   'move speed': 'movementSpeed',
@@ -92,7 +98,7 @@ export function parseItemStats(item: Item): ParsedItemStats {
     const lowerKey = key.toLowerCase();
     
     // Handle adaptive stats separately
-    if (lowerKey === 'adaptive') {
+    if (lowerKey === 'adaptive' || lowerKey.includes('adaptive')) {
       if (value.includes('|')) {
         const parts = value.split('|').map(v => parseFloat(v.trim()) || 0);
         result.adaptive = {
@@ -140,7 +146,6 @@ export function calculateAttackSpeed(
 }
 
 export function getAttackSpeedPercentAtLevel(asPercent: number, level: number): number {
-  // Currently just passing through as the god stats array already contains the scaled value
   return asPercent;
 }
 
@@ -184,10 +189,11 @@ export function calculateTotalStats(
   }
 
   // Calculate current STR/INT to determine adaptive
+  // Note: Base STR/INT is often 0, so items are the primary source
   let currentStr = base.strength + bonuses.strength.flat + (base.strength * bonuses.strength.percent / 100);
   let currentInt = base.intelligence + bonuses.intelligence.flat + (base.intelligence * bonuses.intelligence.percent / 100);
 
-  // PHASE 2: Apply adaptive bonuses
+  // PHASE 2: Apply adaptive bonuses based on which stat is higher
   for (const adaptive of adaptiveBonuses) {
     if (currentStr >= currentInt) {
       bonuses.strength.flat += adaptive.strValue;
@@ -209,89 +215,128 @@ export function calculateTotalStats(
       // AS% is additive
       total[key] = base[key] + bonus.flat + bonus.percent;
     } else if (key === 'critDamage') {
-      // Crit damage bonus is added as decimal
-      total[key] = base[key] + bonus.flat / 100;
+      // Crit damage bonus is added as decimal (e.g., +35% becomes +0.35)
+      total[key] = base[key] + bonus.flat / 100 + bonus.percent / 100;
     } else if (key === 'flatPenetration' || key === 'percentPenetration' || key === 'damageMitigation') {
       // These are purely additive from items
       total[key] = (base[key] || 0) + bonus.flat + bonus.percent;
+    } else if (key === 'critChance' || key === 'lifesteal' || key === 'cooldownRate') {
+      // These are additive percentages
+      total[key] = (base[key] || 0) + bonus.flat + bonus.percent;
     } else {
       // Standard: base + flat + (base * percent%)
+      // For STR/INT where base is 0, this just adds the flat bonus
       total[key] = base[key] + bonus.flat + (base[key] * bonus.percent / 100);
     }
   }
-
+  
+  // Apply caps
+  total.cooldownRate = Math.min(40, total.cooldownRate); // 40% CDR cap
+  total.critChance = Math.min(100, total.critChance); // 100% crit cap
+  
   return total;
 }
 
 // ============================================================
-// PENETRATION & PROTECTION CALCULATIONS
+// PENETRATION CALCULATIONS
 // ============================================================
 
-/**
- * Calculate effective protections after penetration
- * Order: % Pen applies first, then Flat Pen
- */
 export function calculateEffectiveProtections(
-  baseProtections: number,
+  baseProts: number,
   percentPen: number,
   flatPen: number
 ): number {
-  const afterPercentPen = baseProtections * (1 - percentPen / 100);
-  return Math.max(0, afterPercentPen - flatPen);
+  const afterPercent = baseProts * (1 - percentPen / 100);
+  return Math.max(0, afterPercent - flatPen);
 }
 
-/**
- * Calculate damage reduction percentage from protections
- */
-export function getProtectionDamageReduction(effectiveProts: number): number {
-  return (effectiveProts / (100 + effectiveProts)) * 100;
-}
-
-/**
- * Calculate final damage after protections and mitigation
- */
-export function calculateFinalDamage(
-  rawDamage: number,
-  effectiveProtections: number,
-  damageMitigation: number = 0
-): number {
-  // Damage after protections
-  const afterProts = rawDamage * (100 / (100 + effectiveProtections));
-  // Mitigation is flat percentage reduction AFTER prots
-  const afterMitigation = afterProts * (1 - damageMitigation / 100);
-  return Math.floor(afterMitigation);
+export function getProtectionDamageReduction(prots: number): number {
+  return (prots / (prots + 100)) * 100;
 }
 
 // ============================================================
-// ABILITY PARSING
+// ABILITY VALUE PARSING
 // ============================================================
 
-export function parseAbilityValues(valueStr: string): number[] {
-  if (!valueStr) return [0];
-  return valueStr.split('|').map(v => parseFloat(v.trim()) || 0);
+/**
+ * Parse rank-based values like "100 | 155 | 210 | 265 | 320"
+ */
+export function parseAbilityValues(valueString: string): number[] {
+  if (!valueString) return [0];
+  
+  // Handle "X | Y | Z" format
+  if (valueString.includes('|')) {
+    const values = valueString.split('|').map(v => {
+      const num = parseFloat(v.trim());
+      return isNaN(num) ? 0 : num;
+    });
+    return values.length > 0 ? values : [0];
+  }
+  
+  // Single value
+  const num = parseFloat(valueString);
+  return [isNaN(num) ? 0 : num];
 }
+
+/**
+ * Parse cooldown values like "14 | 13.5 | 13 | 12.5 | 12s"
+ */
+export function parseCooldownValues(cooldownString: string): number[] {
+  if (!cooldownString || cooldownString === '-') return [0];
+  
+  // Remove 's' suffix and parse
+  const cleaned = cooldownString.replace(/s/gi, '');
+  return parseAbilityValues(cleaned);
+}
+
+/**
+ * Parse mana cost values like "60 | 65 | 70 | 75 | 80"
+ */
+export function parseCostValues(costString: string): number[] {
+  if (!costString || costString === '-') return [0];
+  return parseAbilityValues(costString);
+}
+
+// ============================================================
+// SCALING PARSING - ENHANCED FOR ALL FORMATS
+// ============================================================
 
 export interface ScalingComponent {
   percent: number;
   stat: 'strength' | 'intelligence';
+  condition?: string; // e.g., "If Foregoing Armor"
 }
 
+/**
+ * Parse various scaling formats:
+ * - "80% Strength"
+ * - "100% Strength + 20% Intelligence"
+ * - "45% Strength or 60% Strength If Foregoing Armor"
+ */
 export function parseScaling(scalingStr: string): ScalingComponent[] {
   if (!scalingStr) return [];
+  
   const results: ScalingComponent[] = [];
   
-  const strMatch = scalingStr.match(/(\d+(?:\.\d+)?)\s*%?\s*(?:strength|str)/gi);
-  const intMatch = scalingStr.match(/(\d+(?:\.\d+)?)\s*%?\s*(?:intelligence|int)/gi);
+  // Handle "or" conditions (take the first one as default)
+  // e.g., "45% Strength or 60% Strength If Foregoing Armor"
+  const orParts = scalingStr.split(/\s+or\s+/i);
+  const primaryScaling = orParts[0];
   
-  if (strMatch) {
-    for (const match of strMatch) {
-      const num = parseFloat(match.match(/\d+(?:\.\d+)?/)?.[0] || '0');
+  // Match patterns like "80% Strength", "100% STR", etc.
+  const strMatches = primaryScaling.matchAll(/(\d+(?:\.\d+)?)\s*%?\s*(?:strength|str)/gi);
+  const intMatches = primaryScaling.matchAll(/(\d+(?:\.\d+)?)\s*%?\s*(?:intelligence|int)/gi);
+  
+  for (const match of strMatches) {
+    const num = parseFloat(match[1]);
+    if (!isNaN(num)) {
       results.push({ percent: num, stat: 'strength' });
     }
   }
-  if (intMatch) {
-    for (const match of intMatch) {
-      const num = parseFloat(match.match(/\d+(?:\.\d+)?/)?.[0] || '0');
+  
+  for (const match of intMatches) {
+    const num = parseFloat(match[1]);
+    if (!isNaN(num)) {
       results.push({ percent: num, stat: 'intelligence' });
     }
   }
@@ -299,14 +344,190 @@ export function parseScaling(scalingStr: string): ScalingComponent[] {
   return results;
 }
 
-export function getAbilityRank(levelingOrder: number[], currentLevel: number, abilityNum: number): number {
-  if (!levelingOrder || levelingOrder.length === 0) return 1;
+/**
+ * Parse conditional scaling (for display purposes)
+ * Returns all scaling variants including conditional ones
+ */
+export interface ConditionalScaling {
+  base: ScalingComponent[];
+  conditional?: {
+    scaling: ScalingComponent[];
+    condition: string;
+  };
+}
+
+export function parseConditionalScaling(scalingStr: string): ConditionalScaling {
+  if (!scalingStr) return { base: [] };
+  
+  const result: ConditionalScaling = { base: [] };
+  
+  // Check for "or" conditions
+  const orMatch = scalingStr.match(/(.+?)\s+or\s+(.+)/i);
+  
+  if (orMatch) {
+    // Parse base scaling
+    result.base = parseScaling(orMatch[1]);
+    
+    // Parse conditional scaling
+    const conditionalPart = orMatch[2];
+    const conditionMatch = conditionalPart.match(/(.+?)\s+if\s+(.+)/i);
+    
+    if (conditionMatch) {
+      result.conditional = {
+        scaling: parseScaling(conditionMatch[1]),
+        condition: conditionMatch[2].trim()
+      };
+    } else {
+      result.conditional = {
+        scaling: parseScaling(conditionalPart),
+        condition: 'Alternative'
+      };
+    }
+  } else {
+    result.base = parseScaling(scalingStr);
+  }
+  
+  return result;
+}
+
+/**
+ * Get ability rank based on leveling order
+ */
+export function getAbilityRank(
+  levelingOrder: number[], 
+  currentLevel: number, 
+  abilityNum: number
+): number {
+  if (!levelingOrder || levelingOrder.length === 0) {
+    // Default leveling order if none provided
+    // Typically: 1, 2, 3, 1, 4, 1, 2, 1, 4, 2, 1, 2, 4, 3, 3, 3, 4, 3, 4, 4
+    const defaultOrder = [1, 2, 3, 1, 4, 1, 2, 1, 4, 2, 1, 2, 4, 3, 3, 3, 4, 3, 4, 4];
+    const pointsInAbility = defaultOrder.slice(0, currentLevel).filter(n => n === abilityNum).length;
+    return Math.max(1, Math.min(5, pointsInAbility));
+  }
+  
   const pointsInAbility = levelingOrder.slice(0, currentLevel).filter(n => n === abilityNum).length;
   return Math.max(1, Math.min(5, pointsInAbility));
 }
 
 // ============================================================
-// DAMAGE CALCULATION
+// ABILITY DAMAGE INFO EXTRACTION - ENHANCED
+// ============================================================
+
+export interface AbilityDamageInfo {
+  hasDamage: boolean;
+  baseDamageValues: number[];
+  scaling: ScalingComponent[];
+  conditionalScaling?: ConditionalScaling;
+  isExecute: boolean;
+  executeThreshold: number;
+  isHeal: boolean;
+  healValues: number[];
+  isUtility: boolean;
+  cooldownValues: number[];
+  costValues: number[];
+}
+
+/**
+ * Extract damage info from an ability's attributes
+ */
+export function extractAbilityDamageInfo(ability: Ability): AbilityDamageInfo {
+  const result: AbilityDamageInfo = {
+    hasDamage: false,
+    baseDamageValues: [],
+    scaling: [],
+    isExecute: false,
+    executeThreshold: 0,
+    isHeal: false,
+    healValues: [],
+    isUtility: true,
+    cooldownValues: parseCooldownValues(ability.cooldown),
+    costValues: parseCostValues(ability.cost),
+  };
+  
+  if (!ability.attributes) return result;
+  
+  for (const attr of ability.attributes) {
+    const label = attr.label.toLowerCase();
+    
+    // Check for damage (but not "Damage Scaling")
+    if (label === 'damage' || (label.includes('damage') && !label.includes('scaling'))) {
+      result.baseDamageValues = parseAbilityValues(attr.value);
+      result.hasDamage = true;
+      result.isUtility = false;
+    }
+    
+    // Check for scaling
+    if (label.includes('scaling') || label === 'damage scaling') {
+      result.scaling = parseScaling(attr.value);
+      result.conditionalScaling = parseConditionalScaling(attr.value);
+    }
+    
+    // Check for execute
+    if (label.includes('execute')) {
+      result.isExecute = true;
+      const match = attr.value.match(/(\d+)/);
+      if (match) result.executeThreshold = parseFloat(match[1]);
+    }
+    
+    // Check for heal
+    if (label === 'heal' || label.includes('heal')) {
+      result.healValues = parseAbilityValues(attr.value);
+      result.isHeal = true;
+    }
+  }
+  
+  return result;
+}
+
+/**
+ * Extract damage info from a sub-ability (like Spear Strike within Combat Dodge)
+ */
+export function extractSubAbilityDamageInfo(subAbility: {
+  name: string;
+  description: string;
+  attributes?: { label: string; value: string }[];
+}): AbilityDamageInfo {
+  const result: AbilityDamageInfo = {
+    hasDamage: false,
+    baseDamageValues: [],
+    scaling: [],
+    isExecute: false,
+    executeThreshold: 0,
+    isHeal: false,
+    healValues: [],
+    isUtility: true,
+    cooldownValues: [],
+    costValues: [],
+  };
+  
+  if (!subAbility.attributes) return result;
+  
+  for (const attr of subAbility.attributes) {
+    const label = attr.label.toLowerCase();
+    
+    if (label === 'damage' || (label.includes('damage') && !label.includes('scaling'))) {
+      result.baseDamageValues = parseAbilityValues(attr.value);
+      result.hasDamage = true;
+      result.isUtility = false;
+    }
+    
+    if (label.includes('scaling') || label === 'damage scaling') {
+      result.scaling = parseScaling(attr.value);
+      result.conditionalScaling = parseConditionalScaling(attr.value);
+    }
+    
+    if (label === 'heal' || label.includes('heal')) {
+      result.healValues = parseAbilityValues(attr.value);
+      result.isHeal = true;
+    }
+  }
+  
+  return result;
+}
+
+// ============================================================
+// ABILITY DAMAGE CALCULATION
 // ============================================================
 
 export interface DamageResult {
@@ -327,11 +548,14 @@ export function calculateAbilityDamage(
   attackerStats: GodStats,
   defenderStats: GodStats,
   damageType: DamageType,
-  percentPen: number = 0,
-  flatPen: number = 0
+  percentPen?: number,
+  flatPen?: number
 ): DamageResult {
-  const baseDamage = baseDamageValues[Math.max(0, Math.min(4, abilityRank - 1))] || 0;
+  // Get base damage at current rank (0-indexed, so rank 1 = index 0)
+  const rankIndex = Math.max(0, Math.min(4, abilityRank - 1));
+  const baseDamage = baseDamageValues[rankIndex] || baseDamageValues[0] || 0;
   
+  // Calculate scaling damage
   let scalingDamage = 0;
   for (const scale of scaling) {
     const statValue = attackerStats[scale.stat] || 0;
@@ -345,13 +569,18 @@ export function calculateAbilityDamage(
     ? defenderStats.physicalProtection 
     : defenderStats.magicalProtection;
   
-  // Apply penetration (% first, then flat)
+  // Use penetration from params if provided, otherwise from stats
+  const finalPercentPen = percentPen ?? attackerStats.percentPenetration ?? 0;
+  const finalFlatPen = flatPen ?? attackerStats.flatPenetration ?? 0;
+  
+  // Apply penetration
   const effectiveProtections = calculateEffectiveProtections(
     baseProts,
-    percentPen, // Use passed params if available, defaulting to stats logic if calculated outside
-    flatPen
+    finalPercentPen,
+    finalFlatPen
   );
   
+  // Damage after protections: damage × (100 / (100 + prots))
   const damageAfterProts = rawDamage * (100 / (100 + effectiveProtections));
   const protectionReduction = getProtectionDamageReduction(effectiveProtections);
   
@@ -375,6 +604,7 @@ export function calculateAbilityDamage(
 // ============================================================
 
 export interface BasicAttackResult {
+  rawDamage: number;
   damage: number;
   critDamage: number;
   attacksPerSecond: number;
@@ -382,14 +612,21 @@ export interface BasicAttackResult {
   critWeightedDps: number;
 }
 
+/**
+ * Calculate basic attack damage
+ * Note: In Smite 2, basic attack damage comes from inhandPower + scaling from STR/INT
+ * The scaling values are typically in the basic attack's attributes
+ */
 export function calculateBasicAttack(
   attackerStats: GodStats,
   defenderStats: GodStats,
   damageType: DamageType,
-  strScaling: number = 100,
-  intScaling: number = 20
+  strScaling: number = 100,  // Default 100% STR scaling
+  intScaling: number = 20    // Default 20% INT scaling
 ): BasicAttackResult {
   // Calculate raw damage from inhand power + scaling
+  // inhandPower is the base damage that scales with level
+  // Then we add STR and INT scaling
   const rawDamage = (attackerStats.inhandPower || 0) +
     (attackerStats.strength * strScaling / 100) + 
     (attackerStats.intelligence * intScaling / 100);
@@ -402,8 +639,8 @@ export function calculateBasicAttack(
   // Apply penetration
   const effectiveProts = calculateEffectiveProtections(
     baseProts,
-    attackerStats.percentPenetration,
-    attackerStats.flatPenetration
+    attackerStats.percentPenetration || 0,
+    attackerStats.flatPenetration || 0
   );
   
   // Damage after protections
@@ -424,11 +661,12 @@ export function calculateBasicAttack(
   
   // DPS calculations
   const dps = Math.round(damage * attacksPerSecond);
-  const critChance = Math.min(100, attackerStats.critChance) / 100;
+  const critChance = Math.min(100, attackerStats.critChance || 0) / 100;
   const avgDamage = damage * (1 - critChance) + critDamage * critChance;
   const critWeightedDps = Math.round(avgDamage * attacksPerSecond);
   
   return {
+    rawDamage: Math.round(rawDamage * 10) / 10,
     damage,
     critDamage,
     attacksPerSecond: Math.round(attacksPerSecond * 100) / 100,
@@ -437,59 +675,61 @@ export function calculateBasicAttack(
   };
 }
 
-// ============================================================
-// HELPER: Extract damage info from ability
-// ============================================================
-
-export interface AbilityDamageInfo {
-  hasDamage: boolean;
-  baseDamageValues: number[];
-  scaling: ScalingComponent[];
-  isExecute: boolean;
-  executeThreshold: number;
-  isHeal: boolean;
-  healValues: number[];
-  isUtility: boolean;
-}
-
-export function extractAbilityDamageInfo(ability: Ability): AbilityDamageInfo {
-  const result: AbilityDamageInfo = {
-    hasDamage: false,
-    baseDamageValues: [],
-    scaling: [],
-    isExecute: false,
-    executeThreshold: 0,
-    isHeal: false,
-    healValues: [],
-    isUtility: true,
-  };
+/**
+ * Parse basic attack scaling from attributes
+ * e.g., "100% Strength + 20% Intelligence"
+ */
+export function parseBasicAttackScaling(basicAttack: Ability): { strScaling: number; intScaling: number } {
+  const result = { strScaling: 100, intScaling: 20 }; // Defaults
   
-  if (!ability.attributes) return result;
+  if (!basicAttack.attributes) return result;
   
-  for (const attr of ability.attributes) {
-    const label = attr.label.toLowerCase();
+  const scalingAttr = basicAttack.attributes.find(
+    a => a.label.toLowerCase().includes('scaling') || a.label.toLowerCase().includes('damage scaling')
+  );
+  
+  if (scalingAttr) {
+    const strMatch = scalingAttr.value.match(/(\d+(?:\.\d+)?)\s*%?\s*(?:strength|str)/i);
+    const intMatch = scalingAttr.value.match(/(\d+(?:\.\d+)?)\s*%?\s*(?:intelligence|int)/i);
     
-    if (label === 'damage' || label.includes('damage') && !label.includes('scaling')) {
-      result.baseDamageValues = parseAbilityValues(attr.value);
-      result.hasDamage = true;
-      result.isUtility = false;
-    }
-    
-    if (label.includes('scaling')) {
-      result.scaling = parseScaling(attr.value);
-    }
-    
-    if (label.includes('execute')) {
-      result.isExecute = true;
-      const match = attr.value.match(/(\d+)/);
-      if (match) result.executeThreshold = parseFloat(match[1]);
-    }
-    
-    if (label === 'heal' || label.includes('heal')) {
-      result.healValues = parseAbilityValues(attr.value);
-      result.isHeal = true;
-    }
+    if (strMatch) result.strScaling = parseFloat(strMatch[1]);
+    if (intMatch) result.intScaling = parseFloat(intMatch[1]);
   }
   
   return result;
 }
+
+// ============================================================
+// HELPER: Get value at specific rank
+// ============================================================
+
+export function getValueAtRank(values: number[], rank: number): number {
+  const rankIndex = Math.max(0, Math.min(values.length - 1, rank - 1));
+  return values[rankIndex] || values[0] || 0;
+}
+
+// ============================================================
+// HELPER: Format damage for display
+// ============================================================
+
+export function formatDamage(value: number): string {
+  return Math.floor(value).toLocaleString();
+}
+
+export function formatScaling(scaling: ScalingComponent[]): string {
+  if (scaling.length === 0) return 'No scaling';
+  
+  return scaling.map(s => {
+    const statName = s.stat === 'strength' ? 'STR' : 'INT';
+    return `${s.percent}% ${statName}`;
+  }).join(' + ');
+}
+
+// ============================================================
+// EXPORTS
+// ============================================================
+
+export {
+  statKeyMap,
+  parseStatValue,
+};
