@@ -9,7 +9,7 @@ import {
   getAbilityRank,
   DamageResult,
   BasicAttackResult,
-} from '../utils/damageCalculations';
+} from './damageCalculations';
 
 interface DamageAnalysisPanelProps {
   yourGod: God | null;
@@ -212,9 +212,26 @@ export const DamageAnalysisPanel: React.FC<DamageAnalysisPanelProps> = ({
 
   // Create default enemy stats if no enemy god selected (Target Dummy)
   const defaultEnemyStats: GodStats = {
-    strength: 0, intelligence: 0, attackSpeed: 0, lifesteal: 0, critChance: 0, critDamage: 1.65,
-    penetration: 0, physicalProtection: 0, magicalProtection: 0, maxHealth: 10000,
-    healthRegen: 0, maxMana: 500, manaRegen: 0, cooldownRate: 0, movementSpeed: 365,
+    strength: 0,
+    intelligence: 0,
+    inhandPower: 0,
+    baseAttackSpeed: 0,
+    attackSpeedPercent: 0,
+    critChance: 0,
+    critDamage: 1.65,
+    flatPenetration: 0,
+    percentPenetration: 0,
+    lifesteal: 0,
+    physicalProtection: 0,
+    magicalProtection: 0,
+    damageMitigation: 0,
+    maxHealth: 10000,
+    healthRegen: 0,
+    maxMana: 500,
+    manaRegen: 0,
+    cooldownRate: 0,
+    movementSpeed: 365,
+    xpRequirement: 0,
   };
 
   const finalEnemyStats = enemyStats || defaultEnemyStats;
@@ -244,9 +261,9 @@ export const DamageAnalysisPanel: React.FC<DamageAnalysisPanelProps> = ({
             <div className="space-y-1">
               <StatRow label="Strength" value={Math.round(yourStats.strength)} color="text-red-400" />
               <StatRow label="Intelligence" value={Math.round(yourStats.intelligence)} color="text-blue-400" />
-              <StatRow label="Penetration" value={`${yourStats.penetration}%`} color="text-orange-400" />
+              <StatRow label="Penetration" value={`${yourStats.percentPenetration}%`} color="text-orange-400" />
               <StatRow label="Crit Chance" value={`${yourStats.critChance}%`} color="text-yellow-400" />
-              <StatRow label="Attack Speed" value={`${yourStats.attackSpeed}%`} />
+              <StatRow label="Attack Speed" value={`${Math.round(yourStats.attackSpeedPercent)}%`} />
             </div>
           )}
         </div>
@@ -272,6 +289,7 @@ export const DamageAnalysisPanel: React.FC<DamageAnalysisPanelProps> = ({
           {[1, 2, 3, 4].map((num) => {
             // @ts-ignore
             const ability = activeKit.abilities[num];
+            if (!ability) return null; // Safety check
             const rank = getAbilityRank(levelingOrder, yourLevel, num);
             const damageInfo = extractAbilityDamageInfo(ability);
             
@@ -284,8 +302,8 @@ export const DamageAnalysisPanel: React.FC<DamageAnalysisPanelProps> = ({
                 yourStats,
                 finalEnemyStats,
                 yourGod.damageType,
-                yourStats.penetration,
-                0 // flat pen - could parse from items
+                yourStats.percentPenetration,
+                yourStats.flatPenetration
               );
             }
 
@@ -303,14 +321,14 @@ export const DamageAnalysisPanel: React.FC<DamageAnalysisPanelProps> = ({
           })}
 
           {/* Basic Attack */}
-          {yourStats && (
+          {yourStats && activeKit && activeKit.basicAttack && (
             <AbilityDamageCard
               num="basic"
               ability={activeKit.basicAttack}
               rank={1}
               damageResult={null}
               basicResult={calculateBasicAttack(yourStats, finalEnemyStats, yourGod.damageType)}
-              damageInfo={{ hasDamage: false, baseDamageValues: [], scaling: [], isExecute: false, executeThreshold: 0, isHeal: false, healValues: [], isUtility: false }}
+              damageInfo={{ hasDamage: false, baseDamageValues: [], scaling: [], isExecute: false, executeThreshold: 0, isHeal: false, healValues: [], isUtility: false, cooldownValues: [], costValues: [] }}
             />
           )}
         </div>

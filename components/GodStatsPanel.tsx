@@ -17,28 +17,16 @@ const StatRow: React.FC<{
   icon: React.ReactNode;
   label: string;
   value: string | number;
-  baseValue?: number;
   color?: string;
-}> = ({ icon, label, value, baseValue, color = 'text-white' }) => {
-  const numericValue = typeof value === 'string' ? parseFloat(value) : value;
-  const diff = baseValue !== undefined ? numericValue - baseValue : 0;
-  
-  // Only show diff if it's significant and baseValue is provided (meaning we are comparing against base/items)
-  const showDiff = baseValue !== undefined && Math.abs(diff) >= 0.1;
-
+}> = ({ icon, label, value, color = 'text-white' }) => {
   return (
     <div className="flex items-center justify-between py-0.5">
       <div className="flex items-center gap-1.5 text-slate-400">
         <span className="text-slate-500">{icon}</span>
-        <span className="text-[10px]">{label}</span>
+        <span className="text-[10px] font-bold">{label}</span>
       </div>
-      <div className={`font-mono text-[10px] ${color} flex items-center gap-1`}>
+      <div className={`font-mono text-[10px] font-bold ${color}`}>
         {value}
-        {showDiff && (
-          <span className={diff > 0 ? 'text-green-400' : 'text-red-400'}>
-            ({diff > 0 ? '+' : ''}{typeof value === 'string' ? diff.toFixed(1) : Math.round(diff)})
-          </span>
-        )}
       </div>
     </div>
   );
@@ -55,68 +43,57 @@ export const GodStatsPanel: React.FC<GodStatsPanelProps> = ({
     [god, level, items]
   );
   
-  // Base stats at current level (no items) for comparison
-  const baseStats = useMemo(() => 
-    god.statsByLevel[Math.max(0, Math.min(19, level - 1))],
-    [god, level]
-  );
-
   const asPercentFromLevel = getAttackSpeedPercentAtLevel(totalStats.attackSpeedPercent, level);
   const actualAS = calculateAttackSpeed(totalStats.baseAttackSpeed, asPercentFromLevel, 0);
-  
-  const baseAsPercent = getAttackSpeedPercentAtLevel(baseStats.attackSpeedPercent, level);
-  const baseActualAS = calculateAttackSpeed(baseStats.baseAttackSpeed, baseAsPercent, 0);
-
-  const hasItems = items.some(item => item !== null);
 
   return (
     <div className="space-y-2 text-xs">
       {/* Offensive */}
       <div className="bg-slate-800/30 rounded p-2">
         <div className="text-[9px] font-bold text-red-400 uppercase mb-1">Offensive</div>
-        <StatRow icon={<BicepsFlexed size={10} />} label="STR" value={Math.round(totalStats.strength)} baseValue={hasItems ? Math.round(baseStats.strength) : undefined} color="text-orange-400" />
-        <StatRow icon={<BookOpen size={10} />} label="INT" value={Math.round(totalStats.intelligence)} baseValue={hasItems ? Math.round(baseStats.intelligence) : undefined} color="text-purple-400" />
-        <StatRow icon={<Sword size={10} />} label="Basic Power" value={Math.round(totalStats.inhandPower || 0)} baseValue={hasItems ? Math.round(baseStats.inhandPower || 0) : undefined} color="text-red-400" />
+        <StatRow icon={<BicepsFlexed size={10} />} label="STR" value={Math.round(totalStats.strength)} color="text-orange-400" />
+        <StatRow icon={<BookOpen size={10} />} label="INT" value={Math.round(totalStats.intelligence)} color="text-purple-400" />
+        <StatRow icon={<Sword size={10} />} label="Basic Power" value={Math.round(totalStats.inhandPower || 0)} color="text-red-400" />
       </div>
 
       {/* Attack Speed & Crit */}
       <div className="bg-slate-800/30 rounded p-2">
         <div className="text-[9px] font-bold text-yellow-400 uppercase mb-1">Speed & Crit</div>
-        <StatRow icon={<Zap size={10} />} label="Attack Speed" value={actualAS.toFixed(2)} baseValue={hasItems ? baseActualAS : undefined} color="text-yellow-300" />
-        <StatRow icon={<Target size={10} />} label="Crit Chance" value={`${totalStats.critChance}%`} baseValue={hasItems ? baseStats.critChance : undefined} color="text-amber-400" />
-        <StatRow icon={<Skull size={10} />} label="Crit Damage" value={`${(totalStats.critDamage * 100).toFixed(0)}%`} baseValue={hasItems ? baseStats.critDamage * 100 : undefined} color="text-amber-400" />
+        <StatRow icon={<Zap size={10} />} label="Attack Speed" value={actualAS.toFixed(2)} color="text-yellow-300" />
+        <StatRow icon={<Target size={10} />} label="Crit Chance" value={`${totalStats.critChance}%`} color="text-amber-400" />
+        <StatRow icon={<Skull size={10} />} label="Crit Damage" value={`${(totalStats.critDamage * 100).toFixed(0)}%`} color="text-amber-400" />
       </div>
 
       {/* Penetration */}
       <div className="bg-slate-800/30 rounded p-2">
         <div className="text-[9px] font-bold text-rose-400 uppercase mb-1">Penetration</div>
-        <StatRow icon={<Crosshair size={10} />} label="Flat Pen" value={Math.round(totalStats.flatPenetration || 0)} baseValue={hasItems ? Math.round(baseStats.flatPenetration || 0) : undefined} color="text-rose-400" />
-        <StatRow icon={<Layers size={10} />} label="% Pen" value={`${totalStats.percentPenetration || 0}%`} baseValue={hasItems ? baseStats.percentPenetration || 0 : undefined} color="text-rose-400" />
-        <StatRow icon={<Heart size={10} />} label="Lifesteal" value={`${totalStats.lifesteal}%`} baseValue={hasItems ? baseStats.lifesteal : undefined} color="text-pink-400" />
+        <StatRow icon={<Crosshair size={10} />} label="Flat Pen" value={Math.round(totalStats.flatPenetration || 0)} color="text-rose-400" />
+        <StatRow icon={<Layers size={10} />} label="% Pen" value={`${totalStats.percentPenetration || 0}%`} color="text-rose-400" />
+        <StatRow icon={<Heart size={10} />} label="Lifesteal" value={`${totalStats.lifesteal}%`} color="text-pink-400" />
       </div>
 
       {/* Defensive */}
       <div className="bg-slate-800/30 rounded p-2">
         <div className="text-[9px] font-bold text-cyan-400 uppercase mb-1">Defensive</div>
-        <StatRow icon={<Shield size={10} />} label="Phys Prot" value={Math.round(totalStats.physicalProtection)} baseValue={hasItems ? Math.round(baseStats.physicalProtection) : undefined} color="text-cyan-400" />
-        <StatRow icon={<Shield size={10} className="text-purple-400" />} label="Mag Prot" value={Math.round(totalStats.magicalProtection)} baseValue={hasItems ? Math.round(baseStats.magicalProtection) : undefined} color="text-purple-400" />
-        <StatRow icon={<ShieldOff size={10} />} label="Mitigation" value={`${totalStats.damageMitigation || 0}%`} baseValue={hasItems ? baseStats.damageMitigation || 0 : undefined} color="text-cyan-300" />
+        <StatRow icon={<Shield size={10} />} label="Phys Prot" value={Math.round(totalStats.physicalProtection)} color="text-cyan-400" />
+        <StatRow icon={<Shield size={10} className="text-purple-400" />} label="Mag Prot" value={Math.round(totalStats.magicalProtection)} color="text-purple-400" />
+        <StatRow icon={<ShieldOff size={10} />} label="Mitigation" value={`${totalStats.damageMitigation || 0}%`} color="text-cyan-300" />
       </div>
 
       {/* Health & Mana */}
       <div className="bg-slate-800/30 rounded p-2">
         <div className="text-[9px] font-bold text-green-400 uppercase mb-1">Health & Mana</div>
-        <StatRow icon={<Heart size={10} className="text-green-500" />} label="Max HP" value={Math.round(totalStats.maxHealth)} baseValue={hasItems ? Math.round(baseStats.maxHealth) : undefined} color="text-green-400" />
-        <StatRow icon={<Activity size={10} className="text-green-500" />} label="HP Regen" value={totalStats.healthRegen.toFixed(1)} baseValue={hasItems ? baseStats.healthRegen : undefined} color="text-green-400" />
-        <StatRow icon={<Droplet size={10} className="text-blue-500" />} label="Max Mana" value={Math.round(totalStats.maxMana)} baseValue={hasItems ? Math.round(baseStats.maxMana) : undefined} color="text-blue-400" />
-        <StatRow icon={<Activity size={10} className="text-blue-300" />} label="MP Regen" value={totalStats.manaRegen.toFixed(1)} baseValue={hasItems ? baseStats.manaRegen : undefined} color="text-blue-400" />
+        <StatRow icon={<Heart size={10} className="text-green-500" />} label="Max HP" value={Math.round(totalStats.maxHealth)} color="text-green-400" />
+        <StatRow icon={<Activity size={10} className="text-green-500" />} label="HP Regen" value={totalStats.healthRegen.toFixed(1)} color="text-green-400" />
+        <StatRow icon={<Droplet size={10} className="text-blue-500" />} label="Max Mana" value={Math.round(totalStats.maxMana)} color="text-blue-400" />
+        <StatRow icon={<Activity size={10} className="text-blue-300" />} label="MP Regen" value={totalStats.manaRegen.toFixed(1)} color="text-blue-400" />
       </div>
 
       {/* Utility */}
       <div className="bg-slate-800/30 rounded p-2">
         <div className="text-[9px] font-bold text-slate-400 uppercase mb-1">Utility</div>
-        <StatRow icon={<Footprints size={10} />} label="Move Speed" value={Math.round(totalStats.movementSpeed)} baseValue={hasItems ? Math.round(baseStats.movementSpeed) : undefined} />
-        <StatRow icon={<RotateCcw size={10} />} label="CDR" value={`${Math.min(40, totalStats.cooldownRate)}%`} baseValue={hasItems ? baseStats.cooldownRate : undefined} />
+        <StatRow icon={<Footprints size={10} />} label="Move Speed" value={Math.round(totalStats.movementSpeed)} />
+        <StatRow icon={<RotateCcw size={10} />} label="CDR" value={`${Math.min(40, totalStats.cooldownRate)}%`} />
       </div>
     </div>
   );

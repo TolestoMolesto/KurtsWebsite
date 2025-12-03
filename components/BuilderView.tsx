@@ -9,7 +9,7 @@ import {
   ChevronUp, ChevronDown, BarChart3, Hexagon, Swords, TrendingUp, Eye, EyeOff, Flame, Sparkle
 } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
-import { God, Item, GodStats, Ability, DamageType } from '../types';
+import { God, Item, GodStats, Ability, DamageType, DEFAULT_GOD_STATS } from '../types';
 import { 
   calculateTotalStats, 
   calculateAttackSpeed, 
@@ -18,7 +18,8 @@ import {
   calculateAbilityDamage,
   extractAbilityDamageInfo,
   getAbilityRank,
-  parseScaling
+  parseScaling,
+  ScalingComponent
 } from './damageCalculations';
 
 import { 
@@ -28,6 +29,7 @@ import {
   StanceId 
 } from './passiveStanceUtils';
 import { PassiveStanceToggle } from './PassiveStanceToggle';
+import { BuilderStatsPanel } from './BuilderStatsPanel';
 
 // ============================================================
 // INTERFACES
@@ -102,7 +104,7 @@ const AbilityCard: React.FC<AbilityCardProps> = ({
   isExpanded,
   onToggle,
   passiveStance
-}) => 
+}) => {
   const isPassive = abilityNum === 'passive';
   const isBasic = abilityNum === 'basic';
   const isUlt = abilityNum === 4;
@@ -112,60 +114,59 @@ const AbilityCard: React.FC<AbilityCardProps> = ({
   
   // Calculate damage if applicable
   const damageResult = useMemo(() => {
-  if (isBasic) {
-    const dummyDefender: GodStats = {
-      ...godStats,
-      physicalProtection: 0,
-      magicalProtection: 0,
-      maxHealth: 10000,
-      damageMitigation: 0
-    };
-    return calculateBasicAttack(godStats, dummyDefender, godDamageType);
-  }
-  
-  if (damageInfo.hasDamage && damageInfo.baseDamageValues.length > 0) {
-    const dummyDefender: GodStats = {
-      ...godStats,
-      physicalProtection: 0,
-      magicalProtection: 0,
-      maxHealth: 10000,
-      damageMitigation: 0
-    };
-    
-    // Check for stance-based bonus scaling (e.g., Achilles unarmored +15%)
-    let scaling = [...damageInfo.scaling];
-    if (passiveStance === 'unarmored' && ability.attributes) {
-      const bonusScalingAttr = ability.attributes.find(a => 
-        a.label.toLowerCase().includes('bonus') && 
-        a.label.toLowerCase().includes('scaling') &&
-        a.label.toLowerCase().includes('unarmored')
-      );
-      if (bonusScalingAttr) {
-        const bonusScaling = parseScaling(bonusScalingAttr.value);
-        for (const bonus of bonusScaling) {
-          const existing = scaling.find(s => s.stat === bonus.stat);
-          if (existing) {
-            existing.percent += bonus.percent;
-          } else {
-            scaling.push(bonus);
-          }
-        }
-      }
+    if (isBasic) {
+      const dummyDefender: GodStats = {
+        ...godStats,
+        physicalProtection: 0,
+        magicalProtection: 0,
+        maxHealth: 10000,
+        damageMitigation: 0
+      };
+      return calculateBasicAttack(godStats, dummyDefender, godDamageType);
     }
     
-    return calculateAbilityDamage(
-      damageInfo.baseDamageValues,
-      rank,
-      scaling,
-      godStats,
-      dummyDefender,
-      godDamageType,
-      godStats.percentPenetration || 0,
-      godStats.flatPenetration || 0
-    );
-  }
-  return null;
-}, [isBasic, damageInfo, rank, godStats, godDamageType, passiveStance, ability.attributes]);
+    if (damageInfo.hasDamage && damageInfo.baseDamageValues.length > 0) {
+      const dummyDefender: GodStats = {
+        ...godStats,
+        physicalProtection: 0,
+        magicalProtection: 0,
+        maxHealth: 10000,
+        damageMitigation: 0
+      };
+      
+      // Separate base scaling from potential bonus scaling
+      // This ensures we never mutate the original damageInfo.scaling array
+      const baseScaling = damageInfo.scaling;
+      let bonusScaling: ScalingComponent[] = [];
+      
+      // Handle conditional scaling from attributes (e.g. Unarmored Bonus)
+      if (passiveStance === 'unarmored' && ability.attributes) {
+        const bonusScalingAttr = ability.attributes.find(a => 
+          a.label.toLowerCase().includes('bonus') && 
+          a.label.toLowerCase().includes('scaling') &&
+          a.label.toLowerCase().includes('unarmored')
+        );
+        if (bonusScalingAttr) {
+          bonusScaling = parseScaling(bonusScalingAttr.value);
+        }
+      }
+      
+      // Combine base and bonus for this calculation only
+      const finalScaling = [...baseScaling, ...bonusScaling];
+      
+      return calculateAbilityDamage(
+        damageInfo.baseDamageValues,
+        rank,
+        finalScaling,
+        godStats,
+        dummyDefender,
+        godDamageType,
+        godStats.percentPenetration || 0,
+        godStats.flatPenetration || 0
+      );
+    }
+    return null;
+  }, [isBasic, damageInfo, rank, godStats, godDamageType, passiveStance, ability.attributes]);
 
   const getIcon = () => {
     if (isPassive) return <Hexagon size={14} className="text-blue-400" />;
@@ -495,20 +496,9 @@ const ItemPassivesPanel: React.FC<ItemPassivesPanelProps> = ({ items }) => {
               <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
             </div>
             
-            {/* Passive Info */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <h4 className="font-bold text-white text-sm">{item.name}</h4>
-                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
-                  item.category === 'Offense' ? 'bg-red-500/20 text-red-400' :
-                  item.category === 'Defense' ? 'bg-blue-500/20 text-blue-400' :
-                  item.category === 'Utility' ? 'bg-green-500/20 text-green-400' :
-                  'bg-purple-500/20 text-purple-400'
-                }`}>
-                  {item.category}
-                </span>
-              </div>
-              <p className="text-xs text-slate-300 leading-relaxed">
+            <div>
+              <h4 className="font-bold text-xs text-white mb-1">{item.name}</h4>
+              <p className="text-[10px] text-slate-300 leading-relaxed">
                 {item.passive}
               </p>
             </div>
@@ -520,581 +510,206 @@ const ItemPassivesPanel: React.FC<ItemPassivesPanelProps> = ({ items }) => {
 };
 
 // ============================================================
-// ENHANCED STATS PANEL COMPONENT
+// MAIN BUILDER VIEW
 // ============================================================
-interface EnhancedStatsPanelProps {
-  god: God;
-  level: number;
-  items: (Item | null)[];
-  calculatedStats?: GodStats | null;  // NEW: Accept pre-calculated stats
-}
 
-const EnhancedStatsPanel: React.FC<EnhancedStatsPanelProps> = ({ god, level, items, calculatedStats }) => {
-  // Use pre-calculated stats if provided, otherwise calculate
-  const totalStats = useMemo(() => {
-    if (calculatedStats) return calculatedStats;
-    return calculateTotalStats(god, level, items, god.damageType);
-  }, [god, level, items, calculatedStats]);
-  
-  const baseStats = useMemo(() => 
-    god.statsByLevel[Math.max(0, Math.min(19, level - 1))],
-    [god, level]
-  );
-
-  const asPercentFromLevel = getAttackSpeedPercentAtLevel(totalStats.attackSpeedPercent, level);
-  const actualAS = calculateAttackSpeed(totalStats.baseAttackSpeed, asPercentFromLevel, 0);
-  const baseAsPercent = getAttackSpeedPercentAtLevel(baseStats.attackSpeedPercent, level);
-  const baseActualAS = calculateAttackSpeed(baseStats.baseAttackSpeed, baseAsPercent, 0);
-
-  const hasItems = items.some(item => item !== null);
-
-  const StatRow: React.FC<{
-    icon: React.ReactNode;
-    label: string;
-    value: string | number;
-    baseValue?: number;
-    color?: string;
-  }> = ({ icon, label, value, baseValue, color = 'text-white' }) => {
-    const numericValue = typeof value === 'string' ? parseFloat(value) : value;
-    const diff = baseValue !== undefined ? numericValue - baseValue : 0;
-    const showDiff = baseValue !== undefined && Math.abs(diff) >= 0.1;
-
-    return (
-      <div className="flex items-center justify-between py-0.5">
-        <div className="flex items-center gap-1.5 text-slate-400">
-          <span className="text-slate-500">{icon}</span>
-          <span className="text-[10px]">{label}</span>
-        </div>
-        <div className={`font-mono text-[10px] ${color} flex items-center gap-1`}>
-          {value}
-          {showDiff && (
-            <span className={diff > 0 ? 'text-green-400' : 'text-red-400'}>
-              ({diff > 0 ? '+' : ''}{typeof value === 'string' ? diff.toFixed(1) : Math.round(diff)})
-            </span>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  return (
-    <div className="space-y-2 text-xs">
-      {/* Offensive */}
-      <div className="bg-slate-800/30 rounded p-2">
-        <div className="text-[9px] font-bold text-red-400 uppercase mb-1">Offensive</div>
-        <StatRow icon={<BicepsFlexed size={10} />} label="STR" value={Math.round(totalStats.strength)} baseValue={hasItems ? Math.round(baseStats.strength) : undefined} color="text-orange-400" />
-        <StatRow icon={<BookOpen size={10} />} label="INT" value={Math.round(totalStats.intelligence)} baseValue={hasItems ? Math.round(baseStats.intelligence) : undefined} color="text-purple-400" />
-        <StatRow icon={<Sword size={10} />} label="Basic Power" value={Math.round(totalStats.inhandPower || 0)} baseValue={hasItems ? Math.round(baseStats.inhandPower || 0) : undefined} color="text-red-400" />
-      </div>
-
-      {/* Attack Speed & Crit */}
-      <div className="bg-slate-800/30 rounded p-2">
-        <div className="text-[9px] font-bold text-yellow-400 uppercase mb-1">Speed & Crit</div>
-        <StatRow icon={<Zap size={10} />} label="Attack Speed" value={actualAS.toFixed(2)} baseValue={hasItems ? baseActualAS : undefined} color="text-yellow-300" />
-        <StatRow icon={<Target size={10} />} label="Crit Chance" value={`${totalStats.critChance}%`} baseValue={hasItems ? baseStats.critChance : undefined} color="text-amber-400" />
-        <StatRow icon={<Skull size={10} />} label="Crit Damage" value={`${(totalStats.critDamage * 100).toFixed(0)}%`} baseValue={hasItems ? baseStats.critDamage * 100 : undefined} color="text-amber-400" />
-      </div>
-
-      {/* Penetration */}
-      <div className="bg-slate-800/30 rounded p-2">
-        <div className="text-[9px] font-bold text-rose-400 uppercase mb-1">Penetration</div>
-        <StatRow icon={<Crosshair size={10} />} label="Flat Pen" value={Math.round(totalStats.flatPenetration || 0)} baseValue={hasItems ? Math.round(baseStats.flatPenetration || 0) : undefined} color="text-rose-400" />
-        <StatRow icon={<Layers size={10} />} label="% Pen" value={`${totalStats.percentPenetration || 0}%`} baseValue={hasItems ? baseStats.percentPenetration || 0 : undefined} color="text-rose-400" />
-        <StatRow icon={<Heart size={10} />} label="Lifesteal" value={`${totalStats.lifesteal}%`} baseValue={hasItems ? baseStats.lifesteal : undefined} color="text-pink-400" />
-      </div>
-
-      {/* Defensive */}
-      <div className="bg-slate-800/30 rounded p-2">
-        <div className="text-[9px] font-bold text-cyan-400 uppercase mb-1">Defensive</div>
-        <StatRow icon={<Shield size={10} />} label="Phys Prot" value={Math.round(totalStats.physicalProtection)} baseValue={hasItems ? Math.round(baseStats.physicalProtection) : undefined} color="text-cyan-400" />
-        <StatRow icon={<Shield size={10} className="text-purple-400" />} label="Mag Prot" value={Math.round(totalStats.magicalProtection)} baseValue={hasItems ? Math.round(baseStats.magicalProtection) : undefined} color="text-purple-400" />
-        <StatRow icon={<ShieldOff size={10} />} label="Mitigation" value={`${totalStats.damageMitigation || 0}%`} baseValue={hasItems ? baseStats.damageMitigation || 0 : undefined} color="text-cyan-300" />
-      </div>
-
-      {/* Health & Mana */}
-      <div className="bg-slate-800/30 rounded p-2">
-        <div className="text-[9px] font-bold text-green-400 uppercase mb-1">Health & Mana</div>
-        <StatRow icon={<Heart size={10} className="text-green-500" />} label="Max HP" value={Math.round(totalStats.maxHealth)} baseValue={hasItems ? Math.round(baseStats.maxHealth) : undefined} color="text-green-400" />
-        <StatRow icon={<Activity size={10} className="text-green-500" />} label="HP Regen" value={totalStats.healthRegen.toFixed(1)} baseValue={hasItems ? baseStats.healthRegen : undefined} color="text-green-400" />
-        <StatRow icon={<Droplet size={10} className="text-blue-500" />} label="Max Mana" value={Math.round(totalStats.maxMana)} baseValue={hasItems ? Math.round(baseStats.maxMana) : undefined} color="text-blue-400" />
-        <StatRow icon={<Activity size={10} className="text-blue-300" />} label="MP Regen" value={totalStats.manaRegen.toFixed(1)} baseValue={hasItems ? baseStats.manaRegen : undefined} color="text-blue-400" />
-      </div>
-
-      {/* Utility */}
-      <div className="bg-slate-800/30 rounded p-2">
-        <div className="text-[9px] font-bold text-slate-400 uppercase mb-1">Utility</div>
-        <StatRow icon={<Footprints size={10} />} label="Move Speed" value={Math.round(totalStats.movementSpeed)} baseValue={hasItems ? Math.round(baseStats.movementSpeed) : undefined} />
-        <StatRow icon={<RotateCcw size={10} />} label="CDR" value={`${Math.min(40, totalStats.cooldownRate)}%`} baseValue={hasItems ? baseStats.cooldownRate : undefined} />
-      </div>
-    </div>
-  );
-};
-
-// ============================================================
-// BUILDER ITEM INSPECTOR COMPONENT
-// ============================================================
-const BuilderItemInspector: React.FC<{ 
-  item: Item; 
-  allItems: Item[]; 
-  onClose: () => void; 
-  onSelect?: () => void;
-  onRemove?: () => void;
-  onChange?: () => void;
-  mode: 'preview' | 'view';
-}> = ({ item, allItems, onClose, onSelect, onRemove, onChange, mode }) => {
-  const roots = (item.type === 'Item' || item.type === 'Starter') ? findRoots(item, allItems) : [item];
-  const uniqueRoots = Array.from(new Set(roots.map(r => r.id))).map(id => roots.find(r => r.id === id)!);
-
-  const renderNode = (node: Item, targetId: string, isRoot = false): React.ReactNode => {
-    const components = getComponents(node, allItems);
-    const isTarget = node.id === targetId;
-    return (
-      <div key={node.id} className="flex flex-col items-center">
-        <div className={`w-8 h-8 rounded border overflow-hidden ${isTarget ? 'border-mythic-gold ring-2 ring-mythic-gold/30' : 'border-slate-600'}`}>
-          <img src={node.image} alt={node.name} className="w-full h-full object-cover" />
-        </div>
-        {components.length > 0 && (
-          <>
-            <div className="w-px h-2 bg-slate-600" />
-            <div className="flex gap-2">
-              {components.map(c => renderNode(c, targetId))}
-            </div>
-          </>
-        )}
-      </div>
-    );
-  };
-
-  return (
-    <div className="bg-slate-900 border border-slate-700 rounded-xl overflow-hidden flex flex-col max-h-[80vh]">
-      {/* Header */}
-      <div className="p-4 border-b border-slate-700 flex items-start gap-4 bg-slate-950/50">
-        <div className="w-16 h-16 rounded-lg border border-slate-600 overflow-hidden shrink-0">
-          <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-bold text-white text-lg">{item.name}</h3>
-            {item.tier && <span className="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-400">T{item.tier}</span>}
-          </div>
-          <div className="flex items-center gap-3 text-xs">
-            <span className="text-yellow-400 font-mono font-bold">{item.cost}g</span>
-            <span className={`px-2 py-0.5 rounded ${
-              item.category === 'Offense' ? 'bg-red-500/20 text-red-400' :
-              item.category === 'Defense' ? 'bg-blue-500/20 text-blue-400' :
-              item.category === 'Utility' ? 'bg-green-500/20 text-green-400' :
-              'bg-purple-500/20 text-purple-400'
-            }`}>{item.category}</span>
-            <span className="text-slate-500">{item.type}</span>
-          </div>
-        </div>
-        <button onClick={onClose} className="p-1 hover:bg-slate-800 rounded transition-colors">
-          <X size={18} className="text-slate-400" />
-        </button>
-      </div>
-
-      {/* Content */}
-      <div className="p-4 overflow-y-auto flex-1 space-y-4">
-        {/* Stats */}
-        {Object.keys(item.stats).length > 0 && (
-          <div>
-            <h4 className="text-[10px] uppercase font-bold text-slate-500 mb-2 tracking-wider">Stats</h4>
-            <div className="grid grid-cols-2 gap-2">
-              {Object.entries(item.stats).map(([stat, value]) => (
-                <div key={stat} className="flex justify-between bg-slate-800/50 rounded px-2 py-1.5">
-                  <span className="text-xs text-slate-400">{stat}</span>
-                  <span className="text-xs font-mono text-white">{value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Passive */}
-        {item.passive && (
-          <div>
-            <h4 className="text-[10px] uppercase font-bold text-purple-400 mb-2 tracking-wider flex items-center gap-1">
-              <Sparkle size={10} /> Passive
-            </h4>
-            <p className="text-sm text-slate-300 leading-relaxed bg-purple-500/10 border border-purple-500/20 rounded-lg p-3">
-              {item.passive}
-            </p>
-          </div>
-        )}
-
-        {/* Build Path */}
-        {(item.type === 'Item' || item.type === 'Starter') && uniqueRoots.length > 0 && (
-          <div className="pt-3 border-t border-slate-800">
-            <h4 className="text-[10px] uppercase font-bold text-slate-500 mb-3 tracking-wider flex items-center gap-1">
-              <Info size={10} /> Build Path
-            </h4>
-            <div className="flex flex-wrap gap-4 justify-center">
-              {uniqueRoots.map(root => (
-                <div key={root.id} className="flex justify-center">
-                  {renderNode(root, item.id, true)}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Footer Actions */}
-      <div className="p-3 border-t border-slate-700 shrink-0 flex gap-2">
-        {mode === 'preview' && onSelect && (
-          <button onClick={onSelect} className="flex-1 py-2 bg-mythic-gold text-slate-900 font-bold rounded-lg hover:bg-yellow-400 transition-colors">
-            Select Item
-          </button>
-        )}
-        {mode === 'view' && (
-          <>
-            {onChange && (
-              <button onClick={onChange} className="flex-1 py-2 bg-slate-700 text-white font-bold rounded-lg hover:bg-slate-600 transition-colors">
-                Change Item
-              </button>
-            )}
-            {onRemove && (
-              <button onClick={onRemove} className="py-2 px-4 bg-red-900/50 text-red-400 font-bold rounded-lg hover:bg-red-900 transition-colors border border-red-500/30">
-                Remove
-              </button>
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  );
-};
-
-// ============================================================
-// SHARE BUILD BUTTON COMPONENT
-// ============================================================
-const ShareBuildButton: React.FC<{ godId: string | null; aspectId: string | null; build: CurrentBuild }> = ({ godId, aspectId, build }) => {
-  const [copied, setCopied] = useState(false);
-  const [showTooltip, setShowTooltip] = useState(false);
-  const isShareable = godId && (build.starter || build.relic || build.items.some(i => i));
-
-  const generateUrl = () => {
-    const params = new URLSearchParams();
-    if (godId) params.set('g', godId);
-    if (aspectId) params.set('a', aspectId);
-    if (build.starter) params.set('s', build.starter);
-    if (build.relic) params.set('r', build.relic);
-    const itemStr = build.items.map(i => i || '_').join(',');
-    if (itemStr !== '_,_,_,_,_,_') params.set('i', itemStr);
-    return `${window.location.origin}${window.location.pathname}?${params.toString()}`;
-  };
-
-  const handleShare = async () => {
-    try {
-      await navigator.clipboard.writeText(generateUrl());
-      setCopied(true);
-      setShowTooltip(true);
-      setTimeout(() => { setCopied(false); setShowTooltip(false); }, 2000);
-    } catch (err) { console.error('Failed to copy:', err); }
-  };
-
-  if (!isShareable) return null;
-
-  return (
-    <div className="relative">
-      <button onClick={handleShare} className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-all ${copied ? 'bg-green-500/20 text-green-400 border border-green-500/40' : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 hover:border-mythic-gold/50'}`}>
-        {copied ? <><Check size={16} /><span>Copied!</span></> : <><Share2 size={16} /><span className="hidden sm:inline">Share Build</span></>}
-      </button>
-      {showTooltip && (
-        <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-3 py-1.5 rounded-lg border border-slate-700 whitespace-nowrap">
-          <div className="flex items-center gap-1.5"><LinkIcon size={12} />Link copied!</div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ============================================================
-// MAIN BUILDER VIEW COMPONENT
-// ============================================================
 export const BuilderView: React.FC = () => {
   const { gods: GODS, items: ITEMS } = useData();
   
-  const [selectedGod, setSelectedGod] = useState<God | null>(null);
-  const [activeAspectId, setActiveAspectId] = useState<string | null>(null);
-  const [build, setBuild] = useState<CurrentBuild>({ starter: null, items: [null, null, null, null, null, null], relic: null });
-
-  // Level and panel states
-  const [builderLevel, setBuilderLevel] = useState(20);
-  const [showStats, setShowStats] = useState(true);
-  const [showAbilities, setShowAbilities] = useState(true);
-  const [showPassives, setShowPassives] = useState(true);
-  
-  // God/Item selection states
-  const [godSearch, setGodSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState('All');
-  const [itemPickerSlot, setItemPickerSlot] = useState<ItemPickerSlot | null>(null);
-  
-  // Item filter states
-  const [itemSearch, setItemSearch] = useState('');
-  const [itemCategory, setItemCategory] = useState('All');
-  const [itemTier, setItemTier] = useState('All');
-  const [activeStats, setActiveStats] = useState<string[]>([]);
-  const [showFilters, setShowFilters] = useState(false);
-  
-  // Item preview/view states
-  const [previewItem, setPreviewItem] = useState<Item | null>(null);
-  const [viewingBuildItem, setViewingBuildItem] = useState<{ item: Item; slot: ItemPickerSlot } | null>(null);
+  // State
+  const [selectedGodId, setSelectedGodId] = useState<string | null>(null);
+  const [aspectId, setAspectId] = useState<string | null>(null);
+  const [level, setLevel] = useState(20);
   const [passiveStance, setPassiveStance] = useState<StanceId | null>(null);
-
-  // Get all equipped items as Item objects for stats calculation
-  const equippedItems = useMemo(() => {
-    if (!ITEMS) return [];
-    return [build.starter, ...build.items, build.relic]
-      .map(id => id ? ITEMS.find(i => i.id === id) || null : null);
-  }, [build, ITEMS]);
-
-  const activePassive = useMemo(() => {
-  if (!selectedGod) return undefined;
-  const activeKit = activeAspectId 
-    ? selectedGod.aspects.find(a => a.id === activeAspectId) 
-    : selectedGod;
-  return activeKit?.passive;
-  }, [selectedGod, activeAspectId]);
-
-  // Calculate total stats with items
-  const totalStats = useMemo(() => {
-  if (!selectedGod) return null;
-  let stats = calculateTotalStats(selectedGod, builderLevel, equippedItems, selectedGod.damageType);
   
-  // Apply passive stance bonuses if applicable
-  if (activePassive && passiveStance) {
-    stats = applyPassiveStanceBonuses(stats, activePassive, passiveStance, builderLevel);
-  }
+  const [build, setBuild] = useState<CurrentBuild>({
+    starter: null,
+    items: [null, null, null, null, null, null],
+    relic: null
+  });
+
+  // Pickers state
+  const [isGodPickerOpen, setIsGodPickerOpen] = useState(false);
+  const [isItemPickerOpen, setIsItemPickerOpen] = useState(false);
+  const [pickerSlot, setPickerSlot] = useState<ItemPickerSlot | null>(null);
+  const [pickerSearch, setPickerSearch] = useState('');
+  const [pickerFilter, setPickerFilter] = useState<'All' | 'Physical' | 'Magical'>('All');
+  const [activeStatFilters, setActiveStatFilters] = useState<string[]>([]);
+
+  // Derived
+  const selectedGod = useMemo(() => GODS.find(g => g.id === selectedGodId) || null, [GODS, selectedGodId]);
   
-  return stats;
-  }, [selectedGod, builderLevel, equippedItems, activePassive, passiveStance]);
-
+  // Initialize passive stance when god changes
   useEffect(() => {
-  if (!selectedGod) {
-    setPassiveStance(null);
-    return;
-  }
-  const defaultStance = getDefaultStance(activePassive);
-  setPassiveStance(defaultStance);
-  }, [selectedGod?.id, activeAspectId, activePassive]);
-
-  // URL parsing for shared builds
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const godId = params.get('g');
-    if (godId && (GODS || []).length > 0) {
-      const god = (GODS || []).find(g => g.id === godId);
-      if (god) {
-        setSelectedGod(god);
-        const aspectId = params.get('a');
-        if (aspectId) setActiveAspectId(aspectId);
-        const starter = params.get('s');
-        const relic = params.get('r');
-        const itemStr = params.get('i') || '_,_,_,_,_,_';
-        const items = itemStr.split(',').map(i => i === '_' ? null : i);
-        setBuild({ starter: starter || null, items: items.slice(0, 6) as (string | null)[], relic: relic || null });
+    if (selectedGod) {
+      // Check if god has stances
+      if (hasPassiveStances(selectedGod.passive)) {
+        setPassiveStance(getDefaultStance(selectedGod.passive));
+      } else {
+        setPassiveStance(null);
       }
     }
-  }, [GODS]);
+  }, [selectedGod]);
 
-  const getItem = (id: string | null) => id ? (ITEMS || []).find(i => i.id === id) || null : null;
+  const activeStats = useMemo(() => {
+    if (!selectedGod) return DEFAULT_GOD_STATS;
+    
+    // Get base stats
+    const allItems = [
+      build.starter ? ITEMS.find(i => i.id === build.starter) || null : null,
+      ...build.items.map(id => id ? ITEMS.find(i => i.id === id) || null : null),
+      build.relic ? ITEMS.find(i => i.id === build.relic) || null : null
+    ].filter(Boolean);
 
-  const handleReset = () => {
+    // Initial stats
+    let stats = calculateTotalStats(selectedGod, level, allItems, selectedGod.damageType);
+
+    // Apply passive stance bonuses if applicable
+    if (passiveStance) {
+      const activeKit = aspectId ? selectedGod.aspects.find(a => a.id === aspectId) || selectedGod : selectedGod;
+      stats = applyPassiveStanceBonuses(stats, activeKit.passive, passiveStance, level);
+    }
+
+    return stats;
+  }, [selectedGod, aspectId, level, build, ITEMS, passiveStance]);
+
+  // Handlers
+  const handleGodSelect = (god: God) => {
+    setSelectedGodId(god.id);
+    setAspectId(null); // Reset aspect
     setBuild({ starter: null, items: [null, null, null, null, null, null], relic: null });
-    setBuilderLevel(20);
-    // Clear URL params
-    window.history.replaceState({}, '', window.location.pathname);
+    setIsGodPickerOpen(false);
   };
 
-  const handleRandomize = () => {
-    if (!selectedGod || !ITEMS) return;
-    
-    const starters = ITEMS.filter(i => i.type === 'Starter');
-    const regularItems = ITEMS.filter(i => i.type === 'Item' && i.tier === 3);
-    const relics = ITEMS.filter(i => i.type === 'Relic');
-    
-    const randomStarter = starters[Math.floor(Math.random() * starters.length)];
-    const randomRelic = relics[Math.floor(Math.random() * relics.length)];
-    
-    const shuffled = [...regularItems].sort(() => Math.random() - 0.5);
-    const randomItems = shuffled.slice(0, 6).map(i => i.id);
-    
-    setBuild({
-      starter: randomStarter?.id || null,
-      items: randomItems as (string | null)[],
-      relic: randomRelic?.id || null
-    });
-  };
+  const handleItemSelect = (item: Item) => {
+    if (!pickerSlot) return;
 
-  const selectItem = (item: Item) => {
-    if (!itemPickerSlot) return;
-    if (itemPickerSlot.type === 'Starter') setBuild({ ...build, starter: item.id });
-    else if (itemPickerSlot.type === 'Relic') setBuild({ ...build, relic: item.id });
-    else if (itemPickerSlot.type === 'Item' && itemPickerSlot.index !== undefined) {
+    if (pickerSlot.type === 'Starter') {
+      setBuild(prev => ({ ...prev, starter: item.id }));
+    } else if (pickerSlot.type === 'Relic') {
+      setBuild(prev => ({ ...prev, relic: item.id }));
+    } else if (typeof pickerSlot.index === 'number') {
       const newItems = [...build.items];
-      newItems[itemPickerSlot.index] = item.id;
-      setBuild({ ...build, items: newItems });
+      newItems[pickerSlot.index] = item.id;
+      setBuild(prev => ({ ...prev, items: newItems }));
     }
-    setItemPickerSlot(null);
-    setPreviewItem(null);
+    
+    setIsItemPickerOpen(false);
+    setPickerSlot(null);
   };
 
-  const removeItem = (slot?: ItemPickerSlot) => {
-    const targetSlot = slot || itemPickerSlot;
-    if (!targetSlot) return;
-    if (targetSlot.type === 'Starter') setBuild({ ...build, starter: null });
-    else if (targetSlot.type === 'Relic') setBuild({ ...build, relic: null });
-    else if (targetSlot.type === 'Item' && targetSlot.index !== undefined) {
+  const removeItem = (type: 'Starter' | 'Item' | 'Relic', index?: number) => {
+    if (type === 'Starter') setBuild(prev => ({ ...prev, starter: null }));
+    else if (type === 'Relic') setBuild(prev => ({ ...prev, relic: null }));
+    else if (typeof index === 'number') {
       const newItems = [...build.items];
-      newItems[targetSlot.index] = null;
-      setBuild({ ...build, items: newItems });
-    }
-    setItemPickerSlot(null);
-    setViewingBuildItem(null);
-  };
-
-  const handleSlotClick = (slot: ItemPickerSlot, currentItemId: string | null) => {
-    if (currentItemId) {
-      const item = getItem(currentItemId);
-      if (item) setViewingBuildItem({ item, slot });
-    } else {
-      setItemPickerSlot(slot);
+      newItems[index] = null;
+      setBuild(prev => ({ ...prev, items: newItems }));
     }
   };
 
-  const toggleStat = (statId: string) => {
-    setActiveStats(prev => prev.includes(statId) ? prev.filter(s => s !== statId) : [...prev, statId]);
+  const openItemPicker = (type: 'Starter' | 'Item' | 'Relic', index?: number) => {
+    setPickerSlot({ type, index });
+    setPickerSearch('');
+    setActiveStatFilters([]);
+    setIsItemPickerOpen(true);
   };
 
-  // Filter items based on current slot and filters
-  const filteredItems = (ITEMS || []).filter(item => {
-    if (!itemPickerSlot) return false;
-    let typeMatch = false;
-    if (itemPickerSlot.type === 'Starter') typeMatch = item.type === 'Starter';
-    else if (itemPickerSlot.type === 'Relic') typeMatch = item.type === 'Relic';
-    else if (itemPickerSlot.type === 'Item') typeMatch = item.type === 'Item' || item.type === 'God Specific';
-    const searchMatch = item.name.toLowerCase().includes(itemSearch.toLowerCase());
-    const godMatch = item.type !== 'God Specific' || (selectedGod && (item as any).god === selectedGod.name);
-    const categoryMatch = itemCategory === 'All' || item.category === itemCategory;
-    let tierMatch = true;
-    if (itemTier !== 'All' && itemPickerSlot.type === 'Item') {
-      const tierNum = parseInt(itemTier.replace('Tier ', ''));
-      tierMatch = item.tier === tierNum;
-    }
-    let statsMatch = true;
-    if (activeStats.length > 0) {
-      statsMatch = activeStats.every(statId => {
-        const filter = STAT_FILTERS.find(f => f.id === statId);
-        if (!filter) return false;
-        return Object.keys(item.stats).some(itemKey =>
-          filter.keys.some(filterKey => itemKey.toLowerCase().includes(filterKey.toLowerCase()))
-        );
-      });
-    }
-    return typeMatch && searchMatch && godMatch && categoryMatch && tierMatch && statsMatch;
-  }).sort((a, b) => a.name.localeCompare(b.name));
+  // Filtered lists for pickers
+  const filteredGods = useMemo(() => {
+    return GODS.filter(g => 
+      g.name.toLowerCase().includes(pickerSearch.toLowerCase()) &&
+      (pickerFilter === 'All' || g.damageType === pickerFilter)
+    );
+  }, [GODS, pickerSearch, pickerFilter]);
 
-  // Filter gods
-  const filteredGods = (GODS || [])
-    .filter(god => god.name.toLowerCase().includes(godSearch.toLowerCase()) && (roleFilter === 'All' || god.lanes.includes(roleFilter)))
-    .sort((a, b) => a.name.localeCompare(b.name));
+  const filteredItems = useMemo(() => {
+    if (!pickerSlot) return [];
+    
+    return ITEMS.filter(item => {
+      // Type check
+      if (pickerSlot.type === 'Starter') {
+        if (item.type !== 'Starter') return false;
+      } else if (pickerSlot.type === 'Relic') {
+        if (item.type !== 'Relic') return false;
+      } else {
+        // Item slot - allow Items and Tier 3s
+        if (item.type !== 'Item') return false;
+        // Only Tier 3 usually for final build
+        if (item.tier !== 3) return false;
+      }
 
-  const hasActiveFilters = itemCategory !== 'All' || itemTier !== 'All' || activeStats.length > 0;
+      // Search check
+      if (pickerSearch && !item.name.toLowerCase().includes(pickerSearch.toLowerCase())) return false;
 
-  // ============================================================
-  // RENDER: GOD NOT SELECTED
-  // ============================================================
+      // Stat filters
+      if (activeStatFilters.length > 0) {
+        const hasStats = activeStatFilters.every(filterId => {
+          const filter = STAT_FILTERS.find(f => f.id === filterId);
+          if (!filter) return false;
+          return Object.keys(item.stats).some(key => 
+            filter.keys.some(k => key.toLowerCase().includes(k.toLowerCase()))
+          );
+        });
+        if (!hasStats) return false;
+      }
+
+      return true;
+    }).sort((a, b) => a.name.localeCompare(b.name));
+  }, [ITEMS, pickerSlot, pickerSearch, activeStatFilters]);
+
+  // --- RENDER ---
+
   if (!selectedGod) {
     return (
-      <div className="container mx-auto px-4 py-8 pb-24">
-        {/* Header */}
-        <div className="bg-slate-900 border border-slate-800 p-4 flex flex-wrap gap-4 items-center justify-between rounded-xl mb-6">
-          <h2 className="font-bold text-white text-lg">Build Creator</h2>
-        </div>
-
-        {/* Current Build Preview (if any items selected) */}
-        {(build.starter || build.items.some(i => i) || build.relic) && (
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-6">
-            <h3 className="text-sm font-bold text-slate-400 mb-4">Current Build Preview</h3>
-            <div className="flex flex-wrap gap-3 justify-center">
-              {build.starter && (
-                <div className="flex flex-col items-center gap-1 cursor-pointer" onClick={() => { const item = getItem(build.starter); if (item) setViewingBuildItem({ item, slot: { type: 'Starter' } }); }}>
-                  <span className="text-[9px] text-purple-400 font-bold">Starter</span>
-                  <img src={getItem(build.starter)?.image} className="w-12 h-12 rounded border border-slate-600 hover:border-purple-400 transition-colors" />
-                </div>
-              )}
-              {build.items.filter(Boolean).map((itemId, idx) => (
-                <div key={idx} className="flex flex-col items-center gap-1 cursor-pointer" onClick={() => { const item = getItem(itemId); if (item) setViewingBuildItem({ item, slot: { type: 'Item', index: idx } }); }}>
-                  <span className="text-[9px] text-slate-500 font-bold">Slot {idx + 1}</span>
-                  <img src={getItem(itemId)?.image} className="w-12 h-12 rounded border border-slate-600 hover:border-mythic-gold transition-colors" />
-                </div>
-              ))}
-              {build.relic && (
-                <div className="flex flex-col items-center gap-1 cursor-pointer" onClick={() => { const item = getItem(build.relic); if (item) setViewingBuildItem({ item, slot: { type: 'Relic' } }); }}>
-                  <span className="text-[9px] text-cyan-400 font-bold">Relic</span>
-                  <img src={getItem(build.relic)?.image} className="w-12 h-12 rounded-full border border-slate-600 hover:border-cyan-400 transition-colors" />
-                </div>
-              )}
-            </div>
-            <p className="text-[10px] text-slate-600 mt-3 text-center">Select a god to complete your build • Click items to view details</p>
+      <div className="container mx-auto px-4 py-20 flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="bg-slate-900 border border-slate-800 p-8 rounded-2xl text-center max-w-lg shadow-2xl">
+          <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Sword size={40} className="text-slate-600" />
           </div>
-        )}
+          <h2 className="text-3xl font-serif font-bold text-white mb-2">Divine Builder</h2>
+          <p className="text-slate-400 mb-8">Select a God to start theorycrafting your build.</p>
+          <button 
+            onClick={() => setIsGodPickerOpen(true)}
+            className="px-8 py-3 bg-mythic-gold text-slate-900 font-bold rounded-xl hover:bg-yellow-400 transition-all transform hover:scale-105"
+          >
+            Select God
+          </button>
+        </div>
         
-        {/* God Search */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-            <input 
-              placeholder="Search gods..." 
-              value={godSearch} 
-              onChange={e => setGodSearch(e.target.value)} 
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg pl-10 pr-4 py-2 text-white placeholder:text-slate-500 focus:border-mythic-gold focus:outline-none" 
-            />
-          </div>
-          <div className="flex gap-1 flex-wrap">
-            {['All', 'Solo', 'Jungle', 'Mid', 'Carry', 'Support'].map(role => (
-              <button 
-                key={role} 
-                onClick={() => setRoleFilter(role)} 
-                className={`px-3 py-2 rounded-lg text-xs font-bold transition-colors ${roleFilter === role ? 'bg-mythic-gold text-slate-900' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
-              >
-                {role}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* God Grid */}
-        <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3">
-          {filteredGods.map(god => (
-            <div 
-              key={god.id} 
-              onClick={() => setSelectedGod(god)} 
-              className="flex flex-col items-center gap-2 p-2 rounded-lg bg-slate-800/50 hover:bg-slate-800 border border-transparent hover:border-mythic-gold/50 cursor-pointer transition-all group"
-            >
-              <div className="w-14 h-14 rounded-lg overflow-hidden border-2 border-slate-700 group-hover:border-mythic-gold transition-colors">
-                <img src={god.image} alt={god.name} className="w-full h-full object-cover" />
+        {/* God Picker Modal (Immediate render for selection) */}
+        {isGodPickerOpen && createPortal(
+          <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-slate-900 w-full max-w-5xl h-[80vh] rounded-2xl border border-slate-700 flex flex-col overflow-hidden">
+              <div className="p-4 border-b border-slate-800 flex gap-4 items-center">
+                <Search className="text-slate-500" />
+                <input 
+                  autoFocus
+                  placeholder="Search Gods..."
+                  className="bg-transparent text-white text-lg w-full focus:outline-none"
+                  value={pickerSearch}
+                  onChange={e => setPickerSearch(e.target.value)}
+                />
+                <button onClick={() => setIsGodPickerOpen(false)} className="p-2 hover:bg-slate-800 rounded-full">
+                  <X size={24} className="text-slate-400" />
+                </button>
               </div>
-              <span className="text-[10px] font-bold text-slate-300 text-center truncate w-full group-hover:text-mythic-gold transition-colors">
-                {god.name}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        {/* Item Viewing Modal */}
-        {viewingBuildItem && createPortal(
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setViewingBuildItem(null)}>
-            <div onClick={e => e.stopPropagation()} className="w-full max-w-md">
-              <BuilderItemInspector 
-                item={viewingBuildItem.item} 
-                allItems={ITEMS || []} 
-                onClose={() => setViewingBuildItem(null)}
-                onRemove={() => removeItem(viewingBuildItem.slot)}
-                onChange={() => { setItemPickerSlot(viewingBuildItem.slot); setViewingBuildItem(null); }}
-                mode="view"
-              />
+              <div className="p-4 overflow-y-auto grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
+                {filteredGods.map(god => (
+                  <button 
+                    key={god.id}
+                    onClick={() => handleGodSelect(god)}
+                    className="group relative aspect-[3/4] bg-slate-800 rounded-xl overflow-hidden border border-slate-700 hover:border-mythic-gold transition-all"
+                  >
+                    <img src={god.image} alt={god.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent opacity-80" />
+                    <div className="absolute bottom-2 left-2 right-2">
+                      <div className="text-xs font-bold text-white uppercase">{god.name}</div>
+                      <div className="text-[10px] text-slate-400">{god.role}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>,
           document.body
@@ -1103,397 +718,292 @@ export const BuilderView: React.FC = () => {
     );
   }
 
-  // ============================================================
-  // RENDER: GOD SELECTED - FULL BUILDER
-  // ============================================================
+  const equippedItems = [
+    build.starter ? ITEMS.find(i => i.id === build.starter) || null : null,
+    ...build.items.map(id => id ? ITEMS.find(i => i.id === id) || null : null),
+    build.relic ? ITEMS.find(i => i.id === build.relic) || null : null
+  ];
+
   return (
-    <div className="container mx-auto px-4 py-8 pb-24">
-      {/* Builder Header */}
-      <div className="bg-slate-900 border border-slate-800 p-4 flex flex-wrap gap-4 items-center justify-between rounded-xl mb-6">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3">
-            <button onClick={() => { setSelectedGod(null); setActiveAspectId(null); }} className="p-2 hover:bg-slate-800 rounded-lg transition-colors">
-              <ChevronLeft size={20} className="text-slate-400" />
-            </button>
-            <img src={selectedGod.image} alt={selectedGod.name} className="w-10 h-10 rounded-lg border border-slate-700 object-cover" />
-            <div>
-              <h2 className="font-bold text-white">{selectedGod.name}</h2>
-              <p className="text-xs text-slate-500">{activeAspectId ? selectedGod.aspects.find(a => a.id === activeAspectId)?.name || 'Base Kit' : 'Base Kit'}</p>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <ShareBuildButton godId={selectedGod?.id || null} aspectId={activeAspectId} build={build} />
-          <button onClick={handleReset} className="px-3 py-2 bg-red-900/30 hover:bg-red-900/50 rounded-lg text-red-400 text-sm border border-red-500/30">Reset</button>
-        </div>
-      </div>
-
-      {/* Randomizer Section */}
-      <div className="mb-6 relative overflow-hidden">
-        <div className="bg-gradient-to-r from-purple-900/40 via-pink-900/40 to-orange-900/40 border border-purple-500/30 rounded-xl p-4 sm:p-5">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500/20 to-transparent rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-pink-500/20 to-transparent rounded-full blur-2xl translate-y-1/2 -translate-x-1/2"></div>
-          <div className="relative flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-            <div className="flex items-center gap-3 text-center sm:text-left">
-              <div className="hidden sm:flex w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 items-center justify-center shadow-lg shadow-purple-500/30 animate-pulse">
-                <Dices size={24} className="text-white" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-white flex items-center gap-2 justify-center sm:justify-start">
-                  <span className="sm:hidden"><Dices size={18} className="text-purple-400" /></span>
-                  Feeling Lucky?
-                </h3>
-                <p className="text-xs text-slate-400">Generate a random build instantly</p>
-              </div>
-            </div>
-            <button 
-              onClick={handleRandomize}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold rounded-xl shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-all hover:scale-105 active:scale-95"
-            >
-              <Shuffle size={18} />
-              <span>Randomize Build</span>
-              <Sparkles size={14} className="text-yellow-300" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Builder Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        {/* LEFT COLUMN: Aspect Selection + Build Slots */}
-        <div className="lg:col-span-3 space-y-4">
-          {/* Aspect Selection */}
-          {selectedGod.aspects.length > 0 && (
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Aspect</h3>
-              <button 
-                onClick={() => setActiveAspectId(null)} 
-                className={`w-full text-left p-3 rounded-lg border mb-2 transition-colors ${!activeAspectId ? 'border-mythic-gold bg-mythic-gold/10 text-white' : 'border-slate-700 bg-slate-800 text-slate-400 hover:border-slate-600'}`}
-              >
-                <span className="font-bold">Base Kit</span>
-                <p className="text-xs mt-1 opacity-70">Original abilities</p>
-              </button>
-              {selectedGod.aspects.map(aspect => (
-                <button 
-                  key={aspect.id} 
-                  onClick={() => setActiveAspectId(aspect.id)} 
-                  className={`w-full text-left p-3 rounded-lg border mb-2 transition-colors ${activeAspectId === aspect.id ? 'border-mythic-gold bg-mythic-gold/10 text-white' : 'border-slate-700 bg-slate-800 text-slate-400 hover:border-slate-600'}`}
-                >
-                  <span className="font-bold">{aspect.name}</span>
-                  <p className="text-xs mt-1 opacity-70 line-clamp-2">{aspect.description}</p>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Build Slots */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="text-xs font-bold text-slate-500 uppercase">Your Build</h4>
-              <p className="text-[10px] text-slate-600">Tap item to view</p>
-            </div>
-            
-            {/* Starter & Relic */}
-            <div className="flex justify-center gap-6 mb-6">
-              <div onClick={() => handleSlotClick({ type: 'Starter' }, build.starter)} className="flex flex-col items-center gap-2 cursor-pointer group">
-                <span className="text-[10px] font-bold text-purple-400 uppercase">Starter</span>
-                <div className={`w-16 h-16 bg-slate-800 rounded-lg border-2 overflow-hidden transition-all group-hover:border-purple-400 ${build.starter ? 'border-purple-500/50' : 'border-slate-600'}`}>
-                  {build.starter ? <img src={getItem(build.starter)?.image} className="w-full h-full object-cover" /> : <div className="flex items-center justify-center h-full text-slate-600"><Plus size={20} /></div>}
-                </div>
-              </div>
-              <div onClick={() => handleSlotClick({ type: 'Relic' }, build.relic)} className="flex flex-col items-center gap-2 cursor-pointer group">
-                <span className="text-[10px] font-bold text-cyan-400 uppercase">Relic</span>
-                <div className={`w-16 h-16 bg-slate-800 rounded-full border-2 overflow-hidden transition-all group-hover:border-cyan-400 ${build.relic ? 'border-cyan-500/50' : 'border-slate-600'}`}>
-                  {build.relic ? <img src={getItem(build.relic)?.image} className="w-full h-full object-cover" /> : <div className="flex items-center justify-center h-full text-slate-600"><Plus size={20} /></div>}
-                </div>
-              </div>
-            </div>
-            
-            {/* Item Slots */}
-            <div className="grid grid-cols-3 gap-3">
-              {build.items.map((itemId, index) => (
-                <div key={index} onClick={() => handleSlotClick({ type: 'Item', index }, itemId)} className="flex flex-col items-center gap-2 cursor-pointer group">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase">Slot {index + 1}</span>
-                  <div className={`w-16 h-16 bg-slate-800 rounded-lg border-2 overflow-hidden transition-all group-hover:border-mythic-gold/50 ${itemId ? 'border-slate-500' : 'border-slate-600'}`}>
-                    {itemId ? <img src={getItem(itemId)?.image} className="w-full h-full object-cover" /> : <div className="flex items-center justify-center h-full text-slate-600"><Plus size={20} /></div>}
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            {/* Total Cost */}
-            <div className="mt-6 pt-4 border-t border-slate-700 text-center">
-              <span className="text-slate-500 text-sm">Total Cost: </span>
-              <span className="text-yellow-400 font-bold">
-                {[build.starter, ...build.items, build.relic].filter(Boolean).reduce((sum, id) => sum + (getItem(id)?.cost || 0), 0)}g
-              </span>
-            </div>
-          </div>
-
-          {/* Level Slider */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-xs font-bold text-slate-400 uppercase">God Level</span>
-              <span className="text-mythic-gold font-mono font-bold text-lg">{builderLevel}</span>
-            </div>
-            <input 
-              type="range" 
-              min="1" 
-              max="20" 
-              value={builderLevel} 
-              onChange={(e) => setBuilderLevel(parseInt(e.target.value))}
-              className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-mythic-gold"
-            />
-            <div className="flex justify-between text-[10px] text-slate-600 mt-1 font-mono">
-              <span>1</span><span>5</span><span>10</span><span>15</span><span>20</span>
-            </div>
-          </div>
-        </div>
-
-        {/* CENTER COLUMN: Stats + Abilities + Passives */}
-        <div className="lg:col-span-5 space-y-4">
-          
-          {/* Stats Panel */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-            <button 
-              onClick={() => setShowStats(!showStats)}
-              className="w-full p-4 flex justify-between items-center hover:bg-slate-800/50 transition-colors"
-            >
-              <span className="text-sm font-bold text-white flex items-center gap-2">
-                <BarChart3 size={16} className="text-mythic-gold" />
-                Stats Overview
-              </span>
-              {showStats ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
-            </button>
-            {showStats && totalStats && (
-              <div className="px-4 pb-4">
-               <EnhancedStatsPanel 
-                  god={selectedGod} 
-                  level={builderLevel} 
-                  items={equippedItems} 
-                  calculatedStats={totalStats}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Abilities Panel */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-            <button 
-              onClick={() => setShowAbilities(!showAbilities)}
-              className="w-full p-4 flex justify-between items-center hover:bg-slate-800/50 transition-colors"
-            >
-              <span className="text-sm font-bold text-white flex items-center gap-2">
-                <Flame size={16} className="text-orange-400" />
-                Abilities & Damage
-              </span>
-              {showAbilities ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
-            </button>
-            {showAbilities && totalStats && (
-              <div className="px-4 pb-4">
-              <AbilitiesPanel 
-                god={selectedGod} 
-                aspectId={activeAspectId} 
-                level={builderLevel} 
-                stats={totalStats}
-                passiveStance={passiveStance}
-                onPassiveStanceChange={setPassiveStance}
-              />
-              </div>
-            )}
-          </div>
-
-          {/* Item Passives Panel */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-            <button 
-              onClick={() => setShowPassives(!showPassives)}
-              className="w-full p-4 flex justify-between items-center hover:bg-slate-800/50 transition-colors"
-            >
-              <span className="text-sm font-bold text-white flex items-center gap-2">
-                <Sparkle size={16} className="text-purple-400" />
-                Item Passives
-              </span>
-              {showPassives ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
-            </button>
-            {showPassives && (
-              <div className="px-4 pb-4">
-                <ItemPassivesPanel items={equippedItems} />
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* RIGHT COLUMN: Item Picker */}
-        <div className="lg:col-span-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden sticky top-24">
-            {itemPickerSlot ? (
-              <>
-                {/* Item Picker Header */}
-                <div className="p-4 border-b border-slate-800 flex items-center justify-between">
-                  <div>
-                    <h3 className="font-bold text-white">
-                      Select {itemPickerSlot.type === 'Item' ? `Item (Slot ${(itemPickerSlot.index || 0) + 1})` : itemPickerSlot.type}
-                    </h3>
-                    <p className="text-xs text-slate-500">{filteredItems.length} items available</p>
-                  </div>
-                  <button onClick={() => setItemPickerSlot(null)} className="p-2 hover:bg-slate-800 rounded-lg">
-                    <X size={18} className="text-slate-400" />
-                  </button>
-                </div>
-
-                {/* Search & Filters */}
-                <div className="p-3 border-b border-slate-800 space-y-3">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-                    <input 
-                      placeholder="Search items..." 
-                      value={itemSearch} 
-                      onChange={e => setItemSearch(e.target.value)}
-                      className="w-full bg-slate-800 border border-slate-700 rounded-lg pl-9 pr-4 py-2 text-sm text-white placeholder:text-slate-500 focus:border-mythic-gold focus:outline-none"
-                    />
-                  </div>
-
-                  {/* Filter Toggle */}
-                  <button 
-                    onClick={() => setShowFilters(!showFilters)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${hasActiveFilters ? 'bg-mythic-gold/20 text-mythic-gold' : 'bg-slate-800 text-slate-400 hover:text-white'}`}
-                  >
-                    <Filter size={14} />
-                    Filters {hasActiveFilters && `(${(itemCategory !== 'All' ? 1 : 0) + (itemTier !== 'All' ? 1 : 0) + activeStats.length})`}
-                  </button>
-
-                  {/* Expanded Filters */}
-                  {showFilters && (
-                    <div className="space-y-3 pt-2">
-                      {/* Category */}
-                      <div>
-                        <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Category</label>
-                        <div className="flex gap-1 flex-wrap">
-                          {['All', 'Offense', 'Defense', 'Utility', 'Hybrid'].map(cat => (
-                            <button 
-                              key={cat} 
-                              onClick={() => setItemCategory(cat)}
-                              className={`px-2 py-1 rounded text-xs font-bold transition-colors ${itemCategory === cat ? 'bg-mythic-gold text-slate-900' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
-                            >
-                              {cat}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Tier (only for regular items) */}
-                      {itemPickerSlot.type === 'Item' && (
-                        <div>
-                          <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Tier</label>
-                          <div className="flex gap-1">
-                            {['All', 'Tier 1', 'Tier 2', 'Tier 3'].map(tier => (
-                              <button 
-                                key={tier} 
-                                onClick={() => setItemTier(tier)}
-                                className={`px-2 py-1 rounded text-xs font-bold transition-colors ${itemTier === tier ? 'bg-mythic-gold text-slate-900' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
-                              >
-                                {tier}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Stat Filters */}
-                      <div>
-                        <label className="text-[10px] text-slate-500 uppercase font-bold block mb-1">Stats</label>
-                        <div className="flex gap-1 flex-wrap">
-                          {STAT_FILTERS.map(stat => (
-                            <button 
-                              key={stat.id}
-                              onClick={() => toggleStat(stat.id)}
-                              className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-bold transition-colors ${activeStats.includes(stat.id) ? 'bg-mythic-gold text-slate-900' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}
-                            >
-                              {stat.icon}
-                              {stat.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Item Grid */}
-                <div className="p-3 max-h-[400px] overflow-y-auto">
-                  <div className="grid grid-cols-5 gap-2">
-                    {filteredItems.map(item => (
-                      <div 
-                        key={item.id}
-                        onClick={() => setPreviewItem(item)}
-                        className={`relative cursor-pointer group ${previewItem?.id === item.id ? 'ring-2 ring-mythic-gold' : ''}`}
-                      >
-                        <div className="w-full aspect-square rounded-lg border border-slate-700 overflow-hidden bg-slate-800 group-hover:border-mythic-gold transition-colors">
-                          <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                        </div>
-                        {item.tier && (
-                          <div className="absolute top-0 right-0 bg-black/80 text-[8px] text-white px-1 rounded-bl font-mono">
-                            T{item.tier}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  {filteredItems.length === 0 && (
-                    <div className="text-center py-8 text-slate-500">
-                      <p className="text-sm">No items match your filters</p>
-                    </div>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="p-8 text-center">
-                <Shield size={32} className="mx-auto text-slate-600 mb-3" />
-                <h3 className="font-bold text-white mb-2">Item Picker</h3>
-                <p className="text-xs text-slate-500">Click on a build slot to select an item</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* MODALS */}
+    <div className="container mx-auto px-4 py-6 max-w-[1920px]">
       
-      {/* Item Preview Modal */}
-      {previewItem && createPortal(
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setPreviewItem(null)}>
-          <div onClick={e => e.stopPropagation()} className="w-full max-w-md">
-            <BuilderItemInspector 
-              item={previewItem} 
-              allItems={ITEMS || []} 
-              onClose={() => setPreviewItem(null)}
-              onSelect={() => { selectItem(previewItem); setPreviewItem(null); }}
-              mode="preview"
+      {/* Top Bar: God Info & Controls */}
+      <div className="flex flex-col md:flex-row gap-6 mb-6 items-start">
+        {/* God Card */}
+        <div className="flex items-center gap-4 bg-slate-900 border border-slate-800 p-4 rounded-xl shrink-0">
+          <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-mythic-gold shadow-lg cursor-pointer" onClick={() => setIsGodPickerOpen(true)}>
+            <img src={selectedGod.image} alt={selectedGod.name} className="w-full h-full object-cover" />
+          </div>
+          <div>
+            <h2 className="text-xl font-serif font-bold text-white leading-none">{selectedGod.name}</h2>
+            <p className="text-xs text-slate-400 font-bold uppercase mt-1">{selectedGod.role} • {selectedGod.damageType}</p>
+            <div className="flex gap-2 mt-2">
+              <button onClick={() => setIsGodPickerOpen(true)} className="text-[10px] bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded border border-slate-700 transition-colors">
+                Change God
+              </button>
+              {selectedGod.aspects.length > 0 && (
+                <div className="relative group">
+                  <select 
+                    value={aspectId || ''} 
+                    onChange={(e) => setAspectId(e.target.value || null)}
+                    className="text-[10px] bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded border border-slate-700 transition-colors appearance-none pr-6 cursor-pointer focus:outline-none"
+                  >
+                    <option value="">Base Kit</option>
+                    {selectedGod.aspects.map(a => (
+                      <option key={a.id} value={a.id}>{a.name}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={10} className="absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Level Slider */}
+        <div className="flex-1 bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col justify-center">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-xs font-bold text-slate-400 uppercase">God Level</span>
+            <span className="text-xl font-mono font-bold text-mythic-gold">{level}</span>
+          </div>
+          <input 
+            type="range" 
+            min="1" 
+            max="20" 
+            value={level} 
+            onChange={(e) => setLevel(parseInt(e.target.value))} 
+            className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-mythic-gold"
+          />
+          <div className="flex justify-between text-[10px] text-slate-600 mt-1 font-mono">
+            <span>1</span><span>10</span><span>20</span>
+          </div>
+        </div>
+
+        {/* Share Button */}
+        <div className="hidden md:block">
+          <button className="flex flex-col items-center justify-center w-24 h-24 bg-slate-900 border border-slate-800 hover:border-mythic-gold rounded-xl transition-all group">
+            <Share2 className="text-slate-400 group-hover:text-mythic-gold mb-2" />
+            <span className="text-xs font-bold text-slate-500 group-hover:text-white">Share</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+        
+        {/* LEFT COLUMN: Items & Stats (4/12) */}
+        <div className="xl:col-span-4 space-y-6">
+          
+          {/* Item Build Grid */}
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <Swords size={16} className="text-mythic-gold" /> Equipment
+              </h3>
+              <button 
+                onClick={() => setBuild({ starter: null, items: [null,null,null,null,null,null], relic: null })}
+                className="text-[10px] text-red-400 hover:text-red-300 flex items-center gap-1"
+              >
+                <X size={12} /> Clear
+              </button>
+            </div>
+
+            <div className="flex gap-4 mb-4">
+              {/* Starter */}
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-[9px] text-slate-500 font-bold uppercase">Starter</span>
+                <div 
+                  onClick={() => openItemPicker('Starter')}
+                  className={`w-14 h-14 rounded-lg border-2 ${build.starter ? 'border-purple-500/50' : 'border-slate-700 border-dashed'} bg-slate-800 flex items-center justify-center cursor-pointer hover:border-purple-400 transition-all relative group overflow-hidden`}
+                >
+                  {build.starter ? (
+                    <>
+                      <img src={ITEMS.find(i => i.id === build.starter)?.image} className="w-full h-full object-cover" />
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); removeItem('Starter'); }}
+                        className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                      >
+                        <X size={20} className="text-white" />
+                      </button>
+                    </>
+                  ) : <Plus size={20} className="text-slate-600" />}
+                </div>
+              </div>
+
+              {/* Relic */}
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-[9px] text-slate-500 font-bold uppercase">Relic</span>
+                <div 
+                  onClick={() => openItemPicker('Relic')}
+                  className={`w-14 h-14 rounded-full border-2 ${build.relic ? 'border-cyan-500/50' : 'border-slate-700 border-dashed'} bg-slate-800 flex items-center justify-center cursor-pointer hover:border-cyan-400 transition-all relative group overflow-hidden`}
+                >
+                  {build.relic ? (
+                    <>
+                      <img src={ITEMS.find(i => i.id === build.relic)?.image} className="w-full h-full object-cover" />
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); removeItem('Relic'); }}
+                        className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                      >
+                        <X size={20} className="text-white" />
+                      </button>
+                    </>
+                  ) : <div className="w-3 h-3 bg-slate-700 rounded-full" />}
+                </div>
+              </div>
+            </div>
+
+            {/* Main Items */}
+            <div className="grid grid-cols-3 gap-3">
+              {build.items.map((itemId, idx) => (
+                <div key={idx} className="flex flex-col items-center gap-1">
+                  <div 
+                    onClick={() => openItemPicker('Item', idx)}
+                    className={`w-full aspect-square rounded-xl border-2 ${itemId ? 'border-slate-600' : 'border-slate-800 border-dashed'} bg-slate-800 flex items-center justify-center cursor-pointer hover:border-mythic-gold transition-all relative group overflow-hidden shadow-lg`}
+                  >
+                    {itemId ? (
+                      <>
+                        <img src={ITEMS.find(i => i.id === itemId)?.image} className="w-full h-full object-cover" />
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); removeItem('Item', idx); }}
+                          className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                        >
+                          <X size={24} className="text-white" />
+                        </button>
+                      </>
+                    ) : <Plus size={24} className="text-slate-700" />}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Stats Panel - Now receives fully calculated stats */}
+          <BuilderStatsPanel 
+            god={selectedGod} 
+            level={level} 
+            items={equippedItems} 
+            stats={activeStats}
+          />
+
+        </div>
+
+        {/* CENTER COLUMN: Abilities (4/12) */}
+        <div className="xl:col-span-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 sticky top-24">
+            <AbilitiesPanel 
+              god={selectedGod}
+              aspectId={aspectId}
+              level={level}
+              stats={activeStats}
+              passiveStance={passiveStance}
+              onPassiveStanceChange={setPassiveStance}
             />
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: Analysis & Passives (4/12) */}
+        <div className="xl:col-span-4 space-y-6">
+          {/* Item Passives */}
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+            <ItemPassivesPanel items={equippedItems} />
+          </div>
+        </div>
+
+      </div>
+
+      {/* Item Picker Modal */}
+      {isItemPickerOpen && pickerSlot && createPortal(
+        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 w-full max-w-5xl h-[85vh] rounded-2xl border border-slate-700 flex flex-col overflow-hidden shadow-2xl">
+            {/* Picker Header */}
+            <div className="p-4 border-b border-slate-800 flex flex-col gap-4 bg-slate-950">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-serif font-bold text-white">
+                  Select {pickerSlot.type}
+                </h3>
+                <button onClick={() => setIsItemPickerOpen(false)} className="p-2 hover:bg-slate-800 rounded-full transition-colors">
+                  <X size={24} className="text-slate-400" />
+                </button>
+              </div>
+              
+              <div className="flex gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                  <input 
+                    autoFocus
+                    placeholder={`Search ${pickerSlot.type}s...`}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 pl-10 pr-4 text-white focus:border-mythic-gold focus:outline-none"
+                    value={pickerSearch}
+                    onChange={e => setPickerSearch(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Stat Filters (Only for Items) */}
+              {pickerSlot.type === 'Item' && (
+                <div className="flex flex-wrap gap-2">
+                  {STAT_FILTERS.map(stat => (
+                    <button
+                      key={stat.id}
+                      onClick={() => setActiveStatFilters(prev => 
+                        prev.includes(stat.id) ? prev.filter(id => id !== stat.id) : [...prev, stat.id]
+                      )}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                        activeStatFilters.includes(stat.id) 
+                          ? 'bg-mythic-gold text-slate-900 border-mythic-gold' 
+                          : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-600'
+                      }`}
+                    >
+                      {stat.icon} {stat.label}
+                    </button>
+                  ))}
+                  {activeStatFilters.length > 0 && (
+                    <button onClick={() => setActiveStatFilters([])} className="text-xs text-red-400 hover:underline px-2">
+                      Clear
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Items Grid */}
+            <div className="flex-1 overflow-y-auto p-4 bg-slate-900">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                {filteredItems.map(item => (
+                  <button 
+                    key={item.id}
+                    onClick={() => handleItemSelect(item)}
+                    className="group flex flex-col gap-2 bg-slate-800 p-3 rounded-xl border border-slate-700 hover:border-mythic-gold hover:bg-slate-800/80 transition-all text-left relative"
+                  >
+                    <div className="aspect-square rounded-lg bg-slate-950 overflow-hidden relative">
+                      <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+                      {/* Stat Preview Overlay */}
+                      <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-center p-2 text-[10px] text-slate-300 space-y-1">
+                        {Object.entries(item.stats).slice(0, 4).map(([key, val]) => (
+                          <div key={key} className="flex justify-between w-full">
+                            <span className="truncate pr-1 text-slate-500">{key.replace('Max ', '')}</span>
+                            <span className="text-white font-mono">{val}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-bold text-xs text-white leading-tight mb-1 line-clamp-2">{item.name}</div>
+                      <div className="text-[10px] text-yellow-500 font-mono">{item.cost > 0 ? item.cost : 'Free'}</div>
+                    </div>
+                  </button>
+                ))}
+                {filteredItems.length === 0 && (
+                  <div className="col-span-full py-20 text-center text-slate-500">
+                    No items found matching your criteria.
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>,
         document.body
       )}
 
-      {/* Item View Modal (for items already in build) */}
-      {viewingBuildItem && createPortal(
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setViewingBuildItem(null)}>
-          <div onClick={e => e.stopPropagation()} className="w-full max-w-md">
-            <BuilderItemInspector 
-              item={viewingBuildItem.item} 
-              allItems={ITEMS || []} 
-              onClose={() => setViewingBuildItem(null)}
-              onRemove={() => removeItem(viewingBuildItem.slot)}
-              onChange={() => { setItemPickerSlot(viewingBuildItem.slot); setViewingBuildItem(null); }}
-              mode="view"
-            />
-          </div>
-        </div>,
-        document.body
-      )}
     </div>
   );
 };
-
-export default BuilderView;
