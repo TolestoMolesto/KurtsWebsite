@@ -89,6 +89,7 @@ interface AbilityCardProps {
   level: number;
   isExpanded: boolean;
   onToggle: () => void;
+  passiveStance?: string | null;  // NEW
 }
 
 const AbilityCard: React.FC<AbilityCardProps> = ({ 
@@ -99,8 +100,9 @@ const AbilityCard: React.FC<AbilityCardProps> = ({
   godDamageType,
   level,
   isExpanded,
-  onToggle
-}) => {
+  onToggle,
+  passiveStance
+}) => 
   const isPassive = abilityNum === 'passive';
   const isBasic = abilityNum === 'basic';
   const isUlt = abilityNum === 4;
@@ -110,39 +112,60 @@ const AbilityCard: React.FC<AbilityCardProps> = ({
   
   // Calculate damage if applicable
   const damageResult = useMemo(() => {
-    if (isBasic) {
-      // Basic attack calculation
-      const dummyDefender: GodStats = {
-        ...godStats,
-        physicalProtection: 0,
-        magicalProtection: 0,
-        maxHealth: 10000,
-        damageMitigation: 0
-      };
-      return calculateBasicAttack(godStats, dummyDefender, godDamageType);
+  if (isBasic) {
+    const dummyDefender: GodStats = {
+      ...godStats,
+      physicalProtection: 0,
+      magicalProtection: 0,
+      maxHealth: 10000,
+      damageMitigation: 0
+    };
+    return calculateBasicAttack(godStats, dummyDefender, godDamageType);
+  }
+  
+  if (damageInfo.hasDamage && damageInfo.baseDamageValues.length > 0) {
+    const dummyDefender: GodStats = {
+      ...godStats,
+      physicalProtection: 0,
+      magicalProtection: 0,
+      maxHealth: 10000,
+      damageMitigation: 0
+    };
+    
+    // Check for stance-based bonus scaling (e.g., Achilles unarmored +15%)
+    let scaling = [...damageInfo.scaling];
+    if (passiveStance === 'unarmored' && ability.attributes) {
+      const bonusScalingAttr = ability.attributes.find(a => 
+        a.label.toLowerCase().includes('bonus') && 
+        a.label.toLowerCase().includes('scaling') &&
+        a.label.toLowerCase().includes('unarmored')
+      );
+      if (bonusScalingAttr) {
+        const bonusScaling = parseScaling(bonusScalingAttr.value);
+        for (const bonus of bonusScaling) {
+          const existing = scaling.find(s => s.stat === bonus.stat);
+          if (existing) {
+            existing.percent += bonus.percent;
+          } else {
+            scaling.push(bonus);
+          }
+        }
+      }
     }
     
-    if (damageInfo.hasDamage && damageInfo.baseDamageValues.length > 0) {
-      const dummyDefender: GodStats = {
-        ...godStats,
-        physicalProtection: 0,
-        magicalProtection: 0,
-        maxHealth: 10000,
-        damageMitigation: 0
-      };
-      return calculateAbilityDamage(
-        damageInfo.baseDamageValues,
-        rank,
-        damageInfo.scaling,
-        godStats,
-        dummyDefender,
-        godDamageType,
-        godStats.percentPenetration || 0,
-        godStats.flatPenetration || 0
-      );
-    }
-    return null;
-  }, [isBasic, damageInfo, rank, godStats, godDamageType]);
+    return calculateAbilityDamage(
+      damageInfo.baseDamageValues,
+      rank,
+      scaling,
+      godStats,
+      dummyDefender,
+      godDamageType,
+      godStats.percentPenetration || 0,
+      godStats.flatPenetration || 0
+    );
+  }
+  return null;
+}, [isBasic, damageInfo, rank, godStats, godDamageType, passiveStance, ability.attributes]);
 
   const getIcon = () => {
     if (isPassive) return <Hexagon size={14} className="text-blue-400" />;
@@ -261,6 +284,31 @@ const AbilityCard: React.FC<AbilityCardProps> = ({
                     <span className="text-slate-200 font-mono">{attr.value}</span>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Damage Variants for Abilities */}
+          {!isBasic && !isPassive && damageResult && 'finalDamage' in damageResult && (
+            <div className="mt-3 bg-slate-900/50 rounded-lg p-3">
+              <h5 className="text-[10px] font-bold text-mythic-gold uppercase mb-2">Damage Variants</h5>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="bg-slate-800/50 rounded p-2">
+                  <div className="text-[9px] text-slate-500 mb-1">Main Hit</div>
+                  <div className="text-sm font-bold text-green-400">{damageResult.finalDamage}</div>
+                </div>
+                {ability.description?.toLowerCase().includes('80%') && (
+                  <div className="bg-slate-800/50 rounded p-2">
+                    <div className="text-[9px] text-slate-500 mb-1">Radial (80%)</div>
+                    <div className="text-sm font-bold text-yellow-400">{Math.round(damageResult.finalDamage * 0.8)}</div>
+                  </div>
+                )}
+                {ability.description?.toLowerCase().includes('115%') && (
+                  <div className="bg-slate-800/50 rounded p-2">
+                    <div className="text-[9px] text-slate-500 mb-1">Non-God (115%)</div>
+                    <div className="text-sm font-bold text-orange-400">{Math.round(damageResult.finalDamage * 1.15)}</div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -389,6 +437,7 @@ const AbilitiesPanel: React.FC<AbilitiesPanelProps> = ({
             level={level}
             isExpanded={expandedAbility === `ability-${num}`}
             onToggle={() => toggleAbility(`ability-${num}`)}
+            passiveStance={passiveStance}
           />
         );
       })}
