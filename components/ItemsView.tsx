@@ -451,7 +451,8 @@ export const ItemsView: React.FC = () => {
 
             <div className="flex flex-col xl:flex-row gap-6">
                 {/* Left Sidebar - Filters */}
-                <div className="w-full xl:w-64 space-y-4 shrink-0">
+                <div className="w-full xl:w-64 shrink-0">
+                  <div className="xl:sticky xl:top-24 space-y-4 xl:max-h-[calc(100vh-8rem)] xl:overflow-y-auto xl:scrollbar-thin xl:scrollbar-thumb-slate-700 xl:scrollbar-track-transparent">
                     {/* Search */}
                     <div className="relative">
                         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
@@ -568,6 +569,7 @@ export const ItemsView: React.FC = () => {
                     <div className="text-center text-xs text-slate-500">
                         Showing <span className="text-mythic-gold font-bold">{filteredItems.length}</span> items
                     </div>
+                  </div>
                 </div>
 
                 {/* Main Grid */}
