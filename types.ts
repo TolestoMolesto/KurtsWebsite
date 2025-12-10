@@ -189,6 +189,15 @@ export interface Item {
   category: 'Offense' | 'Defense' | 'Utility' | 'Hybrid';
   buildsFrom?: string[];
   god?: string;
+  dot?: {
+    baseDamage: number;
+    scaling: number;        // e.g., 35 for 35% Strength
+    scalingStat: 'strength' | 'intelligence';
+    duration: number;       // in seconds
+    hitsPerSecond: number;  // e.g., 2 for 2 ticks per second
+    bonusDuration?: number; // for subsequent hits (e.g., Crusher has 3s bonus duration)
+    bonusScaling?: number;  // e.g., 0.5 for 50% bonus damage = halved
+  };
 }
 
 export enum TierRank {
@@ -233,20 +242,171 @@ export interface ChatMessage {
 
 // --- TOURNAMENT TYPES ---
 export type TournamentRole = 'Solo' | 'Jungle' | 'Mid' | 'Carry' | 'Support';
+export type TournamentPlayerStatus = 'active' | 'checked_in' | 'eliminated' | 'banned' | 'inactive';
+export type TournamentBracketType = 'round_robin' | 'single_elimination' | 'double_elimination';
+export type TournamentMatchStatus = 'pending' | 'verified' | 'disputed' | 'cancelled';
+export type TournamentModeType = 'random' | 'draft';
 
-export interface TournamentPlayer {
-  id: string;
-  name: string;
-  trackerLink?: string;
-  primaryRole: TournamentRole;
-  offRoles: TournamentRole[];
-  mmr: number;
+export interface TournamentPlayerStats {
+  score: number;
+  wins: number;
+  losses: number;
+  matchesPlayed: number;
   kills: number;
   deaths: number;
   assists: number;
+}
+
+export interface TournamentPlayer {
+  id: string;
+  name: string;                    // Profile Name
+  smiteIgn: string;                // Smite 2 In-Game Name
+  discord?: string;
+  trackerLink?: string;
+
+  // Streaming - at least one required
+  twitchUsername?: string;
+  youtubeUsername?: string;
+
+  // MMR
+  currentMmr: number;
+  peakMmr: number;
+  mmr: number;                     // Legacy field for compatibility
+
+  // Draft
+  isTeamCaptain: boolean;          // If true, appears in captain selection for live drafts
+
+  primaryRole: TournamentRole;
+  offRoles: TournamentRole[];
+
+  // Stats
+  stats: TournamentPlayerStats;
+
+  // Status
+  status: TournamentPlayerStatus;
+  checkedIn: boolean;
+
+  // Tournament relationship
+  tournamentId: string;
+
+  // Audit
+  createdAt: string;
+  updatedAt: string;
+  notes?: string;
+  flags?: ('disputed' | 'pending_review' | 'banned')[];
+}
+
+export interface TournamentMatchPlayer {
+  name: string;
+  kills: number;
+  deaths: number;
+  assists: number;
+  verified?: boolean;
+}
+
+export interface TournamentMatchVersion {
+  timestamp: string;
+  snapshot: any;
+  editedBy: string;
+  reason?: string;
+}
+
+export interface TournamentMatch {
+  id: string;
+  tournamentId: string;
+  date: string;
+  status: TournamentMatchStatus;
+  
+  team1: {
+    name: string;
+    players: TournamentMatchPlayer[];
+  };
+  team2: {
+    name: string;
+    players: TournamentMatchPlayer[];
+  };
+  
+  winner: 'Team 1' | 'Team 2';
+  
+  // Metadata
+  submittedAt: string;
+  submittedBy: string;
+  verifiedAt?: string;
+  verifiedBy?: string;
+  
+  // Versioning
+  versions?: TournamentMatchVersion[];
+}
+
+export interface DraftTeamMember {
+  playerId: string;
+  name: string;
+  isCaptain: boolean;
+  primaryRole: TournamentRole;
+  offRoles: TournamentRole[];
+  mmr: number;
+}
+
+export interface DraftSession {
+  id: string;
+  tournamentId: string;
+  status: 'not_started' | 'captain_selection' | 'picking' | 'completed';
+  captains: Array<{
+    playerId: string;
+    name: string;
+    mmr: number;
+    selections: string[]; // Player IDs
+    selectedCount: number;
+  }>;
+  availablePlayers: string[]; // Player IDs not yet selected
+  currentPickIndex: number; // Which captain's turn it is
+  pickOrder: string[]; // Order of captain IDs for round-robin
+  round: number; // Which round of picking (1-4 for 4 players per team)
+  completedAt?: string;
+  createdAt: string;
+}
+
+export interface DraftTeam {
+  id: string;
+  tournamentId: string;
+  name: string;
+  customName: string;
+  members: DraftTeamMember[];
   score: number;
-  matchesPlayed?: number;
-  wins?: number;
+  wins: number;
+  losses: number;
+  createdAt: string;
+  createdBy: string;
+  notes?: string;
+}
+
+export interface Tournament {
+  id: string;
+  month: string;
+  year: number;
+  startDate: string;
+  endDate: string;
+  status: 'planning' | 'active' | 'completed' | 'archived';
+  bracketType: TournamentBracketType;
+  mode: TournamentModeType;
+  prizePool?: number;
+  checkInOpen: boolean;
+  registrationOpen: boolean;
+  registrationStartDate?: string;
+  registrationEndDate?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AuditLog {
+  id: string;
+  action: 'player_created' | 'player_edited' | 'player_deleted' | 'match_created' | 'match_edited' | 'match_deleted' | 'match_verified' | 'tournament_created' | 'tournament_updated';
+  entityType: 'player' | 'match' | 'tournament';
+  entityId: string;
+  changes?: Record<string, any>;
+  changedBy: string;
+  timestamp: string;
+  reason?: string;
 }
 
 export interface TournamentTeam {
@@ -255,15 +415,6 @@ export interface TournamentTeam {
   players: TournamentPlayer[];
   totalScore: number;
   isWinner?: boolean;
-}
-
-export interface TournamentMatch {
-  id: string;
-  team1: TournamentTeam;
-  team2: TournamentTeam;
-  winnerId?: string;
-  nextMatchId?: string;
-  date: string;
 }
 
 export interface TournamentRound {
@@ -275,4 +426,32 @@ export interface Tournament {
   id: string;
   name: string;
   rounds: TournamentRound[];
+}
+
+export interface ScheduledMatch {
+  id: string;
+  tournamentId: string;
+  team1Id: string;
+  team2Id: string;
+  scheduledDate: string;
+  scheduledTime?: string;
+  week: number;
+  status: 'scheduled' | 'in_progress' | 'completed' | 'postponed';
+  matchId?: string; // Link to actual TournamentMatch when completed
+  notes?: string;
+}
+
+export interface TournamentSchedule {
+  id: string;
+  tournamentId: string;
+  startDate: string;
+  endDate: string;
+  weeks: {
+    weekNumber: number;
+    startDate: string;
+    endDate: string;
+    matches: ScheduledMatch[];
+  }[];
+  createdAt: string;
+  updatedAt: string;
 }

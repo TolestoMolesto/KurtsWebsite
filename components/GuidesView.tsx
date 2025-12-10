@@ -41,18 +41,43 @@ const Example: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   </div>
 );
 
+// --- INPUT FIELD COMPONENT ---
+const InputField: React.FC<{ label: string; value: number; onChange: (v: number) => void; min?: number; max?: number; suffix?: string }> = 
+  ({ label, value, onChange, min = 0, max = 9999, suffix = '' }) => (
+  <div className="flex flex-col gap-1">
+    <label className="text-xs text-slate-400 font-semibold uppercase tracking-wide">{label}</label>
+    <div className="flex items-center gap-2">
+      <input
+        type="text"
+        inputMode="numeric"
+        value={value}
+        onChange={(e) => {
+          const numValue = Number(e.target.value);
+          if (!isNaN(numValue)) {
+            onChange(Math.max(min, Math.min(max, numValue)));
+          } else if (e.target.value === '') {
+            onChange(min);
+          }
+        }}
+        className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono text-sm focus:border-mythic-gold focus:outline-none transition-colors"
+      />
+      {suffix && <span className="text-slate-500 text-sm">{suffix}</span>}
+    </div>
+  </div>
+);
+
 // --- INTERACTIVE DAMAGE CALCULATOR ---
 const DamageCalculator: React.FC = () => {
   const [rawDamage, setRawDamage] = useState(500);
   const [isCrit, setIsCrit] = useState(false);
-  const [bonusCritDmg, setBonusCritDmg] = useState(0);
+  const [baseCritMulti, setBaseCritMulti] = useState<1.65 | 2>(1.65);
   const [penPercent, setPenPercent] = useState(0);
   const [penFlat, setPenFlat] = useState(0);
   const [enemyProts, setEnemyProts] = useState(100);
   const [mitigation, setMitigation] = useState(0);
 
   const calc = useMemo(() => {
-    const critMulti = isCrit ? (1.65 + bonusCritDmg / 100) : 1;
+    const critMulti = isCrit ? baseCritMulti : 1;
     const afterCrit = rawDamage * critMulti;
     const effectiveProts = Math.max(0, (enemyProts * (1 - penPercent / 100)) - penFlat);
     const afterProts = afterCrit * (100 / (100 + effectiveProts));
@@ -65,101 +90,160 @@ const DamageCalculator: React.FC = () => {
       final: Math.floor(final),
       protReduction: ((effectiveProts / (100 + effectiveProts)) * 100).toFixed(1),
     };
-  }, [rawDamage, isCrit, bonusCritDmg, penPercent, penFlat, enemyProts, mitigation]);
-
-  const InputField: React.FC<{ label: string; value: number; onChange: (v: number) => void; min?: number; max?: number; suffix?: string }> = 
-    ({ label, value, onChange, min = 0, max = 9999, suffix = '' }) => (
-    <div className="flex flex-col gap-1">
-      <label className="text-xs text-slate-400 font-semibold uppercase tracking-wide">{label}</label>
-      <div className="flex items-center gap-2">
-        <input
-          type="number"
-          value={value}
-          onChange={(e) => onChange(Math.max(min, Math.min(max, Number(e.target.value) || 0)))}
-          className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono text-sm focus:border-mythic-gold focus:outline-none"
-        />
-        {suffix && <span className="text-slate-500 text-sm">{suffix}</span>}
-      </div>
-    </div>
-  );
+  }, [rawDamage, isCrit, baseCritMulti, penPercent, penFlat, enemyProts, mitigation]);
 
   return (
-    <div className="bg-slate-900 border border-slate-700/50 rounded-xl overflow-hidden">
-      <div className="bg-slate-950/50 p-4 border-b border-slate-800">
-        <h3 className="font-bold text-white flex items-center gap-2">
-          <Calculator size={18} className="text-mythic-gold" />
+    <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-700/50 rounded-xl overflow-hidden shadow-2xl">
+      <div className="bg-gradient-to-r from-slate-950/80 to-slate-900/50 p-5 border-b border-slate-700/50">
+        <h3 className="font-bold text-white flex items-center gap-2 mb-2">
+          <Calculator size={20} className="text-mythic-gold" />
           Interactive Damage Calculator
         </h3>
-        <p className="text-slate-400 text-sm mt-1">Input your stats to see calculated damage in real-time</p>
+        <p className="text-slate-400 text-sm">Input your stats to see calculated damage in real-time</p>
       </div>
 
-      <div className="p-4 grid md:grid-cols-2 gap-6">
-        {/* Inputs */}
-        <div className="space-y-4">
-          <div className="text-xs font-bold uppercase tracking-wider text-mythic-gold mb-2">Your Stats</div>
-          <InputField label="Raw Damage" value={rawDamage} onChange={setRawDamage} />
-          
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsCrit(!isCrit)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-all ${isCrit ? 'bg-mythic-gold text-slate-900' : 'bg-slate-800 text-slate-400 border border-slate-700'}`}
-            >
-              <Target size={14} /> Critical Hit
-            </button>
+      <div className="p-6 grid md:grid-cols-2 gap-8">
+        {/* Inputs - Left Side */}
+        <div className="space-y-5">
+          {/* Your Stats Section */}
+          <div>
+            <div className="text-xs font-bold uppercase tracking-wider text-mythic-gold mb-4 flex items-center gap-2">
+              <Zap size={14} /> Your Damage
+            </div>
+            
+            <div className="space-y-3">
+              <InputField label="Raw Damage" value={rawDamage} onChange={setRawDamage} />
+            </div>
           </div>
-          
-          {isCrit && (
-            <InputField label="Bonus Crit Damage" value={bonusCritDmg} onChange={setBonusCritDmg} max={100} suffix="%" />
-          )}
 
-          <InputField label="% Penetration" value={penPercent} onChange={setPenPercent} max={100} suffix="%" />
-          <InputField label="Flat Penetration" value={penFlat} onChange={setPenFlat} max={100} />
+          {/* Critical Hit Section */}
+          <div className="pt-2 border-t border-slate-800">
+            <div className="text-xs font-bold uppercase tracking-wider text-yellow-400 mb-3 flex items-center gap-2">
+              <Target size={14} /> Critical Hit
+            </div>
+            
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-slate-400 font-semibold uppercase tracking-wide block mb-2">Enable Crit</label>
+                <button
+                  onClick={() => setIsCrit(!isCrit)}
+                  className={`w-full px-4 py-2.5 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 ${isCrit ? 'bg-yellow-500 text-slate-900 shadow-lg shadow-yellow-500/20' : 'bg-slate-800 text-slate-400 border border-slate-700 hover:border-slate-600'}`}
+                >
+                  <Target size={14} /> {isCrit ? 'Critical Hit Active' : 'Enable Critical Hit'}
+                </button>
+              </div>
 
-          <div className="text-xs font-bold uppercase tracking-wider text-red-400 mb-2 mt-6">Enemy Stats</div>
-          <InputField label="Protections" value={enemyProts} onChange={setEnemyProts} max={500} />
-          <InputField label="Mitigation" value={mitigation} onChange={setMitigation} max={100} suffix="%" />
+              {isCrit && (
+                <>
+                  <div>
+                    <label className="text-xs text-slate-400 font-semibold uppercase tracking-wide block mb-2">Base Crit Multiplier</label>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setBaseCritMulti(1.65)}
+                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-bold transition-all ${
+                          baseCritMulti === 1.65
+                            ? 'bg-yellow-500/20 border border-yellow-500 text-yellow-300'
+                            : 'bg-slate-800 border border-slate-700 text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        1.65x
+                      </button>
+                      <button
+                        onClick={() => setBaseCritMulti(2)}
+                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-bold transition-all ${
+                          baseCritMulti === 2
+                            ? 'bg-yellow-500/20 border border-yellow-500 text-yellow-300'
+                            : 'bg-slate-800 border border-slate-700 text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        2.0x
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Penetration Section */}
+          <div className="pt-2 border-t border-slate-800">
+            <div className="text-xs font-bold uppercase tracking-wider text-cyan-400 mb-3 flex items-center gap-2">
+              <Target size={14} /> Penetration
+            </div>
+            
+            <div className="space-y-3">
+              <InputField label="% Penetration" value={penPercent} onChange={setPenPercent} max={100} suffix="%" />
+              <InputField label="Flat Penetration" value={penFlat} onChange={setPenFlat} max={100} />
+            </div>
+          </div>
+
+          {/* Enemy Stats Section */}
+          <div className="pt-2 border-t border-slate-800">
+            <div className="text-xs font-bold uppercase tracking-wider text-red-400 mb-3 flex items-center gap-2">
+              <Shield size={14} /> Enemy Defense
+            </div>
+            
+            <div className="space-y-3">
+              <InputField label="Protections" value={enemyProts} onChange={setEnemyProts} max={500} />
+              <InputField label="Mitigation" value={mitigation} onChange={setMitigation} max={100} suffix="%" />
+            </div>
+          </div>
         </div>
 
-        {/* Results */}
-        <div className="space-y-3">
-          <div className="text-xs font-bold uppercase tracking-wider text-green-400 mb-2">Calculation Breakdown</div>
+        {/* Results - Right Side */}
+        <div className="space-y-4">
+          <div className="text-xs font-bold uppercase tracking-wider text-green-400 mb-2 flex items-center gap-2">
+            <Calculator size={14} /> Calculation Breakdown
+          </div>
           
-          <div className="bg-slate-950 rounded-lg p-3 space-y-2 font-mono text-sm">
-            <div className="flex justify-between">
-              <span className="text-slate-400">Raw Damage:</span>
-              <span className="text-white">{rawDamage}</span>
+          {/* Step-by-step breakdown */}
+          <div className="space-y-2 bg-slate-950/80 rounded-lg p-4 border border-slate-800/50">
+            <div className="flex justify-between items-center py-1.5 px-0 border-b border-slate-800/30">
+              <span className="text-sm text-slate-400">Raw Damage:</span>
+              <span className="text-sm font-mono font-bold text-mythic-gold">{rawDamage}</span>
             </div>
+            
             {isCrit && (
-              <div className="flex justify-between">
-                <span className="text-slate-400">× Crit ({calc.critMulti}x):</span>
-                <span className="text-yellow-400">{calc.afterCrit}</span>
+              <div className="flex justify-between items-center py-1.5 px-0 border-b border-slate-800/30">
+                <span className="text-sm text-slate-400">× Crit ({calc.critMulti}x):</span>
+                <span className="text-sm font-mono font-bold text-yellow-400">{calc.afterCrit}</span>
               </div>
             )}
-            <div className="flex justify-between">
-              <span className="text-slate-400">Effective Prots:</span>
-              <span className="text-orange-400">{calc.effectiveProts} ({calc.protReduction}% reduction)</span>
+            
+            <div className="flex justify-between items-center py-1.5 px-0 border-b border-slate-800/30">
+              <span className="text-sm text-slate-400">Pen % / Flat:</span>
+              <span className="text-sm font-mono font-bold text-cyan-400">{penPercent}% / {penFlat}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-slate-400">After Prots:</span>
-              <span className="text-white">{calc.afterProts}</span>
+            
+            <div className="flex justify-between items-center py-1.5 px-0 border-b border-slate-800/30">
+              <span className="text-sm text-slate-400">Effective Prots:</span>
+              <span className="text-sm font-mono font-bold text-orange-400">{calc.effectiveProts}</span>
             </div>
+            
+            <div className="flex justify-between items-center py-1.5 px-0 border-b border-slate-800/30">
+              <span className="text-sm text-slate-400">After Prots:</span>
+              <span className="text-sm font-mono font-bold text-white">{calc.afterProts}</span>
+            </div>
+            
             {mitigation > 0 && (
-              <div className="flex justify-between">
-                <span className="text-slate-400">After Mitigation:</span>
-                <span className="text-white">{(parseFloat(calc.afterProts) * (1 - mitigation/100)).toFixed(1)}</span>
+              <div className="flex justify-between items-center py-1.5 px-0">
+                <span className="text-sm text-slate-400">Mitigation (-{mitigation}%):</span>
+                <span className="text-sm font-mono font-bold text-white">{(parseFloat(calc.afterProts) * (1 - mitigation/100)).toFixed(1)}</span>
               </div>
             )}
           </div>
 
-          <div className="bg-green-900/30 border border-green-500/30 rounded-lg p-4 text-center">
-            <div className="text-xs text-green-400 uppercase tracking-wider mb-1">Final Damage</div>
-            <div className="text-4xl font-black text-green-400">{calc.final}</div>
+          {/* Final Damage Display */}
+          <div className="bg-gradient-to-br from-mythic-gold/10 to-yellow-600/5 border border-mythic-gold/20 rounded-xl p-6 text-center shadow-lg">
+            <div className="text-xs text-mythic-gold uppercase tracking-wider mb-2 font-bold">Final Damage</div>
+            <div className="text-5xl font-black text-mythic-gold">{calc.final}</div>
           </div>
 
-          <div className="bg-slate-800/50 rounded-lg p-3 flex items-start gap-2">
+          {/* Info Box */}
+          <div className="bg-slate-800/30 rounded-lg p-3 flex items-start gap-2 border border-slate-700/30">
             <Info size={14} className="text-slate-500 mt-0.5 shrink-0" />
             <p className="text-xs text-slate-400">
-              The game floors (rounds down) the final damage value. Internal calculations use decimals.
+              The game floors (rounds down) the final damage value. Damage types are visual only - all calculations work the same.
             </p>
           </div>
         </div>
@@ -195,8 +279,8 @@ const DamageCalculationGuide: React.FC<{ onBack: () => void }> = ({ onBack }) =>
             <div className="text-slate-300">Penetration → Protections → Mitigation → Floor</div>
           </div>
           <div className="bg-slate-950/50 rounded-lg p-3">
-            <div className="text-mythic-gold font-semibold mb-1">Base Crit Multiplier</div>
-            <div className="text-slate-300">1.65x (165% damage)</div>
+            <div className="text-mythic-gold font-semibold mb-1">Base Crit Multipliers</div>
+            <div className="text-slate-300">1.65x or 2.0x (items increase further)</div>
           </div>
         </div>
       </div>
@@ -230,13 +314,23 @@ const DamageCalculationGuide: React.FC<{ onBack: () => void }> = ({ onBack }) =>
       </Section>
 
       <Section title="Critical Hit Damage" icon={<Target size={18} />}>
-        <p className="mb-3">Critical hits multiply your basic attack damage. Base crit is 1.65x, items can increase this.</p>
-        <Formula>Crit Damage = Basic Attack × (Base Crit + Bonus Crit)</Formula>
+        <p className="mb-3">Critical hits multiply your basic attack damage. Base crit multiplier can be either 1.65x or 2.0x depending on the item, and items can further increase this bonus.</p>
+        <Formula>Crit Damage = Basic Attack × (Base Crit Multiplier + Bonus Crit)</Formula>
         <Example>
-          Basic Attack: 254.4 | Bonus Crit Damage: +35%<br/>
-          Multiplier = 1.65 + 0.35 = 2.00<br/>
-          = 254.4 × 2.00<br/>
-          = <span className="text-green-400 font-bold">508.8 damage</span> (displays as 508)
+          <div className="mb-3">
+            <strong className="text-mythic-gold">Option 1: 1.65x Base Crit</strong><br/>
+            Basic Attack: 254.4 | Bonus Crit Damage: +35%<br/>
+            Multiplier = 1.65 + 0.35 = 2.00<br/>
+            = 254.4 × 2.00<br/>
+            = <span className="text-green-400 font-bold">508.8 damage</span> (displays as 508)
+          </div>
+          <div>
+            <strong className="text-mythic-gold">Option 2: 2.0x Base Crit</strong><br/>
+            Basic Attack: 254.4 | Bonus Crit Damage: +35%<br/>
+            Multiplier = 2.0 + 0.35 = 2.35<br/>
+            = 254.4 × 2.35<br/>
+            = <span className="text-green-400 font-bold">597.84 damage</span> (displays as 597)
+          </div>
         </Example>
       </Section>
 

@@ -351,5 +351,5 @@ export const GODS: God[] = [
     }
   ],
   recommendedBuilds: []
-},
+}
 ];

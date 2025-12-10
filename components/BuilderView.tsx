@@ -11,16 +11,21 @@ import {
 } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 import { God, Item, GodStats, Ability, DamageType, DEFAULT_GOD_STATS } from '../types';
-import { 
-  calculateTotalStats, 
-  calculateAttackSpeed, 
+import { STAT_FILTERS } from '../services/filters';
+import { parseDotFromPassive, calculateDotDamage, formatDotDisplay, parsePassiveDot, calculatePassiveDotDamage } from '../services/dotCalculations';
+
+import {
+  calculateTotalStats,
+  calculateAttackSpeed,
   getAttackSpeedPercentAtLevel,
   calculateBasicAttack,
   calculateAbilityDamage,
   extractAbilityDamageInfo,
+  extractSubAbilityDamageInfo,
   getAbilityRank,
   parseScaling,
-  ScalingComponent
+  ScalingComponent,
+  SecondaryDamage
 } from './damageCalculations';
 
 import { 
@@ -47,21 +52,6 @@ interface ItemPickerSlot {
   index?: number;
 }
 
-// Stat filters config
-const STAT_FILTERS = [
-  { id: 'Strength', label: 'STR', icon: <BicepsFlexed size={12} />, keys: ['Strength', 'Physical Power'] },
-  { id: 'Intelligence', label: 'INT', icon: <BookOpen size={12} />, keys: ['Intelligence', 'Magical Power'] },
-  { id: 'Attack Speed', label: 'AS', icon: <Zap size={12} />, keys: ['Attack Speed'] },
-  { id: 'Crit', label: 'Crit', icon: <Target size={12} />, keys: ['Crit'] },
-  { id: 'Pen', label: 'Pen', icon: <Crosshair size={12} />, keys: ['Penetration'] },
-  { id: 'Lifesteal', label: 'LS', icon: <Heart size={12} className="text-red-400" />, keys: ['Lifesteal'] },
-  { id: 'Cooldown', label: 'CDR', icon: <RotateCcw size={12} />, keys: ['Cooldown'] },
-  { id: 'Max Health', label: 'HP', icon: <Heart size={12} className="text-green-500" />, keys: ['Max Health'] },
-  { id: 'Max Mana', label: 'Mana', icon: <Droplet size={12} className="text-blue-500" />, keys: ['Max Mana'] },
-  { id: 'Physical Protection', label: 'Phys', icon: <Shield size={12} />, keys: ['Phys'] },
-  { id: 'Magical Protection', label: 'Mag', icon: <Shield size={12} className="text-purple-400" />, keys: ['Mag'] },
-];
-
 // Helper functions for build paths
 const getComponents = (item: Item, allItems: Item[]) => {
   if (!item.buildsFrom) return [];
@@ -81,6 +71,39 @@ const findRoots = (item: Item, allItems: Item[], visited = new Set<string>()): I
 };
 
 // ============================================================
+// COOLDOWN REDUCTION HELPER
+// ============================================================
+/**
+ * Calculate cooldown with CDR applied using Smite's CDR formula
+ * Formula: Reduced CD = Base CD / (1 + CDR% / 100)
+ * This provides smooth scaling with no hard cap, allowing CDR to exceed 100%
+ * 
+ * Examples with 14s base cooldown:
+ * - 20% CDR → 11.7s
+ * - 40% CDR → 10s
+ * - 65% CDR → 8.5s
+ * - 85% CDR → 7.6s
+ * - 105% CDR → 6.8s
+ */
+const calculateReducedCooldown = (baseCD: string, cdrPercent: number): number => {
+  if (!baseCD || baseCD === '-') return 0;
+  
+  // Parse cooldown: "10s", "10", "10.5s", etc.
+  const cdMatch = baseCD.match(/(\d+(?:\.\d+)?)/);
+  if (!cdMatch) return 0;
+  
+  const baseCooldown = parseFloat(cdMatch[1]);
+  if (isNaN(baseCooldown)) return 0;
+  
+  // Smite CDR formula: CD_reduced = Base_CD / (1 + CDR% / 100)
+  // Allows CDR to exceed 100% without negative values
+  const cdrMultiplier = 1 + Math.max(0, cdrPercent) / 100;
+  const reducedCooldown = baseCooldown / cdrMultiplier;
+  
+  return Math.round(reducedCooldown * 10) / 10; // Round to 1 decimal place
+};
+
+// ============================================================
 // ABILITY CARD COMPONENT
 // ============================================================
 interface AbilityCardProps {
@@ -93,25 +116,40 @@ interface AbilityCardProps {
   isExpanded: boolean;
   onToggle: () => void;
   passiveStance?: string | null;  // NEW
+  onPassiveStanceChange?: (stance: StanceId) => void;
+  // Ability-specific toggles
+  ability2Active?: boolean;
+  onAbility2Toggle?: (v: boolean) => void;
+  ability2Shield?: { physical: number; magical: number; pct: number } | null;
 }
 
-const AbilityCard: React.FC<AbilityCardProps> = ({ 
-  ability, 
-  abilityNum, 
-  rank, 
-  godStats, 
+const AbilityCard: React.FC<AbilityCardProps> = ({
+  ability,
+  abilityNum,
+  rank,
+  godStats,
   godDamageType,
   level,
   isExpanded,
   onToggle,
-  passiveStance
+  passiveStance,
+  onPassiveStanceChange,
+  ability2Active,
+  onAbility2Toggle,
+  ability2Shield,
 }) => {
   const isPassive = abilityNum === 'passive';
   const isBasic = abilityNum === 'basic';
   const isUlt = abilityNum === 4;
   
   // Extract damage info from ability
-  const damageInfo = useMemo(() => extractAbilityDamageInfo(ability), [ability]);
+  const damageInfo = useMemo(() => {
+    // For Ability 3, extract damage from Spear Strike subAbility
+    if (abilityNum === 3 && ability.subAbilities && ability.subAbilities[1]) {
+      return extractSubAbilityDamageInfo(ability.subAbilities[1]);
+    }
+    return extractAbilityDamageInfo(ability);
+  }, [ability, abilityNum]);
   
   // Calculate damage if applicable
   const damageResult = useMemo(() => {
@@ -167,20 +205,56 @@ const AbilityCard: React.FC<AbilityCardProps> = ({
       let bonusScaling: ScalingComponent[] = [];
       
       if (passiveStance && ability.attributes) {
-        const stanceName = passiveStance.charAt(0).toUpperCase() + passiveStance.slice(1);
-        const bonusScalingAttr = ability.attributes.find(a => 
-          a.label.toLowerCase().includes('bonus') && 
-          a.label.toLowerCase().includes('scaling') &&
-          a.label.includes(stanceName)
-        );
-        if (bonusScalingAttr) {
+        const stanceKey = passiveStance.toLowerCase();
+
+        // More robust detection for bonus scaling attributes.
+        // Some abilities use labels like "Bonus Damage (Unarmored)" or
+        // "Bonus Damage Scaling (Unarmored)" — not always containing the
+        // literal word "scaling". Match any attribute that references the
+        // stance and looks like a scaling line (contains % or strength/str),
+        // or explicitly contains "bonus" and the stance.
+        const bonusScalingAttr = ability.attributes.find(a => {
+          const lab = a.label.toLowerCase();
+          const val = (a.value || '').toLowerCase();
+
+          const mentionsStance = lab.includes(stanceKey) || val.includes(stanceKey);
+          const looksLikeScaling = lab.includes('scal') || val.includes('%') || val.includes('strength') || val.includes('str');
+          const isBonusLabel = lab.includes('bonus') || lab.includes('additional') || lab.includes('increased') || lab.includes('extra');
+
+          return mentionsStance && (isBonusLabel || looksLikeScaling);
+        }) || null;
+
+        // Fallback: if a generic "bonus" attribute exists with strength in the value,
+        // but it doesn't explicitly include the stance, prefer it only if no better match.
+        if (!bonusScalingAttr) {
+          const fallback = ability.attributes.find(a => {
+            const lab = a.label.toLowerCase();
+            const val = (a.value || '').toLowerCase();
+            return (lab.includes('bonus') || lab.includes('bonus damage')) && (val.includes('strength') || val.includes('str'));
+          });
+          if (fallback) {
+            bonusScaling = parseScaling(fallback.value);
+          }
+        } else {
           bonusScaling = parseScaling(bonusScalingAttr.value);
         }
       }
       
       // Combine for calculation
       const finalScaling = [...currentScaling, ...bonusScaling];
-      
+      // Debug: log Shield of Achilles parsing so we can inspect values
+      if (ability.name && ability.name.toLowerCase().includes('shield of achilles')) {
+        // eslint-disable-next-line no-console
+        console.debug('[Ability Debug] Shield of Achilles', {
+          rank,
+          damageInfo,
+          currentScaling,
+          bonusScaling,
+          finalScaling,
+          strength: godStats.strength,
+        });
+      }
+
       return calculateAbilityDamage(
         damageInfo.baseDamageValues,
         rank,
@@ -194,6 +268,19 @@ const AbilityCard: React.FC<AbilityCardProps> = ({
     }
     return null;
   }, [isBasic, damageInfo, rank, godStats, godDamageType, passiveStance, ability.attributes]);
+
+  // Calculate passive DOT damage (e.g., Agni's Combustion)
+  const passiveDotResult = useMemo(() => {
+    if (!isPassive) return null;
+    const dotInfo = parsePassiveDot(ability.attributes, ability.description || '');
+    if (!dotInfo) return null;
+    return {
+      ...calculatePassiveDotDamage(dotInfo, godStats),
+      label: dotInfo.label,
+      duration: dotInfo.duration,
+      tickInterval: dotInfo.tickInterval
+    };
+  }, [isPassive, ability.attributes, ability.description, godStats]);
 
   const getIcon = () => {
     if (isPassive) return <Hexagon size={14} className="text-blue-400" />;
@@ -217,6 +304,17 @@ const AbilityCard: React.FC<AbilityCardProps> = ({
 
   return (
     <div className={`bg-slate-800/50 rounded-lg border ${getBorderColor()} transition-all overflow-hidden`}>
+      {/* For passive abilities, show the stance toggle and bonuses in the same card (always visible) */}
+      {isPassive && ability && onPassiveStanceChange && (
+        <div className="p-3">
+          <PassiveStanceToggle
+            passive={ability}
+            currentStance={passiveStance || 'armored'}
+            onStanceChange={(s) => onPassiveStanceChange(s)}
+            level={level}
+          />
+        </div>
+      )}
       {/* Header - Always visible */}
       <button 
         onClick={onToggle}
@@ -261,26 +359,172 @@ const AbilityCard: React.FC<AbilityCardProps> = ({
               </span>
             </div>
           )}
-          {isPassive && (
+          {isPassive && passiveDotResult && (
+            <div className="flex items-center gap-2 mt-1">
+              <Flame size={12} className="text-orange-400" />
+              <span className="text-xs text-orange-400 font-mono">{passiveDotResult.total} total</span>
+              <span className="text-[10px] text-slate-500">
+                ({passiveDotResult.perTick} × {passiveDotResult.ticks} ticks)
+              </span>
+            </div>
+          )}
+          {isPassive && !passiveDotResult && (
             <p className="text-[10px] text-slate-400 line-clamp-1 mt-1">{ability.description?.split('\n')[0]}</p>
           )}
         </div>
 
-        {/* Expand/Collapse */}
-        <div className="shrink-0 text-slate-500">
-          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-        </div>
+        {/* Ability 2 toggle (visible on Ability 2 / Radiant Glory) */}
+        {abilityNum === 2 && onAbility2Toggle && (
+          <div className="shrink-0 flex items-center gap-2">
+            {/* Shield display - prominent position */}
+            {ability2Shield && ability2Shield.physical > 0 && (
+              <div className="flex items-center gap-1.5 bg-cyan-900/30 border border-cyan-500/30 px-2.5 py-1 rounded-lg">
+                <Shield size={14} className="text-cyan-400" />
+                <span className="text-cyan-400 font-bold text-sm font-mono">{Math.round(ability2Shield.physical)}</span>
+              </div>
+            )}
+            <button
+              onClick={(e) => { e.stopPropagation(); onAbility2Toggle(!ability2Active); }}
+              className={`text-xs font-bold px-2 py-1 rounded ${ability2Active ? 'bg-green-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+            >
+              {ability2Active ? 'Active' : 'Inactive'}
+            </button>
+            <div className="shrink-0 text-slate-500">
+              {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </div>
+          </div>
+        )}
+        {!onAbility2Toggle && (
+          <div className="shrink-0 text-slate-500">
+            {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </div>
+        )}
       </button>
 
       {/* Expanded Content */}
       {isExpanded && (
         <div className="px-3 pb-3 border-t border-slate-700/50">
+          {/* (toggle moved above into card header area) */}
+
           {/* Description */}
           <div className="mt-3">
             <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-line">
               {ability.description}
             </p>
           </div>
+
+          {/* Sub-Abilities for Ability 3 */}
+          {abilityNum === 3 && ability.subAbilities && ability.subAbilities.length > 0 && (
+            <div className="mt-3 space-y-3">
+              <h5 className="text-[10px] font-bold text-mythic-gold uppercase">Phases</h5>
+              {ability.subAbilities.map((subAbility, idx) => (
+                <div key={idx} className="bg-slate-800/70 rounded-lg p-2.5 border border-slate-700/50">
+                  {/* Sub-Ability Header */}
+                  <div className="flex items-start gap-2 mb-2">
+                    {subAbility.image ? (
+                      <img src={subAbility.image} alt={subAbility.name} className="w-8 h-8 rounded-md object-cover shrink-0" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-md bg-slate-900 flex items-center justify-center shrink-0">
+                        <Zap size={12} className="text-slate-500" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-bold text-xs text-white">{subAbility.name}</div>
+                      <p className="text-[9px] text-slate-400 leading-relaxed mt-1">{subAbility.description}</p>
+                    </div>
+                  </div>
+
+                  {/* Sub-Ability Damage Calculation (for Spear Strike) */}
+                  {idx === 1 && damageResult && 'finalDamage' in damageResult && (
+                    <div className="mt-2 bg-slate-900/50 rounded p-1.5 border border-slate-700/30">
+                      <div className="text-[10px] text-slate-400 mb-1">Spear Strike Damage</div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-green-400 font-mono">{damageResult.finalDamage}</span>
+                        <span className="text-[9px] text-slate-500">
+                          ({damageResult.baseDamage} + {Math.round(damageResult.scalingDamage)} scaling)
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Sub-Ability Attributes */}
+                  {subAbility.attributes && subAbility.attributes.length > 0 && (
+                    <div className="mt-2 grid grid-cols-1 gap-1">
+                      {subAbility.attributes.map((attr, attrIdx) => (
+                        <div key={attrIdx} className="flex justify-between text-[9px]">
+                          <span className="text-slate-500">{attr.label}:</span>
+                          <span className="text-slate-200 font-mono">{attr.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Debug panel for Shield of Achilles */}
+          {isExpanded && ability.name?.toLowerCase().includes('shield of achilles') && (
+            (() => {
+              // Derive debug values similarly to the calculation path
+              const stanceKey = passiveStance ? passiveStance.toLowerCase() : null;
+              let currentScaling = damageInfo.scaling || [];
+
+              if (damageInfo.conditionalScaling?.conditional && stanceKey) {
+                const { scaling: altScaling, condition } = damageInfo.conditionalScaling.conditional;
+                const condLower = (condition || '').toLowerCase();
+                let matches = false;
+                if (stanceKey === 'unarmored') {
+                  matches = condLower.includes('foregoing') || condLower.includes('forego') || condLower.includes('unarmored') || condLower.includes('no armor');
+                } else if (stanceKey === 'armored') {
+                  matches = (condLower.includes('armored') || condLower.includes('wearing armor')) && !condLower.includes('unarmored');
+                }
+                if (matches) currentScaling = altScaling;
+              }
+
+              // find bonus scaling attribute (robust matching)
+              let bonusScalingLocal: ScalingComponent[] = [];
+              if (passiveStance && ability.attributes) {
+                const bonusAttr = ability.attributes.find(a => {
+                  const lab = a.label.toLowerCase();
+                  const val = (a.value || '').toLowerCase();
+                  const mentionsStance = lab.includes(stanceKey || '') || val.includes(stanceKey || '');
+                  const looksLikeScaling = lab.includes('scal') || val.includes('%') || val.includes('strength') || val.includes('str');
+                  const isBonusLabel = lab.includes('bonus') || lab.includes('additional') || lab.includes('increased') || lab.includes('extra');
+                  return mentionsStance && (isBonusLabel || looksLikeScaling);
+                }) || null;
+
+                if (bonusAttr) bonusScalingLocal = parseScaling(bonusAttr.value);
+              }
+
+              const finalScalingLocal = [...currentScaling, ...bonusScalingLocal];
+              const str = godStats.strength || 0;
+              const scalingDamageVal = finalScalingLocal.reduce((sum, s) => sum + (str * (s.percent / 100)), 0);
+              const baseIdx = Math.max(0, Math.min(4, rank - 1));
+              const baseVal = damageInfo.baseDamageValues?.[baseIdx] ?? damageInfo.baseDamageValues?.[0] ?? 0;
+              const raw = baseVal + scalingDamageVal;
+              const final = Math.floor(raw);
+
+              return (
+                <div className="mt-3 bg-red-900/10 border border-red-700/30 rounded-lg p-3">
+                  <h5 className="text-[10px] font-bold text-red-300 uppercase mb-2">Debug — Shield of Achilles</h5>
+                  <div className="text-[12px] grid grid-cols-2 gap-2">
+                    <div className="text-slate-400">Base Damage</div><div className="font-mono">{baseVal}</div>
+                    <div className="text-slate-400">STR</div><div className="font-mono">{str}</div>
+                    <div className="text-slate-400">Current Scaling</div>
+                      <div className="font-mono">{currentScaling.map(s => `${s.percent}% ${s.stat === 'strength' ? 'STR' : 'INT'}`).join(' + ') || '—'}</div>
+                    <div className="text-slate-400">Bonus Scaling</div>
+                      <div className="font-mono">{bonusScalingLocal.map(s => `${s.percent}% ${s.stat === 'strength' ? 'STR' : 'INT'}`).join(' + ') || '—'}</div>
+                    <div className="text-slate-400">Final Scaling</div>
+                      <div className="font-mono">{finalScalingLocal.map(s => `${s.percent}% ${s.stat === 'strength' ? 'STR' : 'INT'}`).join(' + ') || '—'}</div>
+                    <div className="text-slate-400">Scaling Damage</div><div className="font-mono">{Math.round(scalingDamageVal*10)/10}</div>
+                    <div className="text-slate-400">Raw Total</div><div className="font-mono">{Math.round(raw*10)/10}</div>
+                    <div className="text-slate-400">Final (floored)</div><div className="font-mono">{final}</div>
+                  </div>
+                </div>
+              );
+            })()
+          )}
 
           {/* Cost & Cooldown */}
           {!isPassive && (
@@ -296,7 +540,15 @@ const AbilityCard: React.FC<AbilityCardProps> = ({
                 <div className="flex items-center gap-1.5">
                   <RotateCcw size={12} className="text-slate-400" />
                   <span className="text-[10px] text-slate-400">CD:</span>
-                  <span className="text-xs font-mono text-slate-300">{ability.cooldown}</span>
+                  {godStats.cooldownRate > 0 ? (
+                    <>
+                      <span className="text-xs font-mono text-slate-500 line-through">{ability.cooldown}</span>
+                      <span className="text-xs font-mono text-green-400">{calculateReducedCooldown(ability.cooldown, godStats.cooldownRate)}s</span>
+                      <span className="text-[8px] text-slate-500">({godStats.cooldownRate.toFixed(1)}% CDR)</span>
+                    </>
+                  ) : (
+                    <span className="text-xs font-mono text-slate-300">{ability.cooldown}</span>
+                  )}
                 </div>
               )}
             </div>
@@ -319,22 +571,74 @@ const AbilityCard: React.FC<AbilityCardProps> = ({
           {/* Damage Variants for Abilities */}
           {!isBasic && !isPassive && damageResult && 'finalDamage' in damageResult && (
             <div className="mt-3 bg-slate-900/50 rounded-lg p-3">
-              <h5 className="text-[10px] font-bold text-mythic-gold uppercase mb-2">Damage Variants</h5>
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="bg-slate-800/50 rounded p-2">
-                  <div className="text-[9px] text-slate-500 mb-1">Main Hit</div>
-                  <div className="text-sm font-bold text-green-400">{damageResult.finalDamage}</div>
-                </div>
-                {ability.description?.toLowerCase().includes('80%') && (
+              <h5 className="text-[10px] font-bold text-mythic-gold uppercase mb-2">Damage Breakdown</h5>
+              <div className="space-y-3">
+                {/* Primary Damage - show as DoT if applicable */}
+                {damageInfo.isDot && damageInfo.dotTicks ? (
                   <div className="bg-slate-800/50 rounded p-2">
-                    <div className="text-[9px] text-slate-500 mb-1">Radial (80%)</div>
-                    <div className="text-sm font-bold text-yellow-400">{Math.round(damageResult.finalDamage * 0.8)}</div>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Flame size={12} className="text-orange-400" />
+                      <span className="text-[9px] text-slate-400">Tick Damage ({damageInfo.dotTicks} ticks over {damageInfo.dotDuration}s)</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <div className="text-[9px] text-slate-500">Per Tick</div>
+                        <div className="text-sm font-bold text-orange-400">{damageResult.finalDamage}</div>
+                      </div>
+                      <div>
+                        <div className="text-[9px] text-slate-500">Total</div>
+                        <div className="text-sm font-bold text-green-400">{damageResult.finalDamage * damageInfo.dotTicks}</div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="bg-slate-800/50 rounded p-2">
+                      <div className="text-[9px] text-slate-500 mb-1">Main Hit</div>
+                      <div className="text-sm font-bold text-green-400">{damageResult.finalDamage}</div>
+                    </div>
+                    {ability.description?.toLowerCase().includes('80%') && (
+                      <div className="bg-slate-800/50 rounded p-2">
+                        <div className="text-[9px] text-slate-500 mb-1">Radial (80%)</div>
+                        <div className="text-sm font-bold text-yellow-400">{Math.round(damageResult.finalDamage * 0.8)}</div>
+                      </div>
+                    )}
+                    {ability.description?.toLowerCase().includes('115%') && (
+                      <div className="bg-slate-800/50 rounded p-2">
+                        <div className="text-[9px] text-slate-500 mb-1">Non-God (115%)</div>
+                        <div className="text-sm font-bold text-orange-400">{Math.round(damageResult.finalDamage * 1.15)}</div>
+                      </div>
+                    )}
                   </div>
                 )}
-                {ability.description?.toLowerCase().includes('115%') && (
-                  <div className="bg-slate-800/50 rounded p-2">
-                    <div className="text-[9px] text-slate-500 mb-1">Non-God (115%)</div>
-                    <div className="text-sm font-bold text-orange-400">{Math.round(damageResult.finalDamage * 1.15)}</div>
+
+                {/* Secondary Damages (Explode, etc.) */}
+                {damageInfo.secondaryDamages && damageInfo.secondaryDamages.length > 0 && (
+                  <div className="border-t border-slate-700/50 pt-2">
+                    {damageInfo.secondaryDamages.map((secondary: SecondaryDamage, idx: number) => {
+                      const baseIdx = Math.max(0, Math.min(4, rank - 1));
+                      const baseDmg = secondary.baseDamageValues[baseIdx] || secondary.baseDamageValues[0] || 0;
+                      const scalingDmg = secondary.scaling.reduce((sum, s) => {
+                        const statVal = s.stat === 'strength' ? godStats.strength : godStats.intelligence;
+                        return sum + (statVal * s.percent / 100);
+                      }, 0);
+                      const totalDmg = Math.floor(baseDmg + scalingDmg);
+
+                      return (
+                        <div key={idx} className="bg-slate-800/50 rounded p-2">
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <Zap size={12} className="text-yellow-400" />
+                            <span className="text-[9px] text-slate-400">{secondary.label} Damage</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-yellow-400">{totalDmg}</span>
+                            <span className="text-[9px] text-slate-500">
+                              ({baseDmg} + {Math.round(scalingDmg)} scaling)
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -383,6 +687,9 @@ interface AbilitiesPanelProps {
   stats: GodStats;
   passiveStance?: StanceId | null;
   onPassiveStanceChange?: (stance: StanceId) => void;
+  ability2Active?: boolean;
+  onAbility2Toggle?: (v: boolean) => void;
+  ability2Shield?: { physical: number; magical: number; pct: number } | null;
 }
 
 const AbilitiesPanel: React.FC<AbilitiesPanelProps> = ({ 
@@ -391,7 +698,10 @@ const AbilitiesPanel: React.FC<AbilitiesPanelProps> = ({
   level, 
   stats,
   passiveStance,
-  onPassiveStanceChange 
+  onPassiveStanceChange,
+  ability2Active,
+  onAbility2Toggle
+  , ability2Shield
 }) => {
   const [expandedAbility, setExpandedAbility] = useState<string | null>(null);
   
@@ -428,15 +738,7 @@ const AbilitiesPanel: React.FC<AbilitiesPanelProps> = ({
         </span>
       </div>
 
-      {/* Passive Stance Toggle */}
-      {hasPassiveStances(activeKit.passive) && onPassiveStanceChange && (
-        <PassiveStanceToggle
-          passive={activeKit.passive}
-          currentStance={passiveStance || 'armored'}
-          onStanceChange={onPassiveStanceChange}
-          level={level}
-        />
-      )}
+      {/* Passive stance toggle is now rendered inside the Passive Ability card */}
 
       {/* Passive */}
       <AbilityCard
@@ -448,6 +750,8 @@ const AbilitiesPanel: React.FC<AbilitiesPanelProps> = ({
         level={level}
         isExpanded={expandedAbility === 'passive'}
         onToggle={() => toggleAbility('passive')}
+        passiveStance={passiveStance}
+        onPassiveStanceChange={onPassiveStanceChange}
       />
 
       {/* Abilities 1-4 */}
@@ -466,6 +770,9 @@ const AbilitiesPanel: React.FC<AbilitiesPanelProps> = ({
             isExpanded={expandedAbility === `ability-${num}`}
             onToggle={() => toggleAbility(`ability-${num}`)}
             passiveStance={passiveStance}
+            ability2Active={ability2Active}
+            onAbility2Toggle={onAbility2Toggle}
+            ability2Shield={ability2Shield}
           />
         );
       })}
@@ -486,13 +793,143 @@ const AbilitiesPanel: React.FC<AbilitiesPanelProps> = ({
 };
 
 // ============================================================
+// ITEM PASSIVE CARD COMPONENT (memoized for performance)
+// ============================================================
+interface ItemPassiveCardProps {
+  item: Item;
+  isActive: boolean;
+  godStats: GodStats;
+  godDamageType: DamageType;
+  onToggle?: () => void;
+}
+
+const ItemPassiveCard = React.memo(({ item, isActive, godStats, godDamageType, onToggle }: ItemPassiveCardProps) => {
+  // Determine if this item passive should have a toggle
+  // DoT items like The Crusher are always active when abilities hit, so no toggle needed
+  const hasToggle = !item.dot && onToggle;
+
+  // Calculate DoT damage directly if item has dot property
+  const dotResults = useMemo(() => {
+    if (!item.dot) return null;
+    
+    const str = godStats.strength;
+    const intel = godStats.intelligence;
+    const scalingStat = item.dot.scalingStat === 'strength' ? str : intel;
+    
+    // Initial DoT calculation
+    const initialTotal = item.dot.baseDamage + (scalingStat * item.dot.scaling / 100);
+    const initialFloored = Math.floor(initialTotal);
+    const initialTicks = item.dot.duration * item.dot.hitsPerSecond;
+    const initialPerTick = Math.floor(initialFloored / initialTicks);
+    const initialDisplay = initialPerTick * initialTicks;
+    
+    // Bonus DoT calculation (if bonusScaling exists)
+    let bonusDisplay = null;
+    let bonusPerTick = 0;
+    let bonusTicks = 0;
+    let bonusDuration = item.dot.duration;
+
+    if (item.dot.bonusScaling) {
+      const bonusScaling = item.dot.scaling * item.dot.bonusScaling;
+      const bonusTotal = item.dot.baseDamage + (scalingStat * bonusScaling / 100);
+      const bonusFloored = Math.floor(bonusTotal);
+      bonusDuration = item.dot.bonusDuration || item.dot.duration;
+      bonusTicks = bonusDuration * item.dot.hitsPerSecond;
+      bonusPerTick = Math.floor(bonusFloored / bonusTicks);
+      bonusDisplay = bonusPerTick * bonusTicks;
+    }
+
+    return {
+      initial: {
+        total: initialDisplay,
+        perTick: initialPerTick,
+        ticks: initialTicks,
+        dps: Math.floor(initialDisplay / item.dot.duration)
+      },
+      bonus: bonusDisplay !== null ? {
+        total: bonusDisplay,
+        perTick: bonusPerTick,
+        ticks: bonusTicks,
+        dps: Math.floor(bonusDisplay / bonusDuration)
+      } : null
+    };
+  }, [item.dot, godStats.strength, godStats.intelligence]);
+  
+  return (
+    <div 
+      className={`bg-slate-800/50 rounded-lg border transition-colors p-3 ${
+        isActive ? 'border-green-500/50 hover:border-green-500' : 'border-slate-700/50 hover:border-slate-600'
+      }`}
+    >
+      <div className="flex items-start gap-3">
+        {/* Item Icon */}
+        <div className="w-10 h-10 rounded-lg bg-slate-900 border border-slate-700 overflow-hidden shrink-0">
+          <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+        </div>
+        
+        <div className="flex-1">
+          <h4 className="font-bold text-xs text-white mb-1">{item.name}</h4>
+          <p className="text-[10px] text-slate-300 leading-relaxed">
+            {item.passive}
+          </p>
+          
+          {/* DoT Damage Display */}
+          {dotResults && dotResults.initial && (
+            <div className="mt-2 space-y-1.5">
+              {/* Initial DoT */}
+              <div className="bg-slate-900/50 rounded px-2 py-1.5 border border-red-500/20">
+                <div className="text-[9px] text-slate-400 mb-1">Initial Hit DoT</div>
+                <div className="text-xs font-bold text-red-400 font-mono">
+                  {dotResults.initial.total} total
+                  <span className="text-slate-500 font-normal ml-1">({dotResults.initial.perTick} × {Math.round(dotResults.initial.ticks)} ticks)</span>
+                </div>
+              </div>
+              
+              {/* Bonus DoT (for items like Crusher with subsequent hits dealing reduced damage) */}
+              {dotResults.bonus && (
+                <div className="bg-slate-900/50 rounded px-2 py-1.5 border border-orange-500/20">
+                  <div className="text-[9px] text-slate-400 mb-1">Subsequent Hit DoT (Refreshed)</div>
+                  <div className="text-xs font-bold text-orange-400 font-mono">
+                    {dotResults.bonus.total} total
+                    <span className="text-slate-500 font-normal ml-1">({dotResults.bonus.perTick} × {Math.round(dotResults.bonus.ticks)} ticks)</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {hasToggle && (
+          <button
+            onClick={onToggle}
+            className={`text-xs font-bold px-2 py-1 rounded shrink-0 transition-colors ${
+              isActive
+                ? 'bg-green-600 text-white hover:bg-green-700'
+                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+            }`}
+          >
+            {isActive ? 'On' : 'Off'}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+});
+
+ItemPassiveCard.displayName = 'ItemPassiveCard';
+
+// ============================================================
 // ITEM PASSIVES PANEL COMPONENT
 // ============================================================
 interface ItemPassivesPanelProps {
   items: (Item | null)[];
+  godStats: GodStats;
+  godDamageType: DamageType;
+  activePassives?: Set<string>;
+  onPassiveToggle?: (itemId: string) => void;
 }
 
-const ItemPassivesPanel: React.FC<ItemPassivesPanelProps> = ({ items }) => {
+const ItemPassivesPanel: React.FC<ItemPassivesPanelProps> = ({ items, godStats, godDamageType, activePassives = new Set(), onPassiveToggle }) => {
   const itemsWithPassives = items.filter((item): item is Item => item !== null && !!item.passive);
   
   if (itemsWithPassives.length === 0) {
@@ -512,25 +949,15 @@ const ItemPassivesPanel: React.FC<ItemPassivesPanelProps> = ({ items }) => {
         Item Passives ({itemsWithPassives.length})
       </h3>
       
-      {itemsWithPassives.map((item, idx) => (
-        <div 
-          key={item.id + idx}
-          className="bg-slate-800/50 rounded-lg border border-slate-700/50 p-3 hover:border-slate-600 transition-colors"
-        >
-          <div className="flex items-start gap-3">
-            {/* Item Icon */}
-            <div className="w-10 h-10 rounded-lg bg-slate-900 border border-slate-700 overflow-hidden shrink-0">
-              <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-            </div>
-            
-            <div>
-              <h4 className="font-bold text-xs text-white mb-1">{item.name}</h4>
-              <p className="text-[10px] text-slate-300 leading-relaxed">
-                {item.passive}
-              </p>
-            </div>
-          </div>
-        </div>
+      {itemsWithPassives.map((item) => (
+        <ItemPassiveCard
+          key={item.id}
+          item={item}
+          isActive={activePassives.has(item.id)}
+          godStats={godStats}
+          godDamageType={godDamageType}
+          onToggle={onPassiveToggle ? () => onPassiveToggle(item.id) : undefined}
+        />
       ))}
     </div>
   );
@@ -548,6 +975,8 @@ export const BuilderView: React.FC = () => {
   const [aspectId, setAspectId] = useState<string | null>(null);
   const [level, setLevel] = useState(20);
   const [passiveStance, setPassiveStance] = useState<StanceId | null>(null);
+  const [ability2Active, setAbility2Active] = useState<boolean>(false);
+  const [activeItemPassives, setActiveItemPassives] = useState<Set<string>>(new Set());
   
   const [build, setBuild] = useState<CurrentBuild>({
     starter: null,
@@ -562,6 +991,8 @@ export const BuilderView: React.FC = () => {
   const [pickerSearch, setPickerSearch] = useState('');
   const [pickerFilter, setPickerFilter] = useState<'All' | 'Physical' | 'Magical'>('All');
   const [activeStatFilters, setActiveStatFilters] = useState<string[]>([]);
+
+
 
   // Derived
   const selectedGod = useMemo(() => GODS.find(g => g.id === selectedGodId) || null, [GODS, selectedGodId]);
@@ -578,6 +1009,8 @@ export const BuilderView: React.FC = () => {
     }
   }, [selectedGod]);
 
+
+
   // 1. Base + Items Stats (For Display in Panel - Keeps stats clean)
   const displayStats = useMemo(() => {
     if (!selectedGod) return DEFAULT_GOD_STATS;
@@ -593,10 +1026,118 @@ export const BuilderView: React.FC = () => {
     return calculateTotalStats(selectedGod, level, allItems, selectedGod.damageType);
   }, [selectedGod, level, build, ITEMS]);
 
-  // 2. Combat Stats (For Damage Calculation - Includes Passive Stance Bonuses)
+  // 1.b Compute Ability 2 shield amounts based on passive stance
+  const ability2Shield = useMemo(() => {
+    if (!selectedGod) return null;
+    const activeKit = aspectId ? selectedGod.aspects.find(a => a.id === aspectId) || selectedGod : selectedGod;
+
+    const abilityTwo = activeKit.abilities[2];
+    if (!abilityTwo || !abilityTwo.attributes) return null;
+
+    // Only show shield when ARMORED
+    if (passiveStance !== 'armored') return null;
+
+    // Find the Physical Shield attribute (Armored only)
+    const shieldAttr = abilityTwo.attributes.find(a => 
+      a.label.toLowerCase().includes('shield') && a.label.toLowerCase().includes('armored')
+    );
+    if (!shieldAttr || !shieldAttr.value) return null;
+
+    // Parse "50 + 10 Per Level" format
+    const match = shieldAttr.value.match(/(\d+)\s*\+\s*(\d+)\s*Per Level/i);
+    if (!match) return null;
+    
+    const baseShield = parseFloat(match[1]) || 0;
+    const perLevelShield = parseFloat(match[2]) || 0;
+    const totalShield = baseShield + (perLevelShield * (level - 1));
+
+    return {
+      physical: totalShield,
+      magical: 0,
+      pct: 100 // 100% of the calculated shield
+    };
+  }, [selectedGod, aspectId, passiveStance, level]);
+
+  // Check if ability 2 has toggleable buff attributes (like Radiant Glory's % Strength/Protections)
+  const hasAbility2Toggle = useMemo(() => {
+    if (!selectedGod) return false;
+    const activeKit = aspectId ? selectedGod.aspects.find(a => a.id === aspectId) || selectedGod : selectedGod;
+    const abilityTwo = activeKit.abilities[2];
+    if (!abilityTwo || !abilityTwo.attributes) return false;
+
+    // Check for percentage-based buff attributes that indicate a toggleable ability
+    const hasStrengthBuff = abilityTwo.attributes.some(a =>
+      a.label.toLowerCase() === 'strength' && a.value.includes('%')
+    );
+    const hasProtectionBuff = abilityTwo.attributes.some(a =>
+      a.label.toLowerCase().includes('protect') && a.value.includes('%')
+    );
+    const hasShieldAttr = abilityTwo.attributes.some(a =>
+      a.label.toLowerCase().includes('shield')
+    );
+
+    return hasStrengthBuff || hasProtectionBuff || hasShieldAttr;
+  }, [selectedGod, aspectId]);
+
+  // Parse item passives for stat bonuses
+  const parseItemPassiveStats = (passive: string) => {
+    const stats: Record<string, any> = {};
+    
+    // Parse patterns like "+25 Strength", "+25% Strength", "+5% Attack Speed", etc.
+    const patterns = [
+      { regex: /(?:\+)?(\d+(?:\.\d+)?)\%\s*Strength/gi, stat: 'strength', isPercentOfStat: true },
+      { regex: /(?:\+)?(\d+(?:\.\d+)?)\s*Strength(?!\%)/gi, stat: 'strength', isPercentOfStat: false },
+      { regex: /(?:\+)?(\d+(?:\.\d+)?)\%\s*Intelligence/gi, stat: 'intelligence', isPercentOfStat: true },
+      { regex: /(?:\+)?(\d+(?:\.\d+)?)\s*Intelligence(?!\%)/gi, stat: 'intelligence', isPercentOfStat: false },
+      { regex: /(?:\+)?(\d+(?:\.\d+)?)\%\s*Attack Speed/gi, stat: 'attackSpeedPercent', isPercentOfStat: true },
+      { regex: /(?:\+)?(\d+(?:\.\d+)?)\s*Physical Power/gi, stat: 'inhandPower', isPercentOfStat: false },
+      { regex: /(?:\+)?(\d+(?:\.\d+)?)\s*Magical Power/gi, stat: 'inhandPower', isPercentOfStat: false },
+      { regex: /(?:\+)?(\d+(?:\.\d+)?)\s*(?:Physical )?Protection/gi, stat: 'physicalProtection', isPercentOfStat: false },
+      { regex: /(?:\+)?(\d+(?:\.\d+)?)\s*(?:Magical )?Protection/gi, stat: 'magicalProtection', isPercentOfStat: false },
+      { regex: /(?:\+)?(\d+(?:\.\d+)?)\s*Health/gi, stat: 'maxHealth', isPercentOfStat: false },
+      { regex: /(?:\+)?(\d+(?:\.\d+)?)\%\s*Cooldown/gi, stat: 'cooldownRate', isPercentOfStat: true },
+      { regex: /(?:\+)?(\d+(?:\.\d+)?)\%\s*Lifesteal/gi, stat: 'lifesteal', isPercentOfStat: true },
+    ];
+    
+    // First pass: extract flat bonuses
+    for (const { regex, stat, isPercentOfStat } of patterns) {
+      if (!isPercentOfStat) {
+        let match;
+        while ((match = regex.exec(passive)) !== null) {
+          const value = parseFloat(match[1]) || 0;
+          stats[stat] = (stats[stat] || 0) + value;
+        }
+      }
+    }
+    
+    // Initialize percent bonuses object
+    stats._percentBonuses = {};
+    
+    // Second pass: extract percentage bonuses (to be applied as multipliers)
+    for (const { regex, stat, isPercentOfStat } of patterns) {
+      if (isPercentOfStat) {
+        let match;
+        while ((match = regex.exec(passive)) !== null) {
+          const percent = parseFloat(match[1]) || 0;
+          stats._percentBonuses[stat] = (stats._percentBonuses[stat] || 0) + percent;
+        }
+      }
+    }
+    
+    // Debug: Log what we found
+    const flatStats = Object.fromEntries(Object.entries(stats).filter(([k]) => k !== '_percentBonuses'));
+    if (Object.keys(flatStats).length > 0 || Object.keys(stats._percentBonuses).length > 0) {
+      // eslint-disable-next-line no-console
+      console.debug('[Item Passive Parse]', { passive, flatStats, percentBonuses: stats._percentBonuses });
+    }
+    
+    return stats;
+  };
+
+  // 2. Combat Stats (For Damage Calculation - Includes Passive Stance Bonuses + Item Passives)
   const combatStats = useMemo(() => {
     if (!selectedGod) return DEFAULT_GOD_STATS;
-    
+
     // Start with display stats
     let stats = { ...displayStats };
 
@@ -606,8 +1147,80 @@ export const BuilderView: React.FC = () => {
       stats = applyPassiveStanceBonuses(stats, activeKit.passive, passiveStance, level);
     }
 
+    // Collect all percentage bonuses to apply additively (like Smite does)
+    const percentBonusesTotal: Record<string, number> = {};
+
+    // Apply active item passive bonuses
+    if (activeItemPassives.size > 0) {
+      // Get equipped items
+      const items = [
+        build.starter ? ITEMS.find(i => i.id === build.starter) || null : null,
+        ...build.items.map(id => id ? ITEMS.find(i => i.id === id) || null : null),
+        build.relic ? ITEMS.find(i => i.id === build.relic) || null : null
+      ].filter(Boolean);
+
+      for (const item of items) {
+        if (item && item.passive && activeItemPassives.has(item.id)) {
+          const bonuses = parseItemPassiveStats(item.passive);
+
+          // Apply flat bonuses immediately
+          for (const [stat, value] of Object.entries(bonuses)) {
+            if (stat === '_percentBonuses') continue; // Skip the metadata object
+            if (stat in stats) {
+              (stats as any)[stat] = ((stats as any)[stat] || 0) + value;
+            }
+          }
+
+          // Collect percentage bonuses (to be applied additively later)
+          const percentBonuses = bonuses._percentBonuses;
+          if (percentBonuses) {
+            for (const [stat, percent] of Object.entries(percentBonuses)) {
+              percentBonusesTotal[stat] = (percentBonusesTotal[stat] || 0) + (percent as number);
+            }
+          }
+        }
+      }
+    }
+
+    // Collect ability 2 temporary buff percentages (e.g., Radiant Glory protections + strength)
+    if (ability2Active) {
+      // Find active kit (aspect or base)
+      const activeKit = aspectId ? selectedGod.aspects.find(a => a.id === aspectId) || selectedGod : selectedGod;
+      const abilityTwo = activeKit.abilities[2];
+      if (abilityTwo && abilityTwo.attributes) {
+        // Look for Strength attribute (value like '10%')
+        const strAttr = abilityTwo.attributes.find(a => a.label.toLowerCase() === 'strength');
+        if (strAttr && strAttr.value) {
+          const match = strAttr.value.match(/(\d+(?:\.\d+)?)%/);
+          if (match) {
+            const pct = parseFloat(match[1]) || 0;
+            percentBonusesTotal['strength'] = (percentBonusesTotal['strength'] || 0) + pct;
+          }
+        }
+
+        // Look for protections attribute (value like '20%')
+        const protAttr = abilityTwo.attributes.find(a => a.label.toLowerCase().includes('protect'));
+        if (protAttr && protAttr.value) {
+          const match = protAttr.value.match(/(\d+(?:\.\d+)?)%/);
+          if (match) {
+            const pct = parseFloat(match[1]) || 0;
+            percentBonusesTotal['physicalProtection'] = (percentBonusesTotal['physicalProtection'] || 0) + pct;
+            percentBonusesTotal['magicalProtection'] = (percentBonusesTotal['magicalProtection'] || 0) + pct;
+          }
+        }
+      }
+    }
+
+    // Apply all percentage bonuses additively (e.g., 25% + 10% = 35% total)
+    for (const [stat, totalPercent] of Object.entries(percentBonusesTotal)) {
+      if (stat in stats) {
+        const currentValue = (stats as any)[stat] || 0;
+        (stats as any)[stat] = currentValue * (1 + totalPercent / 100);
+      }
+    }
+
     return stats;
-  }, [displayStats, passiveStance, aspectId, selectedGod, level]);
+  }, [displayStats, passiveStance, aspectId, selectedGod, level, ability2Active, activeItemPassives, build, ITEMS]);
 
   // Handlers
   const handleGodSelect = (god: God) => {
@@ -644,6 +1257,32 @@ export const BuilderView: React.FC = () => {
     }
   };
 
+  const randomizeItems = () => {
+    // Get T3 items (final items)
+    const t3Items = ITEMS.filter(item => item.type === 'Item' && item.tier === 3);
+    const starters = ITEMS.filter(item => item.type === 'Starter');
+    const relics = ITEMS.filter(item => item.type === 'Relic');
+
+    if (t3Items.length === 0 || starters.length === 0 || relics.length === 0) return;
+
+    // Randomize starter
+    const randomStarter = starters[Math.floor(Math.random() * starters.length)];
+    
+    // Randomize 6 items
+    const randomItems = Array.from({ length: 6 }, () => 
+      t3Items[Math.floor(Math.random() * t3Items.length)].id
+    );
+
+    // Randomize relic
+    const randomRelic = relics[Math.floor(Math.random() * relics.length)];
+
+    setBuild({
+      starter: randomStarter.id,
+      items: randomItems,
+      relic: randomRelic.id
+    });
+  };
+
   const openItemPicker = (type: 'Starter' | 'Item' | 'Relic', index?: number) => {
     setPickerSlot({ type, index });
     setPickerSearch('');
@@ -662,17 +1301,29 @@ export const BuilderView: React.FC = () => {
   const filteredItems = useMemo(() => {
     if (!pickerSlot) return [];
     
+    // Get all items currently in the build
+    const itemsInBuild = new Set<string>();
+    if (build.starter) itemsInBuild.add(build.starter);
+    if (build.relic) itemsInBuild.add(build.relic);
+    build.items.forEach(id => {
+      if (id) itemsInBuild.add(id);
+    });
+    
     return ITEMS.filter(item => {
-      // Type check
+      // Don't show items already in the build (unless we're replacing the same slot)
       if (pickerSlot.type === 'Starter') {
         if (item.type !== 'Starter') return false;
       } else if (pickerSlot.type === 'Relic') {
         if (item.type !== 'Relic') return false;
+        // Allow showing current relic (so user can replace it)
+        if (itemsInBuild.has(item.id) && item.id !== build.relic) return false;
       } else {
         // Item slot - allow Items and Tier 3s
         if (item.type !== 'Item') return false;
         // Only Tier 3 usually for final build
         if (item.tier !== 3) return false;
+        // Hide items already in build items slots
+        if (itemsInBuild.has(item.id)) return false;
       }
 
       // Search check
@@ -692,64 +1343,121 @@ export const BuilderView: React.FC = () => {
 
       return true;
     }).sort((a, b) => a.name.localeCompare(b.name));
-  }, [ITEMS, pickerSlot, pickerSearch, activeStatFilters]);
+  }, [ITEMS, pickerSlot, pickerSearch, activeStatFilters, build]);
 
   // --- RENDER ---
 
   if (!selectedGod) {
     return (
-      <div className="container mx-auto px-4 py-20 flex flex-col items-center justify-center min-h-[60vh]">
-        <div className="bg-slate-900 border border-slate-800 p-8 rounded-2xl text-center max-w-lg shadow-2xl">
-          <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Sword size={40} className="text-slate-600" />
-          </div>
-          <h2 className="text-3xl font-serif font-bold text-white mb-2">Divine Builder</h2>
-          <p className="text-slate-400 mb-8">Select a God to start theorycrafting your build.</p>
-          <button 
-            onClick={() => setIsGodPickerOpen(true)}
-            className="px-8 py-3 bg-mythic-gold text-slate-900 font-bold rounded-xl hover:bg-yellow-400 transition-all transform hover:scale-105"
+      <div className="container mx-auto px-4 py-6 max-w-[1920px]">
+        {/* Disclaimer Banner */}
+        <div className="mb-6 bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 text-sm text-yellow-100">
+          Select a god to create your build. Use the filters to narrow down by damage type.
+        </div>
+
+        {/* Lucky Buttons */}
+        <div className="mb-8 flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={() => {
+              const randomGod = GODS[Math.floor(Math.random() * GODS.length)];
+              handleGodSelect(randomGod);
+            }}
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold rounded-xl transition-all transform hover:scale-105 shadow-lg"
           >
-            Select God
+            <Sparkles size={18} />
+            Feeling Lucky? (Random God)
+          </button>
+          <button
+            onClick={() => {
+              const randomGod = GODS[Math.floor(Math.random() * GODS.length)];
+              handleGodSelect(randomGod);
+              // Randomize items too
+              setTimeout(() => {
+                randomizeItems();
+              }, 100);
+            }}
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold rounded-xl transition-all transform hover:scale-105 shadow-lg"
+          >
+            <Dices size={18} />
+            Full Random (God + Items)
           </button>
         </div>
-        
-        {/* God Picker Modal (Immediate render for selection) */}
-        {isGodPickerOpen && createPortal(
-          <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-slate-900 w-full max-w-5xl h-[80vh] rounded-2xl border border-slate-700 flex flex-col overflow-hidden">
-              <div className="p-4 border-b border-slate-800 flex gap-4 items-center">
-                <Search className="text-slate-500" />
-                <input 
-                  autoFocus
-                  placeholder="Search Gods..."
-                  className="bg-transparent text-white text-lg w-full focus:outline-none"
-                  value={pickerSearch}
-                  onChange={e => setPickerSearch(e.target.value)}
-                />
-                <button onClick={() => setIsGodPickerOpen(false)} className="p-2 hover:bg-slate-800 rounded-full">
-                  <X size={24} className="text-slate-400" />
-                </button>
-              </div>
-              <div className="p-4 overflow-y-auto grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
-                {filteredGods.map(god => (
-                  <button 
-                    key={god.id}
-                    onClick={() => handleGodSelect(god)}
-                    className="group relative aspect-[3/4] bg-slate-800 rounded-xl overflow-hidden border border-slate-700 hover:border-mythic-gold transition-all"
-                  >
-                    <img src={god.image} alt={god.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent opacity-80" />
-                    <div className="absolute bottom-2 left-2 right-2">
-                      <div className="text-xs font-bold text-white uppercase">{god.name}</div>
-                      <div className="text-[10px] text-slate-400">{god.role}</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
+
+        {/* God Selection Grid */}
+        <div>
+          <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+            <Sword size={24} className="text-mythic-gold" />
+            Select a God
+          </h2>
+          
+          {/* Filter */}
+          <div className="mb-4 flex gap-2">
+            <button
+              onClick={() => setPickerFilter('All')}
+              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                pickerFilter === 'All'
+                  ? 'bg-mythic-gold text-slate-900'
+                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+              }`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setPickerFilter('Physical')}
+              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                pickerFilter === 'Physical'
+                  ? 'bg-orange-600 text-white'
+                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+              }`}
+            >
+              Physical
+            </button>
+            <button
+              onClick={() => setPickerFilter('Magical')}
+              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                pickerFilter === 'Magical'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+              }`}
+            >
+              Magical
+            </button>
+          </div>
+
+          {/* Search */}
+          <div className="mb-6 flex items-center gap-2 bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl">
+            <Search className="text-slate-500" size={18} />
+            <input
+              autoFocus
+              placeholder="Search gods..."
+              className="bg-transparent text-white w-full focus:outline-none"
+              value={pickerSearch}
+              onChange={e => setPickerSearch(e.target.value)}
+            />
+          </div>
+
+          {/* Gods Grid */}
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
+            {filteredGods.map(god => (
+              <button
+                key={god.id}
+                onClick={() => handleGodSelect(god)}
+                className="group relative aspect-[3/4] bg-slate-800 rounded-xl overflow-hidden border-2 border-slate-700 hover:border-mythic-gold transition-all hover:shadow-lg hover:shadow-mythic-gold/50"
+              >
+                <img src={god.image} alt={god.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-80" />
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-900 opacity-40" />
+                <div className="absolute bottom-0 left-0 right-0 p-3">
+                  <div className="text-sm font-bold text-white leading-tight">{god.name}</div>
+                  <div className="text-xs text-slate-300 mt-1">{god.role}</div>
+                  <div className={`text-[10px] font-semibold mt-1 ${god.damageType === 'Physical' ? 'text-orange-400' : 'text-blue-400'}`}>
+                    {god.damageType}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -762,6 +1470,44 @@ export const BuilderView: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-[1920px]">
+      
+      {/* Work-in-Progress Disclaimer */}
+      <div className="mb-6 bg-blue-500/10 border border-blue-500/40 rounded-xl p-4">
+        <div className="flex items-start gap-3">
+          <Sparkles size={20} className="text-blue-400 flex-shrink-0 mt-0.5" />
+          <div>
+            <h3 className="text-sm font-bold text-blue-200 mb-1">🚀 Builder System in Development</h3>
+            <p className="text-xs text-blue-100">We're actively working on this feature! Currently adding passives, abilities, and item effects to create a fully functional build optimization system for mid-maxing. More features coming soon!</p>
+          </div>
+        </div>
+      </div>
+      
+      {/* Disclaimer & Lucky Buttons */}
+      <div className="mb-6 bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <p className="text-sm text-yellow-100">Build your ultimate god with items and relics</p>
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={randomizeItems}
+            className="flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold text-sm rounded-lg transition-all transform hover:scale-105"
+            title="Randomize items only"
+          >
+            <Shuffle size={14} />
+            Randomize Items
+          </button>
+          <button
+            onClick={() => {
+              const randomGod = GODS[Math.floor(Math.random() * GODS.length)];
+              handleGodSelect(randomGod);
+              randomizeItems();
+            }}
+            className="flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-semibold text-sm rounded-lg transition-all transform hover:scale-105"
+            title="Randomize god and items"
+          >
+            <Dices size={14} />
+            Full Random
+          </button>
+        </div>
+      </div>
       
       {/* Top Bar: God Info & Controls */}
       <div className="flex flex-col md:flex-row gap-6 mb-6 items-start">
@@ -912,12 +1658,12 @@ export const BuilderView: React.FC = () => {
             </div>
           </div>
 
-          {/* Stats Panel - Using displayStats (Base + Items only) */}
+          {/* Stats Panel - Using combatStats (Includes Passive) */}
           <BuilderStatsPanel 
             god={selectedGod} 
             level={level} 
             items={equippedItems} 
-            stats={displayStats}
+            stats={combatStats}
           />
 
         </div>
@@ -932,6 +1678,9 @@ export const BuilderView: React.FC = () => {
               stats={combatStats} // Using combatStats (Includes Passive) for damage
               passiveStance={passiveStance}
               onPassiveStanceChange={setPassiveStance}
+              ability2Active={ability2Active}
+              onAbility2Toggle={hasAbility2Toggle ? (v) => setAbility2Active(v) : undefined}
+              ability2Shield={ability2Shield}
             />
           </div>
         </div>
@@ -940,7 +1689,23 @@ export const BuilderView: React.FC = () => {
         <div className="xl:col-span-4 space-y-6">
           {/* Item Passives */}
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-            <ItemPassivesPanel items={equippedItems} />
+            <ItemPassivesPanel 
+              items={equippedItems}
+              godStats={combatStats}
+              godDamageType={selectedGod.damageType}
+              activePassives={activeItemPassives}
+              onPassiveToggle={(itemId) => {
+                setActiveItemPassives(prev => {
+                  const next = new Set(prev);
+                  if (next.has(itemId)) {
+                    next.delete(itemId);
+                  } else {
+                    next.add(itemId);
+                  }
+                  return next;
+                });
+              }}
+            />
           </div>
         </div>
 

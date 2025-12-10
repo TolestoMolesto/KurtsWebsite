@@ -80,9 +80,21 @@ export function applyPassiveStanceBonuses(
     const totalBonus = calculateStanceBonus(bonus, level);
 
     if (bonus.isPercent) {
-      // Percentage bonus (e.g., movement speed %)
-      const currentValue = stats[bonus.stat] as number;
-      stats[bonus.stat] = currentValue * (1 + totalBonus / 100) as any;
+      // For movement speed, we need to apply the bonus BEFORE the BASE_MOVEMENT_SPEED_MULTIPLIER
+      // So we reverse-apply the multiplier, apply the bonus, then re-apply it
+      if (bonus.stat === 'movementSpeed') {
+        const BASE_MOVEMENT_SPEED_MULTIPLIER = 1.178;
+        // Reverse the multiplier to get base movement speed
+        const baseSpeed = stats.movementSpeed / BASE_MOVEMENT_SPEED_MULTIPLIER;
+        // Apply the percentage bonus to base speed
+        const bonusedSpeed = baseSpeed * (1 + totalBonus / 100);
+        // Re-apply the multiplier
+        stats.movementSpeed = bonusedSpeed * BASE_MOVEMENT_SPEED_MULTIPLIER;
+      } else {
+        // Percentage bonus for other stats
+        const currentValue = stats[bonus.stat] as number;
+        stats[bonus.stat] = currentValue * (1 + totalBonus / 100) as any;
+      }
     } else {
       // Flat bonus
       (stats[bonus.stat] as number) += totalBonus;

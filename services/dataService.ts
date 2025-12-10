@@ -1,7 +1,7 @@
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from './firebase';
-import { GODS } from '../data/gods';
-import { ITEMS } from '../data/items';
+import { GODS } from '../data/gods/index';
+import { ITEMS } from '../data/items/index';
 import { God, Item, NamedTierList } from '../types';
 
 /**

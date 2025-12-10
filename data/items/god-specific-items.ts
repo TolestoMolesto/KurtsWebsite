@@ -1,0 +1,30 @@
+import { Item } from '../../types';
+
+// --- GOD SPECIFIC ITEMS ---
+export const geniesLamp: Item = { id: 'genies-lamp', name: "Genie's Lamp", cost: 0, type: 'God Specific', category: 'Offense', god: 'Aladdin', stats: {}, image: 'https://image2url.com/images/1764405127844-9229de49-41f9-407a-96e5-8ba6d8417789.png', passive: "Aladdin gains +0.6% Per Level of all stats from items. Toggle to gain access to 3 wishes; Wealth, Immortality, and Power. Each wish can only be used once per match." };
+export const trainingGrounds: Item = { id: 'training-grounds', name: "Training Grounds", cost: 0, type: 'God Specific', category: 'Defense', god: 'Hua Mulan', stats: {}, image: 'https://image2url.com/images/1764405423572-ba506f81-668e-40b1-8d1b-30e3bbb7a0b8.png', passive: "Consume: Plant a Banner that lasts 45s or until destroyed. Hua Mulan within 11m: Always benefits from Training Arc's Cooldown Reduction. Allies within 11m: +5% Movement Speed. Allies up to 25m away: Gain up to +20% Movement Speed when facing the banner. Movement Speed scales down as they get closer." };
+export const baronsBrew: Item = { id: 'barons-brew', name: "Baron's Brew", cost: 100, type: 'God Specific', category: 'Offense', god: 'Baron Samedi', stats: {}, image: 'https://image2url.com/images/1764405497561-1ca3275a-0be7-4958-81d0-63a2edc0e913.png', passive: "On Use: +18 Heal per second for 14s, +18 Mana per second for 14s, Empty the Brew. On Use of Empty Brew: Throw a Projectile: Deals 40 (+13 per Level) Magic Damage, Applies 30 Hysteria. Baron's Brew is refilled when you return to base." };
+export const masterworkMod: Item = { id: 'masterwork-mod', name: "Masterwork Mod", cost: 0, type: 'God Specific', category: 'Defense', god: 'Vulcan', stats: {}, image: 'https://image2url.com/images/1764405573982-095e6db5-73d9-42de-8683-a05eb48268d0.png', passive: "Thumper gains 300 increased HP and applies a 10/15/20/25/30 Physical and Magical Protection buff to allied gods hit for 3s. Set 3 - You can only have one Mod from each set. Requires level 14." };
+export const thermalMod: Item = { id: 'thermal-mod', name: "Thermal Mod", cost: 0, type: 'God Specific', category: 'Offense', god: 'Vulcan', stats: {}, image: 'https://image2url.com/images/1764405599145-cecf4070-56d8-497d-ae26-4b29185fa0c6.png', passive: "Backfire and Magma Bomb deal 30 + 30% INT Bonus Magical Damage. Set 2 - You can only have one Mod from each set. Requires level 7." };
+export const seismicMod: Item = { id: 'seismic-mod', name: "Seismic Mod", cost: 0, type: 'God Specific', category: 'Offense', god: 'Vulcan', stats: {}, image: 'https://image2url.com/images/1764405626998-c5caba3d-46da-4855-aa54-22c0458d9e26.png', passive: "Earthshaker Knocks Up and Trembles enemies it hits for 2s. Set 3 - You can only have one Mod from each set. Requires level 14." };
+export const surplusMod: Item = { id: 'surplus-mod', name: "Surplus Mod", cost: 0, type: 'God Specific', category: 'Offense', god: 'Vulcan', stats: {}, image: 'https://image2url.com/images/1764405661746-83872ed4-f261-4ce6-9ab0-e5d87138a4de.png', passive: "You can have 2 Inferno Cannons deployed at the same time. Set 3 - You can only have one Mod from each set. Requires level 14." };
+export const shrapnelMod: Item = { id: 'shrapnel-mod', name: "Shrapnel Mod", cost: 0, type: 'God Specific', category: 'Offense', god: 'Vulcan', stats: {}, image: 'https://image2url.com/images/1764405711305-e098c7b1-554d-4885-8573-919832483efa.png', passive: "Inferno Cannon applies additional damage over time on hit. Hits 6 times over 3s for 3/6/9/12/15 + 2% INT per hit. Set 2 - You can only have one Mod from each set. Requires level 7." };
+export const resonatorMod: Item = { id: 'resonator-mod', name: "Resonator Mod", cost: 0, type: 'God Specific', category: 'Offense', god: 'Vulcan', stats: {}, image: 'https://image2url.com/images/1764405753529-88545a76-c850-4654-99ea-5129c3e64353.png', passive: "Thumper gains 150 increased HP and applies an 10/15/20/25/30% Attack Speed debuff for 3s on hit. Set 2 - You can only have one Mod from each set. Requires level 7." };
+export const dualMod: Item = { id: 'dual-mod', name: "Dual Mod", cost: 0, type: 'God Specific', category: 'Offense', god: 'Vulcan', stats: {}, image: 'https://image2url.com/images/1764405778533-7cfdfa98-2246-459d-a4a0-26652a36a11e.png', passive: "Gain access to the Thumper Turret in your first consumable slot. This will occupy this slot for the entire game. Thumper pulses out an attack around it every 1s that deals 20/30/40/50/60 + 10% INT Magical Damage to all enemies in the area. Thumper's Rank will match Inferno Cannon's. Cooldown 20s. Set 1 - You can only have one Mod from each set. Can be built at level 1." };
+export const efficiencyMod: Item = { id: 'efficiency-mod', name: "Efficiency Mod", cost: 0, type: 'God Specific', category: 'Offense', god: 'Vulcan', stats: {}, image: 'https://image2url.com/images/1764405826074-bbdc30e6-3000-4881-80af-96598ac8efa0.png', passive: "Do not gain access to the Thumper ability, instead your passive grants 20 CDR and 5 Intelligence + 1 Per Level, in addition to the other effects when triggered. Set 1 - You can only have one Mod from each set. Can be built at level 1." };
+export const alternatorMod: Item = { id: 'alternator-mod', name: "Alternator Mod", cost: 0, type: 'God Specific', category: 'Offense', god: 'Vulcan', stats: {}, image: 'https://image2url.com/images/1764405851423-e823cdbe-6968-4c3f-a6c8-4b90f0cb739b.png', passive: "Gain access to the Thumper Turret by alternating between an Inferno Cannon and Thumper each ability activation. Thumper pulses out an attack around it every 1s that deals 20/30/40/50/60 + 10% INT Magical Damage to all enemies in the area. Thumper's Rank will match Inferno Cannon's. Cooldown 12s. Set 1 - You can only have one Mod from each set. Can be built at level 1." };
+
+export const GOD_SPECIFIC_ITEMS: Item[] = [
+  geniesLamp,
+  trainingGrounds,
+  baronsBrew,
+  masterworkMod,
+  thermalMod,
+  seismicMod,
+  surplusMod,
+  shrapnelMod,
+  resonatorMod,
+  dualMod,
+  efficiencyMod,
+  alternatorMod,
+];

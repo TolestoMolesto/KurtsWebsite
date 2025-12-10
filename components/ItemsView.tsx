@@ -440,7 +440,7 @@ export const ItemsView: React.FC = () => {
     }
 
     return (
-        <div className="max-w-[1800px] mx-auto px-4 py-8">
+        <div className="max-w-[1800px] mx-auto px-4 py-8 min-h-screen">
             {/* Header */}
             <div className="text-center mb-8">
                 <h1 className="font-serif text-4xl font-bold bg-gradient-to-r from-mythic-gold via-yellow-300 to-amber-500 bg-clip-text text-transparent">
@@ -449,9 +449,11 @@ export const ItemsView: React.FC = () => {
                 <p className="text-slate-500 mt-2">Discover and explore all items in SMITE 2</p>
             </div>
 
-            <div className="flex flex-col xl:flex-row gap-6">
+            <div className="flex flex-col xl:flex-row gap-6 items-start">
                 {/* Left Sidebar - Filters */}
-                <div className="w-full xl:w-64 space-y-4 shrink-0">
+                <div className="w-full xl:w-64 shrink-0 flex flex-col max-h-[calc(100vh-6rem)]">
+                    {/* Sticky Filter Header */}
+                    <div className="sticky top-20 z-10 space-y-4 pb-4 bg-slate-950 border-b border-slate-800">
                     {/* Search */}
                     <div className="relative">
                         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
@@ -494,6 +496,10 @@ export const ItemsView: React.FC = () => {
                             </div>
                         )}
                     </div>
+                    </div>
+
+                    {/* Scrollable Filter Options */}
+                    <div className="overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent space-y-4 pt-4">
 
                     {/* Type Filter */}
                     <div className="bg-slate-900/50 rounded-xl border border-slate-800 p-3">
@@ -568,6 +574,7 @@ export const ItemsView: React.FC = () => {
                     <div className="text-center text-xs text-slate-500">
                         Showing <span className="text-mythic-gold font-bold">{filteredItems.length}</span> items
                     </div>
+                    </div>
                 </div>
 
                 {/* Main Grid */}
@@ -603,7 +610,7 @@ export const ItemsView: React.FC = () => {
 
                 {/* Right Inspector Panel (Desktop) */}
                 <div className="hidden xl:block w-80 shrink-0">
-                    <div className="sticky top-24 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl overflow-hidden min-h-[500px] h-[calc(100vh-8rem)]">
+                    <div className="sticky top-20 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl overflow-hidden min-h-[500px] h-[calc(100vh-6rem)]">
                         {selectedItem && (
                             <div className="absolute top-3 right-3 z-50 flex gap-2">
                                 <div className="px-2 py-1 bg-mythic-gold/20 text-mythic-gold text-[10px] font-bold uppercase rounded-full border border-mythic-gold/30 flex items-center gap-1">

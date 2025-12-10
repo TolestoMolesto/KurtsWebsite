@@ -1273,10 +1273,10 @@ export const GodsView: React.FC = () => {
                   </div>
               </div>
           </div>
-      )}
+      , document.body)}
 
       {/* 2. Build Editor */}
-      {isBuildModalOpen && displayGod && (
+      {isBuildModalOpen && displayGod && createPortal(
           <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
               <div className="bg-slate-900 w-full max-w-lg rounded-2xl border border-slate-700 shadow-2xl flex flex-col overflow-hidden max-h-[90vh]">
                   <div className="p-4 border-b border-slate-700 bg-slate-800 flex justify-between items-center">
@@ -1296,9 +1296,65 @@ export const GodsView: React.FC = () => {
                           </div>
                       </div>
                       
-                      {/* Note: Full item picker logic omitted for brevity as it was likely handled via existing hooks or simplified inputs in this context */}
-                      <div className="text-xs text-slate-500 italic">
-                          (Item selection is handled via the Builder tab or simplified inputs here in a full implementation)
+                      {/* Items Selection */}
+                      <div className="bg-slate-800 p-4 rounded-lg border border-slate-700">
+                          <h4 className="text-xs font-bold text-white uppercase mb-3">Equipment</h4>
+                          
+                          {/* Starter */}
+                          <div className="mb-4">
+                              <label className="text-[10px] text-slate-400 uppercase font-bold mb-2 block">Starter</label>
+                              <button
+                                  onClick={() => setItemPickerSlot({type: 'starter'})}
+                                  className="w-full flex items-center gap-2 p-3 bg-slate-900 border border-slate-700 rounded hover:border-mythic-gold transition-colors"
+                              >
+                                  {buildForm.starterId ? (
+                                      <>
+                                          <img src={ITEMS?.find(i => i.id === buildForm.starterId)?.image} alt="starter" className="w-8 h-8 rounded" />
+                                          <span className="text-xs text-white">{ITEMS?.find(i => i.id === buildForm.starterId)?.name || 'Select Starter'}</span>
+                                      </>
+                                  ) : (
+                                      <span className="text-xs text-slate-400">Select Starter...</span>
+                                  )}
+                              </button>
+                          </div>
+
+                          {/* Items Grid */}
+                          <div className="mb-4">
+                              <label className="text-[10px] text-slate-400 uppercase font-bold mb-2 block">Items (6)</label>
+                              <div className="grid grid-cols-3 gap-2">
+                                  {buildForm.itemIds?.map((itemId, idx) => (
+                                      <button
+                                          key={idx}
+                                          onClick={() => setItemPickerSlot({type: 'item', index: idx})}
+                                          className="aspect-square flex items-center justify-center bg-slate-900 border border-slate-700 rounded hover:border-mythic-gold transition-colors overflow-hidden"
+                                      >
+                                          {itemId ? (
+                                              <img src={ITEMS?.find(i => i.id === itemId)?.image} alt="item" className="w-full h-full object-cover" />
+                                          ) : (
+                                              <span className="text-xs text-slate-500">+</span>
+                                          )}
+                                      </button>
+                                  ))}
+                              </div>
+                          </div>
+
+                          {/* Relic */}
+                          <div>
+                              <label className="text-[10px] text-slate-400 uppercase font-bold mb-2 block">Relic</label>
+                              <button
+                                  onClick={() => setItemPickerSlot({type: 'relic'})}
+                                  className="w-full flex items-center gap-2 p-3 bg-slate-900 border border-slate-700 rounded hover:border-mythic-gold transition-colors"
+                              >
+                                  {buildForm.relicId ? (
+                                      <>
+                                          <img src={ITEMS?.find(i => i.id === buildForm.relicId)?.image} alt="relic" className="w-8 h-8 rounded-full" />
+                                          <span className="text-xs text-white">{ITEMS?.find(i => i.id === buildForm.relicId)?.name || 'Select Relic'}</span>
+                                      </>
+                                  ) : (
+                                      <span className="text-xs text-slate-400">Select Relic...</span>
+                                  )}
+                              </button>
+                          </div>
                       </div>
                   </div>
                   <div className="p-4 border-t border-slate-700 bg-slate-800 flex justify-end gap-2">
@@ -1307,7 +1363,58 @@ export const GodsView: React.FC = () => {
                   </div>
               </div>
           </div>
-      )}
+      , document.body)}
+
+      {/* Item Picker Modal */}
+      {itemPickerSlot && createPortal(
+          <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+              <div className="bg-slate-900 w-full max-w-2xl rounded-2xl border border-slate-700 shadow-2xl flex flex-col overflow-hidden max-h-[85vh]">
+                  <div className="p-4 border-b border-slate-700 bg-slate-800 flex justify-between items-center">
+                      <h3 className="font-bold text-slate-100">Select {itemPickerSlot.type === 'starter' ? 'Starter' : itemPickerSlot.type === 'relic' ? 'Relic' : 'Item'}</h3>
+                      <button onClick={() => setItemPickerSlot(null)}><X size={20} className="text-slate-400 hover:text-white" /></button>
+                  </div>
+                  <div className="p-4 overflow-y-auto flex-1">
+                      <div className="flex gap-2 mb-4">
+                          <input
+                              type="text"
+                              placeholder={`Search ${itemPickerSlot.type === 'starter' ? 'Starters' : itemPickerSlot.type === 'relic' ? 'Relics' : 'Items'}...`}
+                              className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm text-white focus:border-mythic-gold outline-none"
+                              value={pickerSearch}
+                              onChange={(e) => setPickerSearch(e.target.value)}
+                          />
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                          {ITEMS?.filter(item => {
+                              const matchesSearch = item.name.toLowerCase().includes(pickerSearch.toLowerCase());
+                              if (itemPickerSlot.type === 'starter') return matchesSearch && item.type === 'Starter';
+                              if (itemPickerSlot.type === 'relic') return matchesSearch && item.type === 'Relic';
+                              return matchesSearch && item.type === 'Item' && item.tier === 3;
+                          }).map(item => (
+                              <button
+                                  key={item.id}
+                                  onClick={() => {
+                                      if (itemPickerSlot.type === 'starter') {
+                                          setBuildForm({...buildForm, starterId: item.id});
+                                      } else if (itemPickerSlot.type === 'relic') {
+                                          setBuildForm({...buildForm, relicId: item.id});
+                                      } else if (typeof itemPickerSlot.index === 'number') {
+                                          const newItemIds = [...(buildForm.itemIds || [])];
+                                          newItemIds[itemPickerSlot.index] = item.id;
+                                          setBuildForm({...buildForm, itemIds: newItemIds});
+                                      }
+                                      setItemPickerSlot(null);
+                                  }}
+                                  className="flex flex-col gap-2 p-2 bg-slate-800 border border-slate-700 rounded hover:border-mythic-gold transition-all hover:bg-slate-700"
+                              >
+                                  <img src={item.image} alt={item.name} className="w-full aspect-square rounded object-cover" />
+                                  <div className="text-[10px] font-bold text-white text-left line-clamp-1">{item.name}</div>
+                              </button>
+                          ))}
+                      </div>
+                  </div>
+              </div>
+          </div>
+      , document.body)}
 
     </div>
   );

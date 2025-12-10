@@ -1,15 +1,16 @@
 // components/Header.tsx - Updated with Guides tab
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Zap, Sword, Shield, List, Hammer, LogIn, LogOut, User, X, Mail, Lock, Loader2, Snowflake, Trophy, BookOpen } from 'lucide-react'; // Added BookOpen
+import { Zap, Sword, Shield, List, Hammer, LogIn, LogOut, User, X, Mail, Lock, Loader2, Snowflake, Trophy, BookOpen, Flame } from 'lucide-react'; // Added Flame
 import { auth, db } from '../services/firebase';
 import * as FirebaseAuth from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { User as FirebaseUser } from 'firebase/auth';
+import { HolidayLights } from './HolidayLights';
 
 interface HeaderProps {
-  currentView: 'home' | 'gods' | 'items' | 'tierlist' | 'builder' | 'tournament' | 'guides' | 'profile'; // UPDATED
-  setCurrentView: (view: 'home' | 'gods' | 'items' | 'tierlist' | 'builder' | 'tournament' | 'guides' | 'profile') => void; // UPDATED
+  currentView: 'home' | 'gods' | 'items' | 'tierlist' | 'builder' | 'tournament' | 'guides' | 'profile' | 'elo_hell'; // UPDATED
+  setCurrentView: (view: 'home' | 'gods' | 'items' | 'tierlist' | 'builder' | 'tournament' | 'guides' | 'profile' | 'elo_hell') => void; // UPDATED
 }
 
 export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView }) => {
@@ -102,19 +103,21 @@ export const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView }) =
     setIsAuthModalOpen(true);
   };
 
-  // UPDATED: Added guides to navItems
+  // UPDATED: Added Elo Hell to navItems
   const navItems = [
     { id: 'gods', label: 'Gods', icon: <Sword size={16} /> },
     { id: 'builder', label: 'Builder', icon: <Hammer size={16} /> },
     { id: 'items', label: 'Items', icon: <Shield size={16} /> },
     { id: 'tierlist', label: 'Tier List', icon: <List size={16} /> },
     { id: 'tournament', label: 'Tournament', icon: <Trophy size={16} /> },
-    { id: 'guides', label: 'Guides', icon: <BookOpen size={16} /> }, // NEW
+    { id: 'guides', label: 'Guides', icon: <BookOpen size={16} /> },
+    { id: 'elo_hell', label: 'Elo Hell', icon: <Flame size={16} /> }, // NEW
   ];
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full bg-slate-950/80 backdrop-blur-md border-b border-white/5 shadow-2xl">
+      <header className="fixed top-0 left-0 right-0 z-40 w-full bg-slate-950/95 backdrop-blur-xl border-b border-white/5 shadow-2xl">
+        <HolidayLights />
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           
           {/* Left Side: Logo & Desktop Nav */}

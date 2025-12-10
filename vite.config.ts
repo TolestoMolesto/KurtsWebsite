@@ -18,6 +18,33 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
-      }
+      },
+      optimizeDeps: {
+        // Pre-bundle Firebase and other heavy dependencies
+        include: ['react', 'react-dom', 'firebase/auth', 'firebase/firestore', 'lucide-react'],
+      },
+      build: {
+        // Code splitting for better caching
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              // Vendor chunks
+              'react-vendor': ['react', 'react-dom'],
+              'ui-vendor': ['lucide-react'],
+              // Feature chunks
+              'builder': ['./components/BuilderView.tsx'],
+              'gods': ['./components/GodsView.tsx'],
+              'items': ['./components/ItemsView.tsx'],
+              'tournament': ['./components/TournamentView.tsx'],
+              'guides': ['./components/GuidesView.tsx'],
+            },
+          },
+        },
+        // Optimize build output
+        minify: 'esbuild',
+        // Report file sizes
+        reportCompressedSize: true,
+        chunkSizeWarningLimit: 500, // 500 KB warning threshold
+      },
     };
 });

@@ -2,12 +2,20 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Smite Source 2</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes, maximum-scale=5">
+    <meta name="theme-color" content="#09090b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Smite Source 2">
+    <title>Smite Source 2 - Builder & Calculator</title>
+    <meta name="description" content="Ultimate Smite 2 companion tool. Build optimizer, god calculator, and item browser.">
     
-    <!-- Fonts -->
+    <!-- Preconnect to external resources for faster loading -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.tailwindcss.com">
+    
+    <!-- Fonts with display=swap for better LCP -->
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <!-- Tailwind CSS -->
@@ -47,6 +55,17 @@
     </script>
 
     <style>
+      /* Ensure fixed header doesn't block content when scrolling to elements */
+      html {
+        scroll-padding-top: 120px;
+      }
+
+      @media (max-width: 768px) {
+        html {
+          scroll-padding-top: 80px;
+        }
+      }
+
       /* Safe area for mobile bottom nav (notched phones) */
       .safe-area-bottom {
         padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -155,6 +174,43 @@
       /* Custom Hexagon Clip Path */
       .clip-hexagon {
         clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+      }
+
+      /* Holiday Card Glow Effects */
+      @keyframes holiday-glow {
+        0%, 100% {
+          box-shadow: 0 0 10px rgba(250, 204, 21, 0.1), 0 0 20px rgba(250, 204, 21, 0.05);
+        }
+        50% {
+          box-shadow: 0 0 15px rgba(250, 204, 21, 0.2), 0 0 30px rgba(250, 204, 21, 0.1);
+        }
+      }
+
+      .holiday-card-glow {
+        animation: holiday-glow 3s ease-in-out infinite;
+      }
+
+      /* Festive shimmer effect for special elements */
+      @keyframes festive-shimmer {
+        0% {
+          background-position: -100% 0;
+        }
+        100% {
+          background-position: 200% 0;
+        }
+      }
+
+      .festive-shimmer {
+        background: linear-gradient(
+          90deg,
+          transparent 0%,
+          rgba(255, 223, 0, 0.1) 25%,
+          rgba(250, 204, 21, 0.2) 50%,
+          rgba(255, 223, 0, 0.1) 75%,
+          transparent 100%
+        );
+        background-size: 200% 100%;
+        animation: festive-shimmer 4s linear infinite;
       }
     </style>
 </head>

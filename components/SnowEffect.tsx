@@ -12,9 +12,21 @@ export const SnowEffect: React.FC = () => {
 
     let width = window.innerWidth;
     let height = window.innerHeight;
-    
+
     // Handle Retina displays
     const dpr = window.devicePixelRatio || 1;
+
+    // Burst particles for click effects
+    const burstParticles: {
+      x: number;
+      y: number;
+      radius: number;
+      speedX: number;
+      speedY: number;
+      opacity: number;
+      life: number;
+      color: string;
+    }[] = [];
     
     const resize = () => {
         width = window.innerWidth;
@@ -76,12 +88,12 @@ export const SnowEffect: React.FC = () => {
       // --- Draw Snow ---
       particles.forEach((p) => {
         ctx.beginPath();
-        
+
         // Update physics
         p.angle += p.oscSpeed;
         p.y += p.speedY;
-        p.x += Math.sin(p.angle) * 0.5 + p.speedX; 
-        
+        p.x += Math.sin(p.angle) * 0.5 + p.speedX;
+
         // Wrap around
         if (p.y > height + 5) {
             p.y = -10;
@@ -97,11 +109,38 @@ export const SnowEffect: React.FC = () => {
         const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.radius * 2);
         gradient.addColorStop(0, `rgba(${p.color}, ${currentOpacity})`);
         gradient.addColorStop(1, `rgba(${p.color}, 0)`);
-        
+
         ctx.fillStyle = gradient;
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
         ctx.fill();
       });
+
+      // --- Draw Burst Particles ---
+      for (let i = burstParticles.length - 1; i >= 0; i--) {
+        const bp = burstParticles[i];
+
+        // Update physics
+        bp.x += bp.speedX;
+        bp.y += bp.speedY;
+        bp.speedY += 0.15; // Gravity
+        bp.opacity -= 0.015;
+        bp.life--;
+
+        // Remove dead particles
+        if (bp.life <= 0 || bp.opacity <= 0) {
+          burstParticles.splice(i, 1);
+          continue;
+        }
+
+        // Draw burst particle with glow
+        ctx.beginPath();
+        const gradient = ctx.createRadialGradient(bp.x, bp.y, 0, bp.x, bp.y, bp.radius * 2);
+        gradient.addColorStop(0, `rgba(${bp.color}, ${bp.opacity})`);
+        gradient.addColorStop(1, `rgba(${bp.color}, 0)`);
+        ctx.fillStyle = gradient;
+        ctx.arc(bp.x, bp.y, bp.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
       // --- Santa Logic ---
       const now = Date.now();
@@ -142,19 +181,65 @@ export const SnowEffect: React.FC = () => {
       animationFrameId = requestAnimationFrame(animate);
     };
 
+    // Create burst effect on click/touch
+    const createBurst = (x: number, y: number) => {
+      const colors = [
+        '255, 223, 0',   // Gold
+        '250, 204, 21',  // Mythic gold
+        '200, 240, 255', // Ice blue
+        '255, 255, 255', // White
+        '255, 100, 100', // Red
+        '100, 255, 100', // Green
+      ];
+
+      // Create 15-25 particles per burst
+      const count = Math.floor(Math.random() * 10) + 15;
+      for (let i = 0; i < count; i++) {
+        const angle = (Math.PI * 2 * i) / count + Math.random() * 0.5;
+        const speed = Math.random() * 4 + 2;
+        const color = colors[Math.floor(Math.random() * colors.length)];
+
+        burstParticles.push({
+          x,
+          y,
+          radius: Math.random() * 2.5 + 1,
+          speedX: Math.cos(angle) * speed,
+          speedY: Math.sin(angle) * speed - 2, // Slight upward bias
+          opacity: 0.9,
+          life: 60,
+          color,
+        });
+      }
+    };
+
+    const handleClick = (e: MouseEvent) => {
+      createBurst(e.clientX, e.clientY);
+    };
+
+    const handleTouch = (e: TouchEvent) => {
+      for (let i = 0; i < e.touches.length; i++) {
+        const touch = e.touches[i];
+        createBurst(touch.clientX, touch.clientY);
+      }
+    };
+
     window.addEventListener('resize', resize);
+    canvas.addEventListener('click', handleClick);
+    canvas.addEventListener('touchstart', handleTouch);
     animate();
 
     return () => {
       window.removeEventListener('resize', resize);
+      canvas.removeEventListener('click', handleClick);
+      canvas.removeEventListener('touchstart', handleTouch);
       cancelAnimationFrame(animationFrameId);
     };
   }, []);
 
   return (
-    <canvas 
-      ref={canvasRef} 
-      className="fixed inset-0 pointer-events-none z-0"
+    <canvas
+      ref={canvasRef}
+      className="fixed inset-0 pointer-events-auto z-0 cursor-pointer"
     />
   );
 };

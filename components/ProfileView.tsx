@@ -46,6 +46,7 @@ export const ProfileView: React.FC = () => {
         console.error("Error fetching user data:", err);
       }
     };
+    
     fetchUserData();
   }, [user]);
 

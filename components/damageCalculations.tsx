@@ -133,7 +133,7 @@ export function parseItemStats(item: Item): ParsedItemStats {
 
 /**
  * Calculate actual attack speed
- * Formula: floor(baseAS × (1 + totalAS%) × 100) / 100
+ * Formula: round(baseAS × (1 + totalAS%) × 100) / 100
  */
 export function calculateAttackSpeed(
   baseAS: number,
@@ -142,8 +142,8 @@ export function calculateAttackSpeed(
 ): number {
   const totalASPercent = asPercent + bonusASPercent;
   const rawAS = baseAS * (1 + totalASPercent / 100);
-  const flooredAS = Math.floor(rawAS * 100) / 100;
-  return Math.min(2.5, flooredAS); // Cap at 2.5
+  const roundedAS = Math.round(rawAS * 100) / 100;
+  return Math.min(2.5, roundedAS); // Cap at 2.5
 }
 
 export function getAttackSpeedPercentAtLevel(asPercent: number, level: number): number {
@@ -415,10 +415,21 @@ export function getAbilityRank(
 // ABILITY DAMAGE INFO EXTRACTION - ENHANCED
 // ============================================================
 
+// Secondary damage component (e.g., Explode Damage, DoT Damage)
+export interface SecondaryDamage {
+  label: string; // e.g., "Explode", "Burn", "Bleed"
+  baseDamageValues: number[];
+  scaling: ScalingComponent[];
+  ticks?: number; // For DoT effects
+  duration?: number; // For DoT effects
+  tickInterval?: number; // For DoT effects (seconds between ticks)
+}
+
 export interface AbilityDamageInfo {
   hasDamage: boolean;
   baseDamageValues: number[];
   scaling: ScalingComponent[];
+  bonusScaling?: ScalingComponent[];
   conditionalScaling?: ConditionalScaling;
   isExecute: boolean;
   executeThreshold: number;
@@ -427,6 +438,13 @@ export interface AbilityDamageInfo {
   isUtility: boolean;
   cooldownValues: number[];
   costValues: number[];
+  // NEW: Secondary damage effects (Explode, DoT, etc.)
+  secondaryDamages: SecondaryDamage[];
+  // NEW: Is the primary damage a DoT?
+  isDot: boolean;
+  dotTicks?: number;
+  dotDuration?: number;
+  dotTickInterval?: number;
 }
 
 /**
@@ -444,37 +462,106 @@ export function extractAbilityDamageInfo(ability: Ability): AbilityDamageInfo {
     isUtility: true,
     cooldownValues: parseCooldownValues(ability.cooldown),
     costValues: parseCostValues(ability.cost),
+    secondaryDamages: [],
+    isDot: false,
   };
-  
+
   if (!ability.attributes) return result;
-  
+
+  // Keywords that indicate secondary damage types
+  const secondaryDamageKeywords = ['explode', 'detonate', 'burst', 'bonus damage', 'impact'];
+
+  // First pass: collect all damage-related attributes
+  const damageAttrs: { label: string; value: string; isScaling: boolean }[] = [];
+
   for (const attr of ability.attributes) {
     const label = attr.label.toLowerCase();
-    
-    // Check for damage (but not "Damage Scaling")
-    if (label === 'damage' || (label.includes('damage') && !label.includes('scaling'))) {
-      result.baseDamageValues = parseAbilityValues(attr.value);
-      result.hasDamage = true;
-      result.isUtility = false;
+
+    // Check if this is any kind of damage attribute
+    if (label.includes('damage') && !label.includes('type') && !label.includes('taken') && !label.includes('reduced') && !label.includes('mitigation')) {
+      damageAttrs.push({ label: attr.label, value: attr.value, isScaling: label.includes('scaling') });
     }
-    
-    // Check for scaling
-    if (label.includes('scaling') || label === 'damage scaling') {
-      result.scaling = parseScaling(attr.value);
-      result.conditionalScaling = parseConditionalScaling(attr.value);
-    }
-    
+
     // Check for execute
     if (label.includes('execute')) {
       result.isExecute = true;
       const match = attr.value.match(/(\d+)/);
       if (match) result.executeThreshold = parseFloat(match[1]);
     }
-    
+
     // Check for heal
     if (label === 'heal' || label.includes('heal')) {
       result.healValues = parseAbilityValues(attr.value);
       result.isHeal = true;
+    }
+  }
+
+  // Second pass: categorize damage attributes
+  for (const attr of damageAttrs) {
+    const labelLower = attr.label.toLowerCase();
+
+    // Check if this is a secondary damage type
+    const isSecondary = secondaryDamageKeywords.some(kw => labelLower.includes(kw));
+
+    if (isSecondary) {
+      // Extract the prefix (e.g., "Explode" from "Explode Damage")
+      const labelParts = attr.label.split(' ');
+      const damageLabel = labelParts[0]; // e.g., "Explode"
+
+      // Find or create the secondary damage entry
+      let secondary = result.secondaryDamages.find(s => s.label.toLowerCase() === damageLabel.toLowerCase());
+      if (!secondary) {
+        secondary = { label: damageLabel, baseDamageValues: [], scaling: [] };
+        result.secondaryDamages.push(secondary);
+      }
+
+      if (attr.isScaling) {
+        secondary.scaling = parseScaling(attr.value);
+      } else {
+        secondary.baseDamageValues = parseAbilityValues(attr.value);
+      }
+    } else {
+      // Primary damage
+      if (attr.isScaling) {
+        if (labelLower.includes('bonus') || labelLower.includes('additional') || labelLower.includes('extra')) {
+          result.bonusScaling = parseScaling(attr.value);
+        } else {
+          result.scaling = parseScaling(attr.value);
+          result.conditionalScaling = parseConditionalScaling(attr.value);
+        }
+      } else if (labelLower === 'damage' || labelLower.startsWith('damage ')) {
+        result.baseDamageValues = parseAbilityValues(attr.value);
+        result.hasDamage = true;
+        result.isUtility = false;
+      }
+    }
+  }
+
+  // Check description for DoT patterns to determine tick count
+  if (ability.description) {
+    const desc = ability.description.toLowerCase();
+
+    // Pattern: "every Xs" or "every X second" for tick interval
+    // Also handle "every second" (meaning every 1 second)
+    let tickInterval: number | null = null;
+    const everyNumMatch = desc.match(/every\s+(\d+(?:\.\d+)?)\s*s(?:econd)?/i);
+    if (everyNumMatch) {
+      tickInterval = parseFloat(everyNumMatch[1]);
+    } else if (desc.includes('every second') || desc.includes('per second')) {
+      tickInterval = 1;
+    } else if (desc.match(/every\s+0?\.5\s*s/i) || desc.includes('every half second')) {
+      tickInterval = 0.5;
+    }
+
+    // Pattern: "for Xs" or "last for Xs" or "lasts Xs"
+    const forMatch = desc.match(/(?:for|lasts?\s*(?:for\s*)?)\s*(\d+)\s*s/i);
+    const duration = forMatch ? parseFloat(forMatch[1]) : null;
+
+    if (tickInterval !== null && duration !== null) {
+      result.isDot = true;
+      result.dotTickInterval = tickInterval;
+      result.dotDuration = duration;
+      result.dotTicks = Math.round(duration / tickInterval);
     }
   }
   
@@ -500,30 +587,34 @@ export function extractSubAbilityDamageInfo(subAbility: {
     isUtility: true,
     cooldownValues: [],
     costValues: [],
+    secondaryDamages: [],
+    isDot: false,
   };
-  
+
   if (!subAbility.attributes) return result;
-  
+
   for (const attr of subAbility.attributes) {
     const label = attr.label.toLowerCase();
-    
-    if (label === 'damage' || (label.includes('damage') && !label.includes('scaling'))) {
+
+    // Check for damage (specifically "Damage" label, or starts with "Damage ")
+    // Exclude "Damage Scaling", "Damage Type", "Damage Taken", etc.
+    if (label === 'damage' || (label.startsWith('damage ') && !label.includes('scaling') && !label.includes('type') && !label.includes('taken') && !label.includes('reduced'))) {
       result.baseDamageValues = parseAbilityValues(attr.value);
       result.hasDamage = true;
       result.isUtility = false;
     }
-    
+
     if (label.includes('scaling') || label === 'damage scaling') {
       result.scaling = parseScaling(attr.value);
       result.conditionalScaling = parseConditionalScaling(attr.value);
     }
-    
+
     if (label === 'heal' || label.includes('heal')) {
       result.healValues = parseAbilityValues(attr.value);
       result.isHeal = true;
     }
   }
-  
+
   return result;
 }
 

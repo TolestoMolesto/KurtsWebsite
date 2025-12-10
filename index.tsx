@@ -1,6 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { initPerformanceMonitoring } from './services/performanceUtils';
+
+// Initialize performance monitoring in development
+if (process.env.NODE_ENV === 'development') {
+  initPerformanceMonitoring();
+}
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
